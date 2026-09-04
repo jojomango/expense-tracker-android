@@ -16,8 +16,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 
 | Phase | 名稱 | 狀態 | PR |
 |---|---|---|---|
-| 0 | 地基 | **NEXT** | |
-| 1 | Domain：金額與時間 | ⬜ TODO | |
+| 0 | 地基 | ✅ DONE | (見下方交接筆記) |
+| 1 | Domain：金額與時間 | **NEXT** | |
 | 2 | Domain：實體與預算計算 | ⬜ TODO | |
 | 3 | 持久層與匯出匯入 | ⬜ TODO | |
 | 4 | 基礎 UI：錢包與交易 CRUD | ⬜ TODO | |
@@ -27,7 +27,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 
 ---
 
-## Phase 0 — 地基 **NEXT**
+## Phase 0 — 地基 ✅ DONE
 
 **這個 phase 建議人類主導或至少緊盯著做**，因為它決定了之後每個 phase 能不能順利跑。
 如果要交給 agent，務必先確認下面每一項的驗收條件都真的可以自動化檢查。
@@ -87,17 +87,76 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 
 ### 驗收
 
-- [ ] `./gradlew verify` 全綠
+- [x] `./gradlew verify` 全綠（本機用 JDK 17 + Gradle 8.9 實際跑過，非只看 agent 自報）
 - [ ] `./gradlew assembleDebug` 產出的 APK 能在 emulator／實機安裝並開啟，
-      看到一個空白畫面（不用有任何功能，Compose 渲染出來就算過）
-- [ ] domain 純淨度檢查腳本：故意在 `domain/` 底下塞一個
+      看到一個空白畫面（不用有任何功能，Compose 渲染出來就算過）——
+      **這一項本機沒能驗證，見下方交接筆記，需要人類補測**
+- [x] domain 純淨度檢查腳本：故意在 `domain/` 底下塞一個
       `import android.content.Context` 進去測試，確認腳本真的會抓到並讓
-      CI 失敗，測完把這行刪掉
-- [ ] CI 在一個測試 PR 上跑過一次，全綠
+      CI 失敗（exit code 1），測完把這行刪掉
+- [ ] CI 在一個測試 PR 上跑過一次，全綠（draft PR 開出後由 GitHub Actions 驗證）
 
 ### 刻意不做
 
 任何業務邏輯、任何真正的畫面內容。這個 phase 純粹是骨架。
+
+### 交接筆記（Phase 0 → Phase 1）
+
+**做了什麼：**
+- Gradle Kotlin DSL 骨架：AGP 8.6.1、Kotlin 2.0.21（含獨立的
+  `org.jetbrains.kotlin.plugin.compose` — Kotlin 2.0 起 Compose 編譯器外掛
+  跟 Kotlin 版本脫鉤，這是新專案容易漏掉的一個外掛）、Compose BOM
+  2024.10.01、Hilt 2.52、Room 2.6.1（先加依賴，Phase 3 才會真的用）、
+  `kotlinx-datetime`、`kotlinx-serialization`。套件名稱用
+  `com.jojomango.expensetracker`（沿用 GitHub 帳號 jojomango，非規格要求，
+  可自行改）
+- `domain`／`data`／`ui`／`di` 四層各放一個 marker 檔證明 import 方向正確
+  （`ui`→`domain`、`data`→`domain`、`di`→`data`），Phase 1 開始寫真正的
+  `domain/Money.kt` 等檔案時可以直接刪掉 `DomainMarker.kt`
+- `scripts/check-domain-purity.sh`：純 bash + grep 掃描，已手動驗證會抓到
+  違規（塞一行 `import android.content.Context` 進去測過，exit 1，測完移除）
+- ktlint 1.3.1、detekt 1.23.7（`config/detekt/detekt.yml`，暫時關掉
+  `MagicNumber` 規則，Phase 1 `Money`/`Week`/`Month` 落地後應該重新打開，
+  屆時很多常數會需要 `const val` 命名或行內註解豁免）
+- JaCoCo 90% 覆蓋率的 task（`jacocoTestReport` / `jacocoCoverageVerification`）
+  已經寫好但**故意沒有接進 `verify`**——`domain` 現在只有一個空 marker
+  檔、沒有測試，接上去每次 build 都會因為 0% 覆蓋率失敗。**Phase 1 的 PR
+  必須**在 `app/build.gradle.kts` 加回
+  `tasks.named("jacocoTestReport") { finalizedBy("jacocoCoverageVerification") }`
+  （原本的程式碼註解裡有寫這行，直接取消註解即可）
+- `.github/workflows/ci.yml`：`verify` job（ubuntu runner）+ 選配的 `e2e`
+  job（macos runner，`workflow_dispatch` 或 push 到 `main` 才跑，串
+  Maestro）。**branch protection 還沒設定**——需要 repo admin 權限透過
+  GitHub 網頁或 `gh api` 設定，這次 agent session 沒有處理，人類需要另外
+  補上（Settings → Branches → Add rule → main → Require PR + status checks）
+- 拿掉了原本規格裡 `de.mannodermaus:android-junit5`（在 instrumented test
+  上跑 JUnit5）這個套件——研究後發現版本號不穩定、容易卡建置，且
+  Phase 0 用不到（domain 單元測試本來就是純 JVM `testDebugUnitTest`，用
+  標準 JUnit 5 就夠；instrumented/Compose UI 測試維持 JUnit4 風格的
+  `androidx.test` + `compose-ui-test-junit4`，這是 Compose 測試函式庫目前
+  的主流做法，即使專案其他地方用 JUnit5 也一樣）。如果之後真的需要在
+  device 上跑 JUnit5，這是刻意的技術選擇偏離，不是漏做
+
+**已知的坑／沒做完的事：**
+- ⚠️ **APK 安裝開啟這一項驗收沒有在本機完成**：這台機器是 Apple Silicon
+  (M4)，但整條工具鏈（Homebrew、預裝的 JDK）是透過 Rosetta 跑 x86_64，
+  導致：(1) 既有的 x86_64 system image 因為 Rosetta 進程拿不到
+  Hypervisor.framework 加速，`emulator` 直接 PANIC；(2) 改用原生
+  arm64-v8a system image 又發現 SDK 裡的 `emulator` 執行檔本身也是
+  x86_64-only，QEMU2 直接拒絕跑 arm64 guest；(3) 嘗試下載 arm64 版 JDK
+  讓 `sdkmanager` 抓對應的 arm64 emulator 套件，但下載速度異常慢
+  （幾分鐘只有個位數 MB），判斷不值得繼續等。**這是這個 sandbox
+  環境的限制，不是專案設定的問題**——`./gradlew assembleDebug` 本身
+  成功產出了 APK（`app/build/outputs/apk/debug/app-debug.apk`）。
+  **請人類在自己的 Android Studio / 實機上裝一次確認**，這也正好
+  對應 `CLAUDE.md`「Phase 0 建議人類主導或至少親自驗收」的提醒
+- `local.properties`（指向 `~/Library/Android/sdk`）沒有進 repo（已在
+  `.gitignore`），每個開發者需要自己建一份或讓 Android Studio 自動產生
+- `.maestro/` 目錄目前只有一個說明用的 README，真正的 flow 從 Phase 4
+  才開始寫
+- Phase 1 動工前務必看 `SPEC.md` §7 D6（自訂幣別）——決策維持「內建 20
+  種 + 使用者自訂代碼」，`domain/Currency.kt` 設計小數位數查詢介面時
+  要留擴充點，不要重蹈網頁版拖到最後一個 phase的覆轍
 
 ---
 

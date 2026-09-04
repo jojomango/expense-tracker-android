@@ -1,0 +1,15 @@
+build:
+  maxIssues: 0
+
+style:
+  MagicNumber:
+    active: false # revisit once domain/Money/Week/Month land in Phase 1
+
+complexity:
+  LongMethod:
+    threshold: 60
+  LongParameterList:
+    active: true
+
+naming:
+  active: true
