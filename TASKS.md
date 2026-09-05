@@ -646,9 +646,22 @@ emulator，測試沒辦法在本機執行）。
 - **`TESTCASES.md` E2E-3 要求超支時「警示色 + 圖示」，但 `UI-SPEC.md` §4.2
   明講「不用 emoji 警示圖示」——這兩份文件字面上互相矛盾。** 解法：用
   Material Icons 的向量圖示（`Icons.Filled.Warning`），不是 emoji 字元——
-  这同時滿足兩邊，UI-SPEC 說的「不用 emoji」跟 TESTCASES 說的「+圖示」
-  都成立，不算真的違反任何一份契約，但這個判斷寫進「需要人類決策」讓人類
-  確認這樣解讀合理。
+  這同時滿足兩邊，UI-SPEC 說的「不用 emoji」跟 TESTCASES 說的「+圖示」
+  都成立。**人類已確認這個解讀合理，並且要求調查「不用 emoji」這條規則
+  是不是為了避免另外畫 SVG 圖示資產——調查結果：不是，也沒有這個顧慮。**
+  `Icons.Filled.Warning` 來自 `androidx.compose.material:material-icons-extended`，
+  這個套件 **Phase 4 就已經加入**（拿來做底部導覽「統計」頁的
+  `Icons.Filled.BarChart`），這次只是多引用同一個套件裡現成的一個符號，
+  沒有新增依賴、沒有畫任何 SVG、對 APK 大小的影響可忽略。`UI-SPEC.md`
+  §3.1 本來就講「圖示用 Material Icons 就好」（底部導覽），emoji 則是用在
+  分類圖示、空狀態插圖這種「裝飾性內容」——「已超支不用 emoji」讀起來是
+  「這是狀態指示，跟導覽圖示一樣走 Material Icons 路線，不要跟分類 emoji
+  那種裝飾性內容混在一起」，不是「完全不准用圖示」。
+  **記錄成慣例，供之後任何 phase 需要圖示時參考：需要圖示表達狀態/功能
+  （不是裝飾性內容）時，優先用 `material-icons-extended` 裡現成的簡單線條
+  圖示（跟現有的 `ArrowDropDown`/`Add`/`Check`/`Delete`/`Home`/`BarChart`
+  同一個套件），不用另外畫 SVG 或加新的圖示套件依賴；優先選簡單、好懂、
+  線條不複雜的圖示，避免用太花俏或語意不明確的符號。**
 - 錢包管理：`ui/wallet/WalletManagementScreen.kt`（列出所有未封存錢包、
   「新增」入口）+ `ui/wallet/WalletEditScreen.kt`/`WalletEditViewModel.kt`
   （新增/編輯共用同一個表單，沿用 `HomeScreen.FirstWalletOnboarding` 的
@@ -705,12 +718,13 @@ emulator，測試沒辦法在本機執行）。
   `.maestro/scripts/e2e5-dates.js`（Maestro 的 `runScript` + JS）在執行當下
   即時算出「這週一」跟「這週一的前一天（週日）」，兩者的相對位置關係
   （週一屬本週、週日屬上週）跟 TESTCASES 例子的結構完全一樣，只是不管
-  哪一天執行都成立，不用管系統時鐘卡在哪天。連帶發現：Android 內建
-  `DatePickerDialog` 的月曆格子本身是可以直接用 `tapOn` 點的（每一格的
-  accessibility text 是完整的「Tuesday, September 1, 2026」這種英文字串，
-  跟 app 本身的中文介面無關，是 Android 框架自己的 a11y 字串），「換到
-  上個月」的按鈕 content description 也是英文的「Change to previous
-  month」——這些都在 `maestro hierarchy` 裡直接查得到，不用用猜的。
+  哪一天執行都成立，不用管系統時鐘卡在哪天。**人類已確認這個做法能達到
+  預期的測試效果。** 連帶發現：Android 內建 `DatePickerDialog` 的月曆格子
+  本身是可以直接用 `tapOn` 點的（每一格的 accessibility text 是完整的
+  「Tuesday, September 1, 2026」這種英文字串，跟 app 本身的中文介面無關，
+  是 Android 框架自己的 a11y 字串），「換到上個月」的按鈕 content
+  description 也是英文的「Change to previous month」——這些都在
+  `maestro hierarchy` 裡直接查得到，不用用猜的。
 
 **本機驗證：** 這個 phase 全程用本機 arm64 emulator（`Phase0_arm64` AVD）
 反覆迭代——`maestro test .maestro/` 一輪不到 2 分鐘（5 支 flow 全跑約 6
