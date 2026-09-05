@@ -1,0 +1,69 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-9 分類管理：刪除有交易的自訂分類，交易轉移到未分類
+# Given 已有錢包「日常」，且已新增自訂分類「咖啡」
+- launchApp:
+    clearState: true
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+- tapOn: "設定"
+- tapOn: "分類管理"
+- tapOn: "新增"
+- tapOn: "分類名稱"
+- inputText: "咖啡"
+- tapOn: "Icon（emoji）"
+- eraseText: 10
+- inputText: "☕"
+- tapOn: "建立分類"
+- swipe:
+    start: 50%,80%
+    end: 50%,30%
+- assertVisible: "咖啡"
+- tapOn: "返回"
+- tapOn: "返回"
+
+# And 有一筆分類為「咖啡」的交易
+- tapOn: "記帳"
+- tapOn: "5"
+- tapOn: "0"
+- tapOn: "0"
+- swipe:
+    direction: UP
+    from:
+      text: "交通"
+- waitForAnimationToEnd
+- tapOn: "咖啡"
+- tapOn: "記一筆"
+- assertVisible: "咖啡"
+- assertVisible: "-NT\\$500.00"
+
+# When 刪除分類「咖啡」
+- tapOn: "設定"
+- tapOn: "分類管理"
+- swipe:
+    start: 50%,80%
+    end: 50%,30%
+- assertVisible: "咖啡"
+- swipe:
+    start: 88%,56%
+    end: 9%,56%
+# Then 分類從清單消失
+- assertNotVisible: "咖啡"
+- tapOn: "返回"
+- tapOn: "返回"
+
+# And 原本該筆交易的分類顯示變為「未分類」
+# And 交易本身（金額、日期）不遺失
+- assertVisible: "未分類"
+- assertVisible: "-NT\\$500.00"

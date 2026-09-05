@@ -1,0 +1,61 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-8 分類管理：新增分類、系統預設分類保護
+# Given 已有錢包「日常」（TWD，週預算 3000）
+- launchApp:
+    clearState: true
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+# When 進入分類管理頁
+- tapOn: "設定"
+- tapOn: "分類管理"
+# Then 顯示 7 個支出分類與 4 個收入分類，皆標示「系統預設」
+# （種子內容本身已經有 CategoryTest 的單元測試覆蓋；這裡只確認畫面真的把
+# 種子資料渲染出來，抽樣檢查幾個，不用每個分類都斷言一次）
+- assertVisible: "居住"
+- assertVisible: "系統預設"
+
+# When 新增分類「咖啡」（支出，icon「☕」）
+- tapOn: "新增"
+- tapOn: "分類名稱"
+- inputText: "咖啡"
+- tapOn: "Icon（emoji）"
+- eraseText: 10
+- inputText: "☕"
+# 這個表單很短，「建立分類」按鈕本來就在鍵盤上方，不用 hideKeyboard——
+# 之前加了一行 hideKeyboard 反而讓 flow 直接跳回上一頁（這個表單沒有真正
+# 呼叫出系統鍵盤時，hideKeyboard 送出的是 BACK 鍵事件，等於直接把畫面
+# 導覽退回去，不是單純收鍵盤）。
+- tapOn: "建立分類"
+
+# Then 分類清單新增一筆「☕ 咖啡」，不標示「系統預設」
+# 自訂分類排在所有系統預設分類之後（CategoryDao.observeAll() 的
+# ORDER BY isDefault DESC, name ASC），要往下捲才看得到。
+- swipe:
+    start: 50%,80%
+    end: 50%,30%
+- assertVisible: "咖啡"
+
+# When 嘗試刪除系統預設分類「飲食」
+# `direction: LEFT` + `from: 飲食` 錨定 swipe 的預設拖曳距離常常跨不過
+# SwipeToDismissBox 的門檻（Phase 4/5 都踩過同一件事），改用明確座標橫跨
+# 整列寬度——「飲食」這時候在畫面上的位置是螢幕高度 67% 左右（跟這支 flow
+# 前面「往下捲一次」之後的畫面位置對應，若之後這頁版面改了要重新校準）。
+- swipe:
+    start: 88%,67%
+    end: 9%,67%
+# Then 刪除被拒絕（顯示錯誤訊息）
+# And 「🍜 飲食」仍存在於分類清單
+- assertVisible: "系統預設分類無法刪除"
+- assertVisible: "飲食"

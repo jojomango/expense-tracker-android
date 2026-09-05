@@ -68,36 +68,36 @@ fun CategoryManagementScreen(
             )
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            CategorySection(
-                title = "支出",
-                categories = categories.filter { it.type == CategoryType.EXPENSE },
-                onEditCategory = onEditCategory,
-                onDeleteCategory = viewModel::deleteCategory,
-            )
-            CategorySection(
-                title = "收入",
-                categories = categories.filter { it.type == CategoryType.INCOME },
-                onEditCategory = onEditCategory,
-                onDeleteCategory = viewModel::deleteCategory,
-            )
-        }
-    }
-}
-
-@Composable
-private fun CategorySection(
-    title: String,
-    categories: List<Category>,
-    onEditCategory: (String) -> Unit,
-    onDeleteCategory: (Category) -> Unit,
-) {
-    if (categories.isEmpty()) return
-    Text(title, modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
-    LazyColumn {
-        items(categories, key = { it.id }) { category ->
-            CategoryRow(category = category, onEdit = { onEditCategory(category.id) }, onDelete = { onDeleteCategory(category) })
-            HorizontalDivider()
+        // 一開始用「兩個各自的 LazyColumn 疊在一個非捲動的 Column 裡」，結果分類
+        // 數量一多（7 支出 + 4 收入 + 自訂的）畫面下半段直接被裁掉、完全滑不動——
+        // LazyColumn 巢狀在沒有捲動能力、也沒有給定高度的 Column 底下不會生效。
+        // 改成整頁只用一個 LazyColumn，分類名稱標題（「支出」/「收入」）當一般
+        // item 插進去，才能整頁一起捲動。
+        val expenseCategories = categories.filter { it.type == CategoryType.EXPENSE }
+        val incomeCategories = categories.filter { it.type == CategoryType.INCOME }
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (expenseCategories.isNotEmpty()) {
+                item { Text("支出", modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) }
+                items(expenseCategories, key = { it.id }) { category ->
+                    CategoryRow(
+                        category = category,
+                        onEdit = { onEditCategory(category.id) },
+                        onDelete = { viewModel.deleteCategory(category) },
+                    )
+                    HorizontalDivider()
+                }
+            }
+            if (incomeCategories.isNotEmpty()) {
+                item { Text("收入", modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) }
+                items(incomeCategories, key = { it.id }) { category ->
+                    CategoryRow(
+                        category = category,
+                        onEdit = { onEditCategory(category.id) },
+                        onDelete = { viewModel.deleteCategory(category) },
+                    )
+                    HorizontalDivider()
+                }
+            }
         }
     }
 }

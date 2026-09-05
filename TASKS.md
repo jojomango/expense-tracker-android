@@ -22,8 +22,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 3 | 持久層與匯出匯入 | ✅ DONE | (見下方交接筆記) |
 | 4 | 基礎 UI：錢包與交易 CRUD | ✅ DONE | (見下方交接筆記) |
 | 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
-| 6 | 分類與統計 | **NEXT** | |
-| 7 | 打磨 | ⬜ TODO | |
+| 6 | 分類與統計 | ✅ DONE | (見下方交接筆記) |
+| 7 | 打磨 | **NEXT** | |
 
 ---
 
@@ -36,6 +36,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | # | 項目 | 狀態 | 觸發條件 |
 |---|---|---|---|
 | TD-1 | Persistence 測試（`data/RoomTestDb.kt`／`PersistenceTest.kt`／`BackupPersistenceTest.kt`）用 JUnit4（透過 Robolectric）+ `junit-vintage-engine` 橋接，跟 domain 層的 JUnit5 不一致。**不是 bug、不違反 SPEC.md §5**（那條 JUnit5 規定的範圍明文限定在 domain 層），純粹是工具選擇的殘留差異，見 Phase 3 交接筆記完整脈絡 | 擱置，不主動處理 | Robolectric 官方釋出 JUnit5 支援（目前只有一個 0.1.0 的社群 extension，未達生產可用門檻，見 [robolectric/robolectric#3477](https://github.com/robolectric/robolectric/issues/3477)）才評估遷移，沒有的話不用管 |
+| TD-2 | Maestro flow 裡刪除列表項目的滑動手勢（`SwipeToDismissBox`）用明確座標百分比（例如 `88%,67%`）而不是錨定元素，因為 `swipe: { direction: LEFT, from: { text: X } }` 常常跨不過 dismiss 門檻。已在 Phase 4（E2E-2）、Phase 5、Phase 6（E2E-8 刪飲食、E2E-9 刪咖啡）踩過同一件事，共 5 次。座標寫死在畫面目前的版面高度上，之後任何 phase 改動上方版面（預算卡、分類清單頭部等）都可能讓座標失準，需要重新校準 | 擱置，不主動處理（座標校準成本目前還算低，重新校準只要跑一次失敗、看截圖、調整 Y% 即可） | 之後有餘裕時，把可滑動刪除的列表項目都加上穩定的 `testTag`，Maestro 改用 tag 定位，一勞永逸解決這個脆弱點；或是這個座標校準成本明顯升高（例如又發生一次「改版面高度、忘記重新校準」的 CI 失敗）時，優先處理 |
 
 ---
 
@@ -747,7 +748,7 @@ E2E-1/E2E-2）在本機連續兩輪全綠之後，才推上 CI 用
 
 ---
 
-## Phase 6 — 分類與統計
+## Phase 6 — 分類與統計 ✅ DONE
 
 **必讀：** `UI-SPEC.md` §6
 
@@ -757,6 +758,106 @@ E2E-1/E2E-2）在本機連續兩輪全綠之後，才推上 CI 用
   （Compose Canvas 手畫長條圖）
 
 **驗收：** E2E-8、E2E-9、E2E-10、T8.3 全過。
+
+### 交接筆記（Phase 6 → Phase 7）
+
+**做了什麼：**
+- **T8.3.2（Phase 4/5 遺留的坑，這個 phase 一併補完）**：`WalletSwitcherSheet`
+  現在會顯示每個錢包自己的「{幣別} · {該錢包當期餘額}」，不再只顯示幣別代碼。
+  加了 `TransactionRepository.observeAll()`（跨錢包的所有交易）+
+  `HomeViewModel.walletBalanceTexts: StateFlow<Map<String, String>>`
+  （依 walletId 分組、套用跟 `BudgetCard` 一樣的
+  `weeklyBalance ?: totalBalance ?: weeklyExpenseTotal` 邏輯）。切換錢包後
+  也補上 `UI-SPEC.md` §7 要求的 Snackbar「已切換到 {名稱}」。
+- 分類管理：`ui/category/CategoryManagementScreen.kt`（清單 + 滑動刪除，系統
+  預設分類刪除會被 `DefaultCategoryException` 擋下並顯示 Snackbar）+
+  `CategoryEditScreen.kt`/`CategoryEditViewModel.kt`（新增/編輯共用表單，
+  類型建立後不可改，跟 Phase 5 的 `Wallet.currency` immutable 是同一個理由：
+  已有的統計/預算計算假設分類 type 不會變動）。色票用 `Color.kt` 既有的
+  `CategoryColors` 10 色去重後的 `palette`（`UI-SPEC.md` §2.2 表格有 11 列，
+  但「其他（支出）」跟「其他（收入）」共用同一個 `#7A7A80`，去重後剛好
+  10 個不同顏色——不是遺漏，是預期行為）。
+- 統計頁 `ui/stats/StatsScreen.kt`/`StatsViewModel.kt`：本週／本月分類佔比
+  圓環（Compose `Canvas` `drawArc` 手畫，中心疊 Compose `Text` 顯示期間總額，
+  沒有引入圖表函式庫）+ 近 8 週支出趨勢長條圖（`Canvas` `drawRect` + 虛線
+  平均線，底下另外疊一排等寬 `Box` 當週別標籤，跟 `UI-SPEC.md` §6 說的
+  「取巧邏輯」一致）。`StatsViewModel` 刻意直接讀 `Settings.defaultWalletId`
+  決定「目前錢包」，不跟 `HomeViewModel` 共用實例——這是為了不要重蹈 Phase 5
+  交接筆記裡那個「兩個 NavBackStackEntry-scoped ViewModel 各自狀態不同步」
+  的覆轍，因為 `HomeViewModel.switchWallet()` 已經會把選擇立刻寫回
+  `Settings.defaultWalletId`，任何畫面直接讀這個 Flow 就能保持同步，不需要
+  額外傳實例。
+
+**踩過的坑（本機 arm64 emulator 反覆驗證抓到的）：**
+- **又一個「巢狀 `LazyColumn` 放在不可捲動的外層 `Column` 裡」的版面 bug**，
+  這次踩了兩次，分屬兩個畫面：
+  1. `CategoryManagementScreen.kt` 初稿把「支出」「收入」兩個區段各自包成
+     獨立的 `LazyColumn`，兩個都放進同一個不可捲動的外層 `Column`——結果
+     畫面上看起來沒事，但完全捲不動，超出螢幕範圍的分類（例如「薪資」
+     「獎金」）永遠碰不到，肉眼看截圖才發現。修法：改成單一頂層
+     `LazyColumn`，區段標題用 `item {}` 插進 `items(...)` 中間。
+  2. `StatsScreen.kt` 的外層也是一個沒有 `verticalScroll` 的 `Column`——這次
+     是在跑 E2E-10 驗證「近 8 週支出趨勢」卡片下方的週別標籤時發現的：
+     斷言一直抓不到文字，一開始以為是文字內容錯，後來截圖才發現那排標籤
+     根本沒進入螢幕可視範圍、而且怎麼滑都滑不動。修法：外層 `Column` 加
+     `.verticalScroll(rememberScrollState())`。
+  **教訓（寫給下一個 phase，甚至下一次寫任何新畫面時都該想一下）：** 任何
+  一頁只要內容「有可能超過一個螢幕高度」，外層容器就必須是
+  `LazyColumn`／或明確帶 `verticalScroll` 的 `Column`，**不能只憑肉眼看
+  截圖判斷「看起來都有顯示」就通過**——不可捲動的畫面在只有幾筆資料、剛好
+  塞得進螢幕的情況下，跟正常畫面長得一模一樣，只有資料多到溢出時才會
+  暴露，這正是為什麼這個 bug 連續在兩個不同畫面被埋了兩次都沒在寫程式碼
+  當下被發現，而是要跑到 Maestro flow 斷言失敗、看截圖才抓到。
+- **`hideKeyboard` 誤觸發返回上一頁**：E2E-8 新增分類「咖啡」那步，表單很短、
+  鍵盤根本沒蓋住「建立分類」按鈕，卻加了一行 `hideKeyboard`——結果整個
+  flow 被彈回 `CategoryManagementScreen`（不是留在表單上）。原因：這個表單
+  沒有真的呼叫出系統鍵盤讓 `hideKeyboard` 去收，Maestro 的 `hideKeyboard`
+  底層送出的其實是 BACK 鍵事件，沒有鍵盤可收時，這個 BACK 事件就變成
+  單純把畫面導覽退回去。修法：拿掉這行，直接 `tapOn: "建立分類"`。
+  **教訓：`hideKeyboard` 不是無副作用的「保險起見加一下」——只有在真的
+  需要收鍵盤時才加，加之前先截圖確認鍵盤真的擋住了要點的元素。**
+- **`SwipeToDismissBox` 座標脆弱性又中了兩次**（E2E-8 刪「飲食」、E2E-9 刪
+  「咖啡」），已經是第 4、5 次踩到同一件事（Phase 4、Phase 5 各一次）。
+  已寫進「已知技術債」TD-2，這次沒有花時間做 `testTag` 改造，繼續用
+  「每次重新截圖校準 Y%」的做法撐過去。
+- **E2E-10 的日期建構方式在特定月曆日子上會整個垮掉，這次真的踩到了**：
+  這個 emulator 沒有 root，鎖不住系統時鐘（跟 Phase 5 E2E-5 一樣的限制），
+  一開始沿用 E2E-5 的做法，用「這週一」代表本週交易、「上週一」代表
+  同月但不同週的交易。但這次跑到「今天剛好落在這個月第一週」（跑測試時
+  剛好是 9/5 週六，這週一是 8/31、上週一是 8/24，兩者都在**上個月**）——
+  `StatsViewModel` 的 `Month.rangeOf(referenceDate)` 用的是 `referenceDate
+  = today()` 自己所在的月份（9 月）去查詢，兩筆「這週」的交易全部被排除
+  在外，本月統計整個變成 `NT$0.00`。**這不是 app bug，是相對日期測試在
+  特定日子上的真實邊界情況**：只要「今天」在月初第一週，「本週」跟「上週」
+  就有很高機率整個落在上個月。修法（`.maestro/scripts/e2e10-dates.js`）：
+  - 「本週」交易一律用「今天」本身（保證同週、同月，不用管今天是星期幾）。
+  - 「同月但不同週」交易改用「今天 ±7 天」，優先用往前 7 天，若那天跨月
+    才改用往後 7 天——任何月份長度都 ≥28 天，數學上至少有一邊一定同月，
+    這個保證是通用的，不是碰運氣。
+  - 代價：近 8 週趨勢圖的「同月不同週」那筆交易，落點可能是**未來**（例如
+    這次是下週），而趨勢圖只回顧過去 8 週（不含未來週），所以那筆交易
+    所在週的標籤斷言拿掉了（改成只斷言「本週」的週別標籤，數值本身已由
+    domain 的 T3.6 單元測試覆蓋）。**這是相對日期測試在無 root emulator 上
+    的已知取捨**，跟 E2E-5 的取捨屬於同一類問題，供之後任何需要用相對
+    日期構造「本週/本月/近N週」情境的 flow 參考。
+
+**本機驗證：** 沿用 Phase 4/5 建立的本機 arm64 emulator 快速迭代流程——
+`maestro test .maestro/` 全部 8 支 flow 一輪約 11 分鐘（含本次新增的
+E2E-10），連續兩輪全綠（8/8 Passed）才推上 CI 用 `workflow_dispatch` 再次
+確認。`./gradlew verify`（含 `rm -rf app/build .gradle` 後乾淨重跑一次）全綠。
+
+**留給下一個 phase 的資訊：**
+- Phase 7（打磨）如果要動到 `StatsScreen`/`CategoryManagementScreen` 的版面，
+  記得兩者外層都已經是可捲動容器了（`LazyColumn`／`verticalScroll`），不用
+  再重複踩上面那個坑，但如果新增內容導致高度變化，`.maestro/E2E-8/E2E-9`
+  裡刪除分類的 swipe 座標可能又要重新校準（見 TD-2）。
+- `SwipeToDismissBox` 座標脆弱性（TD-2）目前累計踩了 5 次，如果 Phase 7
+  「打磨」的範圍包含測試基礎設施，值得評估花時間做 `testTag` 改造一次
+  解決，而不是繼續每個 phase 各自重新校準。
+- `.maestro/scripts/e2e10-dates.js` 的「今天 ±7 天找同月不同週」演算法
+  （數學上保證至少一邊成立）是這個 phase 新確立的技巧，之後如果還有
+  phase 需要類似的「本週 vs 同月不同週」相對日期情境，可以直接參考、
+  複用這個演算法，不用重新推導。
 
 ---
 
