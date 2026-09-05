@@ -175,8 +175,8 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
     }
 }
 
-// jacocoCoverageVerification is intentionally NOT wired into `verify` yet —
-// domain/ has no real logic until Phase 1 (see TASKS.md), so a 90% gate on an
-// empty package would fail every Phase 0 build. Phase 1's PR should add
-// `tasks.named("jacocoTestReport") { finalizedBy("jacocoCoverageVerification") }`
-// once Money/Week/Month land with tests.
+// domain/ now has real logic (Money/Week/Month, Phase 1) with tests, so the
+// 90% coverage gate is enforced from here on.
+tasks.named("jacocoTestReport") {
+    finalizedBy("jacocoCoverageVerification")
+}
