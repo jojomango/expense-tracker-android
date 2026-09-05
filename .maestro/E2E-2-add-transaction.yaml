@@ -31,10 +31,15 @@ appId: com.jojomango.expensetracker
 # 分類網格是 CategoryDao.observeAll() 的 `ORDER BY isDefault DESC, name ASC`
 # 結果（依名稱字母序），「飲食」排到最後、掉到第二列被畫面裁掉。
 # scrollUntilVisible 對這個畫面沒用（它挑的觸控點落在下方滑不動的自製數字
-# 鍵台），改用明確座標、只在分類網格可視範圍內（螢幕高度 23%~38%）拖曳。
+# 鍵台），改用錨定在既有元素（「交通」）上的 swipe，跟畫面解析度無關。
 - swipe:
-    start: 50%,38%
-    end: 50%,26%
+    direction: UP
+    from:
+      text: "交通"
+# 上一次在本機跑，緊接著 tapOn "飲食" 真的點下去了，但送出後交易變成「未分類」——
+# LazyVerticalGrid 的 fling 動畫還沒完全停下來就被 tapOn 打斷，觸控座標在動畫
+# 還在滾動時被判定成別的位置。等動畫真的停下來再點。
+- waitForAnimationToEnd
 - tapOn: "飲食"
 - assertVisible: "今天"
 # And 送出
@@ -60,10 +65,11 @@ appId: com.jojomango.expensetracker
 - assertVisible: "NT$2,800.00"
 
 # When 刪除該筆交易
+# `direction: LEFT` + `from: 飲食` 錨定 swipe 的預設拖曳距離不夠長，
+# 沒辦法越過 SwipeToDismissBox 的刪除門檻；改用明確座標橫跨整列寬度。
 - swipe:
-    direction: LEFT
-    from:
-      text: "飲食"
+    start: 88%,37%
+    end: 9%,37%
 # Then 交易從列表消失
 # And 本週餘額立即回到「NT$3,000.00」
 - assertNotVisible: "-NT\\$200.00"

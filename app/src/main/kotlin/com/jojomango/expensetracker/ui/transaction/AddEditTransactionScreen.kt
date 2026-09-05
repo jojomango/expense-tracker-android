@@ -164,7 +164,10 @@ private fun CategoryGrid(
             val color = runCatching { Color(android.graphics.Color.parseColor(category.color)) }.getOrDefault(Color.Gray)
             val selected = category.id == selectedCategoryId
             Column(
-                modifier = Modifier.padding(6.dp),
+                modifier =
+                    Modifier
+                        .padding(6.dp)
+                        .clickable(role = Role.Button) { onSelect(category.id) },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
@@ -178,7 +181,7 @@ private fun CategoryGrid(
                                 } else {
                                     Modifier
                                 },
-                            ).clickable(role = Role.Button) { onSelect(category.id) },
+                            ),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(category.icon, fontSize = 22.sp)

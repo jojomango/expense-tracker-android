@@ -42,8 +42,9 @@ appId: com.jojomango.expensetracker
 - assertVisible: "居住"
 - assertVisible: "其他"
 - swipe:
-    start: 50%,38%
-    end: 50%,26%
+    direction: UP
+    from:
+      text: "交通"
 - assertVisible: "飲食"
 - tapOn: "收入"
 - assertVisible: "薪資"
