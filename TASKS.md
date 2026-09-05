@@ -17,8 +17,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | Phase | 名稱 | 狀態 | PR |
 |---|---|---|---|
 | 0 | 地基 | ✅ DONE | (見下方交接筆記) |
-| 1 | Domain：金額與時間 | **NEXT** | |
-| 2 | Domain：實體與預算計算 | ⬜ TODO | |
+| 1 | Domain：金額與時間 | ✅ DONE | (見下方交接筆記) |
+| 2 | Domain：實體與預算計算 | **NEXT** | |
 | 3 | 持久層與匯出匯入 | ⬜ TODO | |
 | 4 | 基礎 UI：錢包與交易 CRUD | ⬜ TODO | |
 | 5 | 預算與即時餘額 | ⬜ TODO | |
@@ -160,7 +160,7 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 
 ---
 
-## Phase 1 — Domain：金額與時間
+## Phase 1 — Domain：金額與時間 ✅ DONE
 
 **必讀：** `SPEC.md` §2（P1/P2）、`TESTCASES.md` T1（Money）、T2（Week）、T5（Month）
 
@@ -180,6 +180,61 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 就先決定好「使用者自訂幣別代碼」要怎麼取得小數位數（例如：新增時要求輸入
 小數位數，或是預設全部當 2 位小數 + 一個「這個幣別沒有小數」的勾選框）。
 不強制要求這個 phase 就實作完，但至少在 API 設計上留好擴充點。
+
+### 驗收
+
+- [x] T1（Money）、T2（Week）、T5（Month）全過（54 個測案：Money 21、Week 26、Month 7）
+- [x] domain 覆蓋率 96%（門檻 90%），`jacocoCoverageVerification` 已接進 `verify`
+- [x] `./gradlew verify` 全綠（domain 純淨度 + ktlint + detekt + 測試 + 覆蓋率 + assembleDebug）
+- [x] UI 仍是空白畫面（這個 phase 沒有動 `ui`/`data`/`di`，只加 `domain`）
+
+### 交接筆記（Phase 1 → Phase 2）
+
+**做了什麼：**
+- `domain/Currency.kt`：`CurrencyInfo`（code/decimalDigits/symbol）+ 內建 20 種幣別
+  （`Currencies.builtIn`）+ `CurrencyRegistry` 類別。**D6 決策落地方式**：
+  `CurrencyRegistry(custom: Map<String, CurrencyInfo> = emptyMap())`——domain
+  本身不持有任何裝置/資料庫相關的可變狀態，自訂幣別由呼叫端（Phase 3+ 讀取
+  使用者設定後）組出 `custom` map 傳進來。`Money.of`/`parse`/`sum` 都接受
+  一個預設值為空的 `registry` 參數，預設情況下只認得內建 20 種。
+- `domain/Money.kt`：`amount: Long` + `currency: CurrencyInfo`，`internal
+  constructor`（外部一律走 `of`/`parse`/`sum` 這幾個 companion 工廠函式，
+  確保幣別一定經過 `CurrencyRegistry` 解析過，不會建出「不知道小數位數」的
+  Money）。`format()` 是手刻的千分位分組邏輯，**沒有用 `java.text.NumberFormat`**
+  ——那個會受 JVM 預設 locale 影響，手刻雖然多寫幾行，但每台裝置行為保證一致。
+- `domain/Week.kt`：`Week.rangeOf` 用 `date.dayOfWeek.value`（1=一...7=日）跟
+  `weekStartDay.value` 算 offset；`Week.groupByWeek` 是泛型函式（`<T>` +
+  `dateOf: (T) -> LocalDate` lambda），因為 Phase 1 還沒有 `Transaction`
+  型別（Phase 2 才有），先做成泛型可以直接被 Phase 2 拿去用，不用重寫。
+- `domain/Month.kt`：`Month.rangeOf` 用 kotlinx-datetime 的
+  `plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)` 算月底，不用手刻
+  每個月天數表。
+- `domain/DateRange.kt`：`Week`/`Month` 共用的 `data class DateRange(start,
+  end)`，帶一個 `operator fun contains`。
+- 踩到的坑：kotlinx-datetime 這個版本的 `DayOfWeek` **沒有** `isoDayNumber`
+  屬性（那是某些版本才有的），要用 `.value`（1=一...7=日）。如果之後升級
+  kotlinx-datetime 版本，這裡可能要重新確認。
+- JaCoCo 90% 覆蓋率門檻已經正式接進 `verify`（`app/build.gradle.kts` 底部
+  `tasks.named("jacocoTestReport") { finalizedBy("jacocoCoverageVerification") }`
+  已取消註解），目前 domain 覆蓋率 96%。
+- Phase 0 留下的四個 marker 檔（`DomainMarker`/`DataMarker`/`UiMarker`/
+  `DiMarker`）全部刪除——它們的任務（證明 domain/data/ui/di 互相 import 方向
+  正確）已經在 Phase 0 的 CI 裡驗證過且合併了，繼續留著只是佔位噪音。
+  Phase 2/3 開始寫 `Wallet`/`Transaction`/`Category`、Room、Hilt 綁定時，
+  這幾個空 package 目錄會重新長出真正的檔案。
+
+**已知的坑／下一個 phase 要注意：**
+- `Money.sum(items, code)` 目前**不驗證 registry 一致性以外的東西**——如果
+  `items` 裡混了不同幣別（跟 `code` 不符），會在 fold 裡逐筆 `require` 拋錯，
+  但錯誤訊息只會指出第一個不符的那一筆，不會列出全部違規項目，這對 Phase 2
+  做 `summarizeByCategory` 之類的彙總函式應該夠用，但如果之後需要更詳細的
+  診斷資訊可以再擴充。
+- `CurrencyRegistry` 目前是無狀態的（每次呼叫端自己組 `custom` map 傳進來），
+  Phase 2 的 `Wallet` 型別如果要儲存「這個錢包用什麼幣別」，儲存的應該是
+  幣別代碼字串（`currency: String`），不是 `CurrencyInfo` 物件本身——`Wallet`
+  也不該持有 `CurrencyRegistry`，需要金額運算時才在呼叫端組出對應的 registry。
+- `Week.groupByWeek` 的泛型設計刻意讓 Phase 2 的 `Transaction` 型別可以直接
+  傳 `list of Transaction` + `{ it.date }` 進來，不需要另外包一層。
 
 ---
 
