@@ -77,6 +77,9 @@ interface TransactionDao {
     fun observeByWallet(walletId: String): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions")
+    fun observeAll(): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions")
     suspend fun getAllOnce(): List<TransactionEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

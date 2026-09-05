@@ -49,4 +49,10 @@ object CategoryColors {
     const val SALARY = "#2F8F63"
     const val BONUS = "#C98B2E"
     const val INVESTMENT = "#4A6FA8"
+
+    /** 新增/編輯分類的色票——TASKS.md Phase 6「不做自由選色」，只能從這 10 色
+     * 挑一個（跟預設分類共用同一組色票，`MISC` 在支出跟收入各出現一次但顏色
+     * 相同，這裡去重）。 */
+    val palette: List<String> =
+        listOf(FOOD, TRANSPORT, HOUSING, SHOPPING, ENTERTAINMENT, MEDICAL, MISC, SALARY, BONUS, INVESTMENT)
 }
