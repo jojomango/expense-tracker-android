@@ -33,6 +33,7 @@ appId: com.jojomango.expensetracker
 # （domain/Category.kt DefaultCategories.seedDefaults() — T2.2.x 已用單元測試覆蓋
 # 種子內容本身；這裡只需要確認記帳頁的分類網格真的把種子資料渲染出來）
 - tapOn: "記帳"
+- takeScreenshot: after-tap-add-transaction-fab
 - assertVisible: "飲食"
 - assertVisible: "居住"
 - assertVisible: "其他"

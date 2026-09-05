@@ -20,6 +20,7 @@ appId: com.jojomango.expensetracker
 
 # When 點擊新增按鈕
 - tapOn: "記帳"
+- takeScreenshot: after-tap-add-transaction-fab
 # And 輸入金額「120」、選擇分類「飲食」、日期保持預設（今天）
 - tapOn: "1"
 - tapOn: "2"
