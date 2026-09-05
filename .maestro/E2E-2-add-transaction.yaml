@@ -5,6 +5,10 @@ appId: com.jojomango.expensetracker
 # ——用 E2E-1 同樣的引導流程建立前提條件，這個 flow 本身不驗證 E2E-1 的內容。
 - launchApp:
     clearState: true
+# launchApp 本身不保證第一幀畫完就回傳——E2E-1 因為緊接著有 assertVisible
+# （會重試等待），冷啟動的等待時間剛好夠；這支少了這一步，直接 tapOn 會在
+# 畫面還是全白的時候就撲空。補上同樣的 assertVisible 當作啟動完成的等待點。
+- assertVisible: "建立你的第一個錢包"
 - tapOn: "錢包名稱"
 - inputText: "日常"
 - tapOn: "幣別（ISO 4217，如 TWD）"
@@ -13,6 +17,8 @@ appId: com.jojomango.expensetracker
 - tapOn: "每週"
 - tapOn: "預算金額"
 - inputText: "3000"
+# 收起系統鍵盤——這個表單是真正的系統 TextField，鍵盤開著會蓋住「建立錢包」按鈕。
+- hideKeyboard
 - tapOn: "建立錢包"
 - assertVisible: "NT$3,000.00"
 
@@ -22,6 +28,18 @@ appId: com.jojomango.expensetracker
 - tapOn: "1"
 - tapOn: "2"
 - tapOn: "0"
+# 分類網格是 CategoryDao.observeAll() 的 `ORDER BY isDefault DESC, name ASC`
+# 結果（依名稱字母序），「飲食」排到最後、掉到第二列被畫面裁掉。
+# scrollUntilVisible 對這個畫面沒用（它挑的觸控點落在下方滑不動的自製數字
+# 鍵台），改用錨定在既有元素（「交通」）上的 swipe，跟畫面解析度無關。
+- swipe:
+    direction: UP
+    from:
+      text: "交通"
+# 上一次在本機跑，緊接著 tapOn "飲食" 真的點下去了，但送出後交易變成「未分類」——
+# LazyVerticalGrid 的 fling 動畫還沒完全停下來就被 tapOn 打斷，觸控座標在動畫
+# 還在滾動時被判定成別的位置。等動畫真的停下來再點。
+- waitForAnimationToEnd
 - tapOn: "飲食"
 - assertVisible: "今天"
 # And 送出
@@ -47,10 +65,11 @@ appId: com.jojomango.expensetracker
 - assertVisible: "NT$2,800.00"
 
 # When 刪除該筆交易
+# `direction: LEFT` + `from: 飲食` 錨定 swipe 的預設拖曳距離不夠長，
+# 沒辦法越過 SwipeToDismissBox 的刪除門檻；改用明確座標橫跨整列寬度。
 - swipe:
-    direction: LEFT
-    from:
-      text: "飲食"
+    start: 88%,37%
+    end: 9%,37%
 # Then 交易從列表消失
 # And 本週餘額立即回到「NT$3,000.00」
 - assertNotVisible: "-NT\\$200.00"

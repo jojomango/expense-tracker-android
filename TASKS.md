@@ -529,6 +529,91 @@ emulator，測試沒辦法在本機執行）。
   拆成獨立檔案、`on:` 只留 `push: branches: [main]` 和 `workflow_dispatch`
   （不寫 `pull_request`）之後，這個 job 完全不會出現在 PR 的 checks 裡，
   想手動驗證的話用 `workflow_dispatch` 觸發即可。
+- **PR #6 merge 進 main 後，`e2e` job 真的跑了一次，結果證實了兩件事：**
+  1. **`ubuntu-latest` + KVM 這個修正是有效的**——emulator 33 秒內開機完成、
+     APK 順利裝進去，跟本機/舊 `macos-14` 設定「boot timeout」的狀況完全不同。
+     這是 PR #5 那個修正第一次被真的驗證過，不再只是「照著官方文件猜應該可以」。
+  2. **`E2E-1`/`E2E-2` 這兩支 Maestro flow 第一次執行就抓到兩個真的問題**（都是
+     flow 本身寫得不夠嚴謹，不是 app 的 bug）：
+     - 兩支都在 `tapOn: "建立錢包"` 這一步失敗（`Element not found`）——
+       首次啟動引導表單用的是真正的系統 `TextField`（不像記帳頁用自製鍵台），
+       打完最後一個欄位後鍵盤沒收起來，把畫面下方的「建立錢包」按鈕蓋住。
+       修法：最後一次 `inputText` 之後、`tapOn: "建立錢包"` 之前加一行
+       `hideKeyboard`。
+     - 修好上面那個之後，兩支又都在分類網格找不到「飲食」失敗。**一開始以為
+       是 app 的 bug，後來拉 CI 上傳的失敗截圖才看清楚 app 完全正常**：
+       `CategoryDao.observeAll()`（`data/Daos.kt`）明確寫了
+       `ORDER BY isDefault DESC, name ASC`，分類網格是照名稱字母序排列，
+       不是 `DefaultCategories.seedDefaults()` 的插入順序——這是合理的實作
+       選擇，`UI-SPEC.md` 沒有規定分類網格一定要照種子表格順序顯示。「飲食」
+       照字母序排到 7 個支出分類的最後一個，掉到第二列、被 4 欄網格的可視
+       範圍裁掉。`scrollUntilVisible` 對這個畫面完全沒用——它挑的預設觸控點
+       落在畫面下方的自製數字鍵台（同樣是 `LazyVerticalGrid`，但內容剛好
+       塞得下、滑不動），改用錨定在既有元素（如「交通」）上的
+       `swipe: { direction: UP, from: { text: ... } }`，才是真的滑到分類網格。
+     - **教訓：Maestro flow 失敗時不要光看程式碼猜，先想辦法把當下畫面截圖
+       撈出來看**——把 `e2e.yml` 的 `Run emulator + Maestro flows` 這步改成
+       `continue-on-error: true`，跑完不論成敗都用 `actions/upload-artifact`
+       把 Maestro 預設寫的 `~/.maestro/tests`（每個失敗步驟的截圖 + view
+       hierarchy JSON）上傳成 CI artifact，再用一個獨立 step 依真正的
+       `outcome` 讓 job 該失敗就失敗。
+     - **本機也建好了 arm64 emulator，之後改 Maestro flow 不用每次都等 CI**
+       （CI 一輪 3~5 分鐘，本機一輪不到 2 分鐘，還能用 `adb shell input tap`
+       + `maestro hierarchy` 即時互動除錯，這次靠這招才抓到下面兩個真的
+       app bug）：
+       - Homebrew／JDK 這條線目前 `JAVA_HOME` 指到
+         `/tmp/jdk17_extracted/...`（x86_64 build，雖然 Mac 是 Apple
+         Silicon）——這個 JDK 本身編譯專案沒問題，但只要拿它去跑
+         `sdkmanager`，`sdkmanager` 就會誤判 host 是 x86_64，連帶把
+         `emulator` 這個 SDK package 也裝成 x86_64 版本，在 arm64 Mac 上
+         完全開不了機（`FATAL | Avd's CPU Architecture 'arm64' is not
+         supported by the QEMU2 emulator on x86_64 host`）。另外裝的
+         `cmdline-tools;3.0` 版本太舊，太舊到根本不認得 arm64 mac 這個
+         host、`sdkmanager --list` 連 `emulator` package 都列不出來。
+         解法：另外下載一份 arm64 原生 Temurin 17（暫放
+         `/tmp/jdk17_arm64/`）+ 新版 `cmdline-tools;12.0`（暫放
+         `/tmp/cmdline-tools-new/`），用這兩個重新跑
+         `sdkmanager "emulator"`，才抓到真正的 `emulator-darwin_aarch64`
+         套件。**這兩個暫存目錄只在這次 session 的 sandbox 裡，之後要嘛
+         正式導進專案的本機開發文件、要嘛每次都要重新設定**——這是留給
+         人類的後續：值得裝一份真正的 arm64 JDK 取代 Homebrew 現在用的
+         x86_64 版本，一勞永逸解決這整條問題。
+       - `Phase0_arm64` 這個 AVD（Android 14, arm64-v8a）系統映像其實早就
+         下載好、放在那邊沒用到，Phase 0 交接筆記裡沒寫清楚為什麼。
+       - Maestro CLI 需要 Java 17+ 在 PATH 上第一順位（預設系統 `java` 是
+         1.8），要用同一份 arm64 JDK。
+     - **用本機這條線抓到兩個真的 app bug**（跟上面「flow 寫得不夠嚴謹」
+       不同，這兩個是 `ui/transaction/AddEditTransactionScreen.kt` 本身的
+       問題）：
+       1. `CategoryGrid` 的 `.clickable` 只加在 50dp 的圖示 `Box` 上，
+          分類名稱的 `Text`（圖示下方那行字）完全不在可點擊範圍內——使用者
+          點在分類文字上會沒有任何反應。用 `adb shell input tap` 對著
+          `maestro hierarchy` 回報的文字座標手動點，完全沒有選取效果就是
+          鐵證；改點圖示本身才會出現選取邊框。**修法：把 `.clickable`
+          從內層的圖示 `Box` 移到外層包住圖示+文字的整個 `Column`**，
+          這樣點文字或圖示都算數。
+       2. `swipe: { direction: LEFT, from: { text: "飲食" } }` 這個刪除手勢
+          的預設拖曳距離跨不過 `SwipeToDismissBox` 的刪除門檻（試過拉長
+          `duration` 也沒用，距離本身沒變），改用明確座標橫跨整列寬度
+          （`start: 88%,37%` → `end: 9%,37%`）才划得過去——這是 flow
+          本身的問題，不是 app 的 bug。
+     - **順帶注意到、但沒有修的小問題**：編輯交易金額後刪除，Snackbar
+       復原提示文字（`已刪除 {分類} {金額}`）顯示的是編輯前的舊金額
+       （「已刪除 飲食 NT$120.00」，正確應該是編輯後的 NT$200.00）——
+       金額計算跟畫面顯示的實際交易資料本身都是對的（餘額正確回到
+       NT$3,000.00），只有這行提示文字用了舊值。沒有測案要求這行文字的
+       精確度，這次的 E2E-2 flow 也沒有斷言它，先記錄下來，之後有空
+       再查（大概率是 `HomeScreen.kt` 的 `onDelete` lambda 裡某個閉包
+       捕捉到了刪除前一刻的舊 `transaction` 物件）。
+     - 這些修正在 [PR #7](https://github.com/jojomango/expense-tracker-android/pull/7)，
+       已經在本機 arm64 emulator 上連續兩次全綠（`maestro test .maestro/`
+       兩支 flow 都 Passed），`./gradlew verify` 也全綠，**推上 CI 之後
+       `workflow_dispatch` 也真的跑出 `success`**（[run
+       33949964640](https://github.com/jojomango/expense-tracker-android/actions/runs/33949964640)）——
+       `e2e` job 本身、`Upload Maestro debug artifacts`、
+       `Fail job if Maestro flows failed` 全部通過，這是本機 + CI 雙重
+       確認過的結果，不是只憑本機推論。E2E-1、E2E-2、T8.1、T8.2 這幾個
+       Phase 4 的驗收項目到這裡才算真正拿到綠燈證據。
 
 ---
 
