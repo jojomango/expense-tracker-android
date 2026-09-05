@@ -329,39 +329,36 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 
 ### 驗收（實際結果）
 
-- [x] T4.1（Persistence，7 案）、T4.2（匯出/匯入，8 案）全過——**但跑在
-      `androidTest`，不是 TESTCASES.md 原本寫的 `data/src/test/`**，見下方
-      「需要人類決策」
+- [x] T4.1（Persistence，7 案）、T4.2（匯出/匯入，9 案）全過，**跑在
+      `data/src/test/`（純 JVM，用 Robolectric），符合 TESTCASES.md 原本的
+      測試分層**——見下方「已批准的新套件」
 - [x] T4.2 的純函式部分（decodeBackup/validateBackup/mergeTransactionsById）
-      額外在 `test`（JVM）跑過一份，這些不需要 Room 就能測
+      額外在不需要 Robolectric 的 domain 測試裡跑過一份
 - [x] `./gradlew verify` 全綠，domain 覆蓋率 93%，乾淨重跑過一次確認可重現
-- [x] `./gradlew compileDebugAndroidTestKotlin` 確認 androidTest 程式碼編譯過
-      （**沒有**在本機實際跑過——這台機器的 emulator 問題跟 Phase 0 記錄的
-      一樣，等 CI 的 e2e job 在 GitHub 的 macOS runner 上跑）
+- [x] 全部 146 個測試（domain + persistence）都在本機**實際跑過並通過**，
+      不需要 emulator，也不受這台機器的 Apple Silicon/Rosetta 環境限制
 
-### 需要人類決策
+### 已批准的新套件：Robolectric
 
-**T4 Persistence／Backup 測試跑在 `androidTest`，不是 TESTCASES.md 寫的
-`data/src/test/`。** 過程：
+**過程**（也記錄在 `data/RoomTestDb.kt` 的註解裡）：一開始想用 Room 2.7 的
+「bundled SQLite driver」在純 JVM 跑 Room，不需要新套件——實測後卡在真正的
+死路：AGP（Android Gradle Plugin）模組的 Gradle variant-aware 依賴解析，
+永遠只會抓到 `androidx.sqlite:sqlite-bundled` 的 **Android target**
+artifact（裡面包 Android ABI 的 `.so`），不會抓到桌機能載入的 native
+library。退而求其次先改用 `androidTest`（不需要新套件，但本機沒有堪用的
+emulator，測試沒辦法在本機執行）。
 
-1. TESTCASES.md 的分層表格明講 persistence 測試放 `data/src/test/`（JVM），
-   這在 Room 2.6 需要 Robolectric 才做得到（不在 SPEC.md §5 表格內）
-2. Room 2.7 有一個「bundled SQLite driver」理論上能讓 Room 在純 JVM 跑，
-   不需要 Robolectric——**實測過**，先遇到 `Context` 參數卡住（改用
-   `ContextWrapper(null)` 繞過）、又遇到 `JournalMode.AUTOMATIC` 會呼叫
-   `context.getSystemService()`（改成 `.setJournalMode(TRUNCATE)` 繞過），
-   最後卡在真正的死路：AGP（Android Gradle Plugin）模組的 Gradle
-   variant-aware 依賴解析，**永遠只會抓到 `androidx.sqlite:sqlite-bundled`
-   的 Android target artifact**（裡面包 Android ABI 的 `.so`），不會抓到
-   macOS/Linux 桌機能載入的 native library，跑到
-   `System.loadLibrary("sqliteJni")` 就 `UnsatisfiedLinkError`
-3. 兩條路都要脫離 TESTCASES.md 寫的位置：Robolectric（新套件，也要人類
-   批准）或 `androidTest`（標準做法，`androidx.test` 已核准，**不需要新
-   套件**）。選了影響較小的後者
-
-**這是一個規格（TESTCASES.md 測試分層表格）跟技術現實的落差**，不是我自己
-想改測試位置——過程都記錄在 `data/RoomTestDb.kt` 的註解裡。如果人類覺得
-`androidTest` 不能接受，替代方案是引入 Robolectric（需要另外批准）。
+跟人類討論後，確認 **Robolectric 才是業界對這個問題的主流答案**（在 AGP
+模組裡不開 emulator、純 JVM 跑 Room/`Context` 相關測試的標準做法），人類
+批准新增這個套件。改用 Robolectric 後：
+- Persistence／Backup 測試搬回 `data/src/test/`，符合 TESTCASES.md 原本的
+  分層
+- 全部在本機的 `testDebugUnitTest` 裡實際跑過、通過，不受 emulator 環境
+  限制
+- Robolectric 只支援 JUnit4（不是 domain 層要求的 JUnit5），用
+  `junit-vintage-engine` 讓兩種測試在同一個 Gradle test task 共存——這是
+  跟 TESTCASES.md 分層表格唯一還留著的一個小差異（JUnit4 vs JUnit5），
+  影響範圍很小（只有 persistence 測試用 JUnit4，domain 測試仍是 JUnit5）
 
 ### 交接筆記（Phase 3 → Phase 4）
 

@@ -1,6 +1,5 @@
 package com.jojomango.expensetracker.data
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryType
@@ -21,12 +20,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
- * TESTCASES.md T4.1 — Persistence（Room in-memory database）。見
- * `RoomTestDb.kt` 為什麼這批測試在 `androidTest` 而不是 `data/src/test/`。
+ * TESTCASES.md T4.1 — Persistence（Room in-memory database）。用 Robolectric
+ * 在純 JVM 跑（見 `RoomTestDb.kt` 為什麼不是真的 emulator/androidTest）。
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class PersistenceTest {
     private lateinit var db: AppDatabase
     private lateinit var walletRepo: RoomWalletRepository

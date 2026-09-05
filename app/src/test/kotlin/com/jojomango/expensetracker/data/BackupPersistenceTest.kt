@@ -1,6 +1,5 @@
 package com.jojomango.expensetracker.data
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.jojomango.expensetracker.domain.BackupCategory
 import com.jojomango.expensetracker.domain.BackupIntegrityException
 import com.jojomango.expensetracker.domain.BackupParseException
@@ -25,13 +24,15 @@ import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * TESTCASES.md T4.2 — 匯出/匯入。純解析/驗證邏輯（decodeBackup／validateBackup／
  * mergeTransactionsById）在 domain 已經是純函式，這裡只測「透過真正的 Room DB
- * 走一趟」的整合行為（round-trip、replace、merge 的原子性）。
+ * 走一趟」的整合行為（round-trip、replace、merge 的原子性），用 Robolectric
+ * 在純 JVM 跑。
  */
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class BackupPersistenceTest {
     private lateinit var db: AppDatabase
     private lateinit var backupRepo: RoomBackupRepository
@@ -105,7 +106,12 @@ class BackupPersistenceTest {
             }
 
             val after = backupRepo.export()
-            assertEquals(before, after)
+            // exportedAt 是「這次匯出當下的時間」，兩次呼叫本來就會不同，
+            // 不是資料有沒有變動的訊號——比較資料本身即可。
+            assertEquals(before.wallets, after.wallets)
+            assertEquals(before.transactions, after.transactions)
+            assertEquals(before.categories, after.categories)
+            assertEquals(before.settings, after.settings)
         }
 
     @Test
