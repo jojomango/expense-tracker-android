@@ -38,6 +38,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.jojomango.expensetracker.ui.category.CategoryEditScreen
+import com.jojomango.expensetracker.ui.category.CategoryManagementScreen
 import com.jojomango.expensetracker.ui.home.HomeScreen
 import com.jojomango.expensetracker.ui.home.HomeViewModel
 import com.jojomango.expensetracker.ui.navigation.Routes
@@ -148,6 +150,7 @@ private fun ExpenseTrackerApp() {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
                     onManageWallets = { navController.navigate(Routes.WALLET_MANAGEMENT) },
+                    onManageCategories = { navController.navigate(Routes.CATEGORY_MANAGEMENT) },
                 )
             }
             composable(Routes.ADD_TRANSACTION) {
@@ -183,6 +186,28 @@ private fun ExpenseTrackerApp() {
                 arguments = listOf(navArgument("walletId") { type = NavType.StringType }),
             ) {
                 WalletEditScreen(
+                    onDone = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                )
+            }
+            composable(Routes.CATEGORY_MANAGEMENT) {
+                CategoryManagementScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddCategory = { navController.navigate(Routes.CATEGORY_NEW) },
+                    onEditCategory = { id -> navController.navigate(Routes.editCategory(id)) },
+                )
+            }
+            composable(Routes.CATEGORY_NEW) {
+                CategoryEditScreen(
+                    onDone = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                )
+            }
+            composable(
+                Routes.CATEGORY_EDIT_PATTERN,
+                arguments = listOf(navArgument("categoryId") { type = NavType.StringType }),
+            ) {
+                CategoryEditScreen(
                     onDone = { navController.popBackStack() },
                     onCancel = { navController.popBackStack() },
                 )
