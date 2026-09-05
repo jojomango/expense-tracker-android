@@ -21,9 +21,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 2 | Domain：實體與預算計算 | ✅ DONE | (見下方交接筆記) |
 | 3 | 持久層與匯出匯入 | ✅ DONE | (見下方交接筆記) |
 | 4 | 基礎 UI：錢包與交易 CRUD | ✅ DONE | (見下方交接筆記) |
-| 5 | 預算與即時餘額 | **NEXT** | |
-| 5 | 預算與即時餘額 | ⬜ TODO | |
-| 6 | 分類與統計 | ⬜ TODO | |
+| 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
+| 6 | 分類與統計 | **NEXT** | |
 | 7 | 打磨 | ⬜ TODO | |
 
 ---
@@ -617,7 +616,7 @@ emulator，測試沒辦法在本機執行）。
 
 ---
 
-## Phase 5 — 預算與即時餘額
+## Phase 5 — 預算與即時餘額 ✅ DONE
 
 **必讀：** `SPEC.md` §3.4、`UI-SPEC.md` §4.2
 
@@ -628,6 +627,123 @@ emulator，測試沒辦法在本機執行）。
 - 週起始日設定畫面
 
 **驗收：** E2E-3、E2E-4、E2E-5 全過。**這時 app 已具備核心價值。**
+
+### 交接筆記（Phase 5 → Phase 6）
+
+**做了什麼：**
+- `domain/Budget.kt` 的 `daysLeftInWeek`/`dailyAllowance` 其實 Phase 2 就做好了（連
+  T3.7/T3.8 測試都在），`UI-SPEC.md` §4.2 也提前提醒過這件事——這個 phase
+  在 domain 層幾乎沒有新工作，全部是 UI 接線。
+- `ui/home/BudgetCard.kt`（新檔案，從 `HomeScreen.kt` 分出來，避免那個檔案
+  超過 detekt 的 `TooManyFunctions` 門檻）：`UI-SPEC.md` §4.2 五個元素全部
+  補齊——標籤、金額（+超支圖示）、進度條、「已用 X/Y · 還有 N 天」、
+  分隔線下的「日均可用」。「已用 X/Y·還有N天」跟「日均可用」**只在
+  `WEEKLY` 模式顯示**——這兩個概念（`daysLeftInWeek`）是週預算特有的，
+  `TOTAL` 模式沒有週期可言；`UI-SPEC.md` 沒有明講這點（沒有寫「TOTAL 模式
+  不顯示」），這是我的解讀，寫進「需要人類決策」。`TOTAL` 模式改成顯示
+  `SPEC.md` §3.4 明講的「已用百分比」（「已用 4%」這種格式），這兩種模式
+  顯示的資訊完全不同，不是同一行文字套兩種數字。
+- **`TESTCASES.md` E2E-3 要求超支時「警示色 + 圖示」，但 `UI-SPEC.md` §4.2
+  明講「不用 emoji 警示圖示」——這兩份文件字面上互相矛盾。** 解法：用
+  Material Icons 的向量圖示（`Icons.Filled.Warning`），不是 emoji 字元——
+  這同時滿足兩邊，UI-SPEC 說的「不用 emoji」跟 TESTCASES 說的「+圖示」
+  都成立。**人類已確認這個解讀合理，並且要求調查「不用 emoji」這條規則
+  是不是為了避免另外畫 SVG 圖示資產——調查結果：不是，也沒有這個顧慮。**
+  `Icons.Filled.Warning` 來自 `androidx.compose.material:material-icons-extended`，
+  這個套件 **Phase 4 就已經加入**（拿來做底部導覽「統計」頁的
+  `Icons.Filled.BarChart`），這次只是多引用同一個套件裡現成的一個符號，
+  沒有新增依賴、沒有畫任何 SVG、對 APK 大小的影響可忽略。`UI-SPEC.md`
+  §3.1 本來就講「圖示用 Material Icons 就好」（底部導覽），emoji 則是用在
+  分類圖示、空狀態插圖這種「裝飾性內容」——「已超支不用 emoji」讀起來是
+  「這是狀態指示，跟導覽圖示一樣走 Material Icons 路線，不要跟分類 emoji
+  那種裝飾性內容混在一起」，不是「完全不准用圖示」。
+  **記錄成慣例，供之後任何 phase 需要圖示時參考：需要圖示表達狀態/功能
+  （不是裝飾性內容）時，優先用 `material-icons-extended` 裡現成的簡單線條
+  圖示（跟現有的 `ArrowDropDown`/`Add`/`Check`/`Delete`/`Home`/`BarChart`
+  同一個套件），不用另外畫 SVG 或加新的圖示套件依賴；優先選簡單、好懂、
+  線條不複雜的圖示，避免用太花俏或語意不明確的符號。**
+- 錢包管理：`ui/wallet/WalletManagementScreen.kt`（列出所有未封存錢包、
+  「新增」入口）+ `ui/wallet/WalletEditScreen.kt`/`WalletEditViewModel.kt`
+  （新增/編輯共用同一個表單，沿用 `HomeScreen.FirstWalletOnboarding` 的
+  欄位風格；幣別建立後不可改，編輯時欄位停用）。`UI-SPEC.md` §7 只說
+  「管理錢包…」導向「錢包管理頁」，**沒有給這個頁面的完整視覺規格**——
+  這是這個 phase 自己設計、填的空，寫進「需要人類決策」。
+- `ui/settings/SettingsScreen.kt` 補上週起始日設定（`FilterChip` 選
+  週日～週六，`SettingsViewModel` 寫回 `SettingsRepository`）+ 一個導向
+  錢包管理頁的入口。
+- `Routes.kt` 新增 `WALLET_MANAGEMENT`/`WALLET_NEW`/`WALLET_EDIT_PATTERN`。
+
+**踩過的坑（都是本機 arm64 emulator 快速反覆驗證抓到的，見下面「本機驗證」）：**
+- **一個嚴重的既有 bug（Phase 4 就埋下，Phase 5 才第一次真的觸發）：**
+  `MainActivity.ExpenseTrackerApp()` 在 `NavHost` 外面先取一次
+  `homeViewModel: HomeViewModel = hiltViewModel()`（給 FAB／錢包切換 sheet
+  用），但 `composable(Routes.HOME) { HomeScreen(...) }` 呼叫 `HomeScreen`
+  時**沒有把這個實例傳進去**——`HomeScreen` 用自己函式簽章預設參數的
+  `hiltViewModel()`，這個預設參數會取得**另一個**、scope 綁在 "home" 這個
+  `NavBackStackEntry` 的 `HomeViewModel` 實例，跟 `ExpenseTrackerApp` 那層
+  （scope 是整個 Activity）拿到的不是同一個物件。兩個實例各自的
+  `selectedWalletId`（`MutableStateFlow`）互不相通，所以在錢包切換 sheet
+  點別的錢包，`switchWallet()` 呼叫在其中一個實例上，畫面顯示的是另一個
+  實例——**點了完全沒反應，畫面永遠停在原本的錢包**。這在 Phase 4 就存在
+  （`WalletSwitcherSheet` 是 Phase 4 做的），但 Phase 4 的 E2E flow 從沒有
+  真的測過「切換到另一個錢包」這個動作，一直到 Phase 5 的 E2E-4（多錢包）
+  才第一次真的觸發、暴露出來。修法：`HomeScreen(..., viewModel =
+  homeViewModel)` 明確共用同一個實例。**教訓：`hiltViewModel()` 當函式
+  預設參數這件事本身沒問題，但一旦外層（`NavHost` 外面）也想拿同一個
+  ViewModel，一定要顯式傳進去，不能假設「反正都是同一個 Composable 樹，
+  應該會拿到同一個」——Navigation Compose 的 ViewModelStoreOwner 是綁在
+  NavBackStackEntry 上的，跟外層 Activity scope 是兩回事。**
+- `CategoryDao.observeAll()` 的字母序排序（Phase 4 交接筆記提過的同一件
+  事）在 Phase 5 的 E2E-4 又踩了一次——新增第二個錢包後要選「飲食」分類，
+  一樣需要 `swipe` 先捲到看得到。
+- **Maestro flow 本身的技術債**：`.maestro/E2E-2-add-transaction.yaml`
+  刪除交易那步用明確座標百分比 `88%,48%`（不是錨定元素），這個座標是
+  「交易列表第一列」在**目前這個版面**（週預算模式的完整預算卡，含
+  已用/還有N天/日均可用三行）底下的實際位置算出來的——Phase 5 把預算卡
+  加高之後，這個座標就跟 Phase 4 時計算的不一樣了，這次真的因為這樣壞過
+  一次（`assertNotVisible` 失敗），才重新校準。**這是已知的脆弱點**：
+  之後任何一個 phase 只要再改首頁版面高度，這個座標大概率又要重新校準。
+  更耐用的做法應該是給交易列表的可滑動容器一個穩定的 `testTag`，用 tag
+  定位而不是螢幕座標百分比——這次沒有時間做，留給之後有空的時候。
+- **`WalletSwitcherSheet` 目前沒有依 `UI-SPEC.md` §7 顯示「{幣別} ·
+  {該錢包當期餘額}」**，只顯示幣別代碼（例如「TWD」），沒有顯示該錢包的
+  即時餘額。這是 Phase 4 就有的既有小缺口，Phase 5 沒有處理（E2E-3/4/5
+  都不需要這個顯示），需要另外去抓每個錢包各自的餘額才能做，範圍比較大，
+  留給之後。同樣地，切換錢包後 `UI-SPEC.md` §7 講的「用 Snackbar 顯示
+  『已切換到 {名稱}』」也還沒做。
+- **E2E-5（週起始日設定）沒有照抄 `TESTCASES.md` 給的 2026-08-09/08-10
+  這兩個固定日期**——這個 emulator 沒有 root，改不了系統時鐘（試過
+  `adb shell date -s`、`su 0 date`，都被拒絕：`Operation not permitted`/
+  `su: inaccessible`），沒辦法讓「今天」變成任何一個特定日期。改用
+  `.maestro/scripts/e2e5-dates.js`（Maestro 的 `runScript` + JS）在執行當下
+  即時算出「這週一」跟「這週一的前一天（週日）」，兩者的相對位置關係
+  （週一屬本週、週日屬上週）跟 TESTCASES 例子的結構完全一樣，只是不管
+  哪一天執行都成立，不用管系統時鐘卡在哪天。**人類已確認這個做法能達到
+  預期的測試效果。** 連帶發現：Android 內建 `DatePickerDialog` 的月曆格子
+  本身是可以直接用 `tapOn` 點的（每一格的 accessibility text 是完整的
+  「Tuesday, September 1, 2026」這種英文字串，跟 app 本身的中文介面無關，
+  是 Android 框架自己的 a11y 字串），「換到上個月」的按鈕 content
+  description 也是英文的「Change to previous month」——這些都在
+  `maestro hierarchy` 裡直接查得到，不用用猜的。
+
+**本機驗證：** 這個 phase 全程用本機 arm64 emulator（`Phase0_arm64` AVD）
+反覆迭代——`maestro test .maestro/` 一輪不到 2 分鐘（5 支 flow 全跑約 6
+分鐘），比等 CI（每輪 3~5 分鐘、還要等 GitHub Actions 排隊）快很多；配合
+`adb shell input tap`/`maestro hierarchy`/`adb shell screencap` 直接互動，
+上面兩個真的 bug（HomeViewModel 雙實例、預算卡加高導致座標偏移）都是這樣
+抓到的，光看程式碼或猜測座標抓不到。5 支 E2E flow（含 Phase 4 留下的
+E2E-1/E2E-2）在本機連續兩輪全綠之後，才推上 CI 用
+`workflow_dispatch` 再次確認。
+
+**留給下一個 phase 的資訊：**
+- Phase 6（分類與統計）需要的分類管理 CRUD，可以參考這個 phase
+  `WalletManagementScreen`/`WalletEditScreen` 的分割方式（列表頁 + 共用的
+  新增/編輯表單頁）。
+- `WalletSwitcherSheet` 的餘額顯示、切換錢包的 Snackbar，都還沒做，見上面
+  「踩過的坑」。
+- E2E-2 刪除交易那個 swipe 座標的脆弱點（見上面），如果 Phase 6 又改了
+  首頁版面高度，這個座標可能要再校準一次，甚至考慮趁那個 phase 順便
+  把它換成 testTag 定位。
 
 ---
 

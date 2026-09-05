@@ -27,7 +27,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -55,10 +54,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.BudgetMode
-import com.jojomango.expensetracker.domain.BudgetStatus
 import com.jojomango.expensetracker.domain.Currencies
 import com.jojomango.expensetracker.domain.Money
-import com.jojomango.expensetracker.domain.TotalBudgetStatus
 import com.jojomango.expensetracker.domain.Transaction
 import com.jojomango.expensetracker.domain.TransactionType
 import com.jojomango.expensetracker.domain.Wallet
@@ -222,73 +219,6 @@ private fun HomeContent(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun BudgetCard(
-    state: HomeUiState,
-    wallet: Wallet,
-) {
-    val typography = LocalAppTypography.current
-    val extraColors = LocalAppExtraColors.current
-    Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(22.dp)) {
-            val label =
-                when (wallet.budgetMode) {
-                    BudgetMode.WEEKLY -> "本週還可以花"
-                    BudgetMode.TOTAL -> "總預算還剩"
-                    BudgetMode.NONE -> "本週支出"
-                }
-            Text(label, style = typography.label, color = extraColors.fg3)
-            Spacer(Modifier.height(4.dp))
-
-            val isOverBudget = state.weeklyBalance?.isOverBudget ?: state.totalBalance?.isOverBudget ?: false
-            val amountText =
-                when {
-                    state.weeklyBalance != null -> state.weeklyBalance.balance.format()
-                    state.totalBalance != null -> state.totalBalance.balance.format()
-                    else -> state.weeklyExpenseTotal?.format() ?: "—"
-                }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    amountText,
-                    style = typography.balance,
-                    color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                )
-                if (isOverBudget) {
-                    Spacer(Modifier.width(8.dp))
-                    Text("已超支", style = typography.label, color = MaterialTheme.colorScheme.error)
-                }
-            }
-
-            if (wallet.budgetMode != BudgetMode.NONE) {
-                Spacer(Modifier.height(12.dp))
-                val usedPercent = usedPercentOf(state, wallet)
-                LinearProgressIndicator(
-                    progress = { usedPercent.toFloat() },
-                    modifier = Modifier.fillMaxWidth().height(8.dp),
-                    color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                    trackColor = extraColors.track,
-                )
-            }
-        }
-    }
-}
-
-private fun usedPercentOf(
-    state: HomeUiState,
-    wallet: Wallet,
-): Double {
-    val total: TotalBudgetStatus? = state.totalBalance
-    val weekly: BudgetStatus? = state.weeklyBalance
-    return when {
-        total != null -> (total.usedPercent / 100.0).coerceIn(0.0, 1.0)
-        weekly != null && wallet.budgetAmount != null && wallet.budgetAmount > 0 -> {
-            val spent = wallet.budgetAmount - weekly.balance.amount
-            (spent.toDouble() / wallet.budgetAmount.toDouble()).coerceIn(0.0, 1.0)
-        }
-        else -> 0.0
     }
 }
 

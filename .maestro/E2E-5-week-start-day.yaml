@@ -1,0 +1,70 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-5 週起始日設定
+# 這裡不寫死 TESTCASES.md 給的 2026-08-09/08-10，而是用 scripts/e2e5-dates.js
+# 算出「這週一」跟「這週一的前一天（週日）」——跟 TESTCASES 例子的相對位置關係
+# 完全一樣（週一屬於本週、週日屬於上週），差別只在於不管哪一天執行這個 flow
+# 都成立，不用管系統時鐘卡在哪一天（這台 emulator 沒有 root，改不了系統日期，
+# 這是唯一可行的替代方案）。
+- runScript: scripts/e2e5-dates.js
+
+# Given weekStartDay 為「週一」（Settings() 預設值，onboarding 不用特別設）
+- launchApp:
+    clearState: true
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+# And 在「這週一的前一天（週日）」有一筆支出 1000
+- tapOn: "記帳"
+- tapOn: "1"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "選日期"
+- repeat:
+    times: ${output.monthsBackA}
+    commands:
+      - tapOn: "Change to previous month"
+- tapOn: "${output.dateALabel}"
+- tapOn: "確定"
+- tapOn: "居住"
+- tapOn: "記一筆"
+
+# And 在「這週一」有一筆支出 500
+- tapOn: "記帳"
+- tapOn: "5"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "選日期"
+- repeat:
+    times: ${output.monthsBackB}
+    commands:
+      - tapOn: "Change to previous month"
+- tapOn: "${output.dateBLabel}"
+- tapOn: "確定"
+- tapOn: "居住"
+- tapOn: "記一筆"
+
+# Then 本週餘額為「NT$2,500.00」（只計週一那筆——週日那筆屬於上週）
+- assertVisible: "NT$2,500.00"
+
+# When 將 weekStartDay 改為「週日」
+- tapOn: "設定"
+- tapOn: "週日"
+- tapOn: "返回"
+
+# Then 本週餘額立即變為「NT$1,500.00」（兩筆都計入）
+# And 沒有任何交易資料被修改——用同樣兩筆交易的金額還在（-NT$1,000.00 那筆
+# 沒有消失或被改到別的值）驗證，不是重新讀一次資料庫比對，但行為上等價：
+# 如果資料被誤改，餘額不會剛好是 1500。
+- assertVisible: "NT$1,500.00"
