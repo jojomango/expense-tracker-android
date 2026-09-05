@@ -37,7 +37,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 |---|---|---|---|
 | TD-1 | Persistence 測試（`data/RoomTestDb.kt`／`PersistenceTest.kt`／`BackupPersistenceTest.kt`）用 JUnit4（透過 Robolectric）+ `junit-vintage-engine` 橋接，跟 domain 層的 JUnit5 不一致。**不是 bug、不違反 SPEC.md §5**（那條 JUnit5 規定的範圍明文限定在 domain 層），純粹是工具選擇的殘留差異，見 Phase 3 交接筆記完整脈絡 | 擱置，不主動處理 | Robolectric 官方釋出 JUnit5 支援（目前只有一個 0.1.0 的社群 extension，未達生產可用門檻，見 [robolectric/robolectric#3477](https://github.com/robolectric/robolectric/issues/3477)）才評估遷移，沒有的話不用管 |
 | TD-2 | Maestro flow 裡刪除列表項目的滑動手勢（`SwipeToDismissBox`）用明確座標百分比（例如 `88%,67%`）而不是錨定元素，因為 `swipe: { direction: LEFT, from: { text: X } }` 常常跨不過 dismiss 門檻。已在 Phase 4（E2E-2）、Phase 5、Phase 6（E2E-8 刪飲食、E2E-9 刪咖啡）踩過同一件事，共 5 次。座標寫死在畫面目前的版面高度上，之後任何 phase 改動上方版面（預算卡、分類清單頭部等）都可能讓座標失準，需要重新校準 | 擱置，不主動處理（座標校準成本目前還算低，重新校準只要跑一次失敗、看截圖、調整 Y% 即可） | 之後有餘裕時，把可滑動刪除的列表項目都加上穩定的 `testTag`，Maestro 改用 tag 定位，一勞永逸解決這個脆弱點；或是這個座標校準成本明顯升高（例如又發生一次「改版面高度、忘記重新校準」的 CI 失敗）時，優先處理 |
-| TD-3 | `e2e.yml` CI workflow（ubuntu-latest + x86_64 emulator）在 Phase 6 這次連續 3 次 `workflow_dispatch` 都沒有全綠，但本機 arm64 emulator 連續兩輪 8/8 全綠——失敗模式一致：`launchApp: { clearState: true }` 之後的第一個斷言（例如「建立你的第一個錢包」）在啟動後約 18~19 秒就判定不可見，但每次踩到的是不同一支 flow（含完全沒被 Phase 6 改動過的 E2E-2/E2E-4/E2E-5），指向 CI 這台共用、資源較吃緊的 emulator 上 `clearState` 清資料+重啟這個動作，有時候比 Maestro 斷言預設等待時間還久，是 CI 基礎設施層級的既有 flakiness，不是任何一個 phase 的 app 程式碼造成的。細節見 [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) 的「需要人類決策」 | 擱置，不主動處理（依 CLAUDE.md「CI 連續失敗 3 次要停止」的規則，這次已停下來記錄分析，沒有繼續盲目重跑或修改 flow 去繞過） | 之後任何 phase 若又連續在 `e2e.yml` 上遇到同樣「clearState 後第一個斷言在 CI 上偶發找不到元素」的失敗模式，值得花時間处理（例如幫 CI job 提高 emulator 資源、拉長斷言等待時間、或在 `.maestro/config.yaml` 設全域較長 timeout），而不是每次都重跑到運氣好全綠為止 |
+| TD-3 | ~~`e2e.yml` CI 偶發失敗~~ **已解決**：`launchApp: { clearState: true }` 之後的第一個斷言會在 CI 上偶發失敗（約 18 秒逾時、截圖是空白視窗、view hierarchy 裡完全沒有 App 的視窗），每次中獎的 flow 都不一樣，本機 arm64 emulator 從來不會踩到。從 CI 上傳的 device logcat 找到真正原因是 **ActivityManager 的 destroy-timeout race**：`pm clear` 拆掉舊 task 後會排一個約 1.15 秒才觸發的 destroy timeout，而 Maestro 在 0.69 秒後就重新啟動 App，timeout 觸發時 AMS 把「這個 package 目前的 process」當成要清掉的對象，於是把剛啟動的新 process 殺掉（`Killing 2998 (adj -10000): remove task`）。解法：把 `launchApp: { clearState: true }` 拆成 `clearState` → 等 3 秒（`scripts/settle-after-clear.js`）→ `launchApp: { stopApp: false }`，讓 destroy timeout 在還沒有新 process 存在時就先觸發完畢 | ✅ 已解決（CI 8/8 全綠，見 [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11)） | 教訓兩條，之後遇到 CI-only 的偶發失敗請直接照做：(1) **先去看 CI artifact 裡的 device logcat 跟 failure 截圖/hierarchy**（`e2e.yml` 每次都有上傳），不要憑程式碼猜——這次前後猜錯兩次（資源競爭、Gradle daemon），都是看了 logcat 才在幾分鐘內定案；(2) 「斷言逾時」不一定等於「等不夠久」，要先確認**元素所屬的 process 還活著**，這次就是 process 已經被殺掉，把 timeout 拉長再久都不會過 |
 
 ---
 
@@ -847,6 +847,24 @@ E2E-1/E2E-2）在本機連續兩輪全綠之後，才推上 CI 用
 E2E-10），連續兩輪全綠（8/8 Passed）才推上 CI 用 `workflow_dispatch` 再次
 確認。`./gradlew verify`（含 `rm -rf app/build .gradle` 後乾淨重跑一次）全綠。
 
+**CI 上的 `clearState` race（TD-3，這個 phase 花最多時間的一件事）：**
+本機兩輪全綠之後，CI 的 e2e 卻連續 4 次都掛在「`launchApp: { clearState: true }`
+之後的第一個斷言」，而且每次中獎的 flow 都不一樣（含完全沒被這個 phase 改過的
+E2E-2/E2E-4/E2E-5）。前兩次的假設（CI 資源競爭、背景 Gradle daemon 搶 CPU）
+**都猜錯了**，加了 `./gradlew --stop` 之後照樣失敗。最後是去翻 `e2e.yml` 每次
+都有上傳的 **device logcat**（`maestro-debug-output` artifact）才在幾分鐘內定案：
+`pm clear` 拆掉舊 task 會排一個約 1.15 秒才觸發的 destroy timeout，Maestro 在
+0.69 秒後就重新啟動 App，timeout 觸發時 AMS 把「這個 package 目前的 process」
+當成要清掉的對象，把剛啟動的新 process 殺掉——App 一啟動就死，只剩空白視窗
+（failure 截圖就是主題背景色的空白畫面，view hierarchy 裡只有
+`com.android.systemui`、完全沒有 App 的視窗），Maestro 接著白等 17 秒逾時。
+解法見 `.maestro/scripts/settle-after-clear.js` 檔頭（clearState → 等 3 秒 →
+`launchApp: { stopApp: false }`），修完 CI 首次 8/8 全綠。
+**兩條可以直接複用的教訓：**（1）CI-only 的偶發失敗，第一步就去看 artifact 裡的
+logcat 跟 failure 截圖/hierarchy，不要憑程式碼猜；（2）「斷言逾時」不一定是
+「等不夠久」，要先確認元素所屬的 process 還活著——這次 process 早就被殺了，
+timeout 拉多長都不會過。
+
 **留給下一個 phase 的資訊：**
 - Phase 7（打磨）如果要動到 `StatsScreen`/`CategoryManagementScreen` 的版面，
   記得兩者外層都已經是可捲動容器了（`LazyColumn`／`verticalScroll`），不用
@@ -859,6 +877,11 @@ E2E-10），連續兩輪全綠（8/8 Passed）才推上 CI 用 `workflow_dispatc
   （數學上保證至少一邊成立）是這個 phase 新確立的技巧，之後如果還有
   phase 需要類似的「本週 vs 同月不同週」相對日期情境，可以直接參考、
   複用這個演算法，不用重新推導。
+- **新增 flow 時，開頭一律照抄現有 flow 的
+  `clearState` → `runScript: scripts/settle-after-clear.js` →
+  `launchApp: { stopApp: false }` 這三行，不要圖方便寫回
+  `launchApp: { clearState: true }`**——那樣會把 TD-3 那個 race 重新引進來，
+  而且本機測不出來，只會在 CI 上偶發失敗。理由見 settle-after-clear.js 檔頭。
 
 ---
 
