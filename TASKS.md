@@ -22,7 +22,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 3 | 持久層與匯出匯入 | ✅ DONE | (見下方交接筆記) |
 | 4 | 基礎 UI：錢包與交易 CRUD | ✅ DONE | (見下方交接筆記) |
 | 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
-| 6 | 分類與統計 | ✅ DONE | (見下方交接筆記) |
+| 6 | 分類與統計 | ✅ DONE | [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) |
 | 7 | 打磨 | **NEXT** | |
 
 ---
