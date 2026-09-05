@@ -487,6 +487,18 @@ emulator，測試沒辦法在本機執行）。
   （不是「有格式問題」，是格式化工具跑到一半就丟例外）。教訓：改可見度這種
   結構性變更，寧可整段用 `Write` 工具重寫檔案，也不要用 `sed` 動類別/建構子這種
   多行結構。
+- **真的有一個金額換算 bug**，是在補寫 E2E-2 的 Maestro flow、對照 TESTCASES.md
+  逐行核對「輸入 120 應該顯示 NT$120.00」時才發現的：`AddEditTransactionViewModel`
+  原本直接把鍵台輸入的數字字串（`"120"`）當成 [Money] 的最小單位使用，
+  沒有乘上 `10^decimalDigits`，會存成 `NT$1.20` 而不是 `NT$120.00`——編輯既有
+  交易時的反向換算也漏了同一件事。修法是把這個換算抽成 domain 的兩個純函式
+  `majorDigitsToMinorUnits`/`minorUnitsToMajorDigits`（`domain/TransactionInput.kt`），
+  同時補了單元測試；`ui/home/HomeScreen.kt` 首次啟動引導表單原本也是手刻同一段
+  換算邏輯（沒有測試覆蓋），一併換成這兩個函式。**教訓：只跑
+  `./gradlew verify` 綠燈不代表功能正確**——`verify` 只confirm 程式碼組得出來、
+  已寫的測試通過，這次的 bug 完全不影響編譯或既有測試，是實際核對 E2E 規格文字
+  時才抓到的，這也是為什麼 CLAUDE.md 一直強調「誠實回報失敗，遠比假裝成功有價值」、
+  且「未跑過 Maestro flow」要老實寫進 PR。
 
 **留給下一個 phase 的資訊：**
 - 目前 `HomeScreen.kt` 的預算卡是最陽春版本（只顯示金額與進度條），Phase 5 要
@@ -501,8 +513,14 @@ emulator，測試沒辦法在本機執行）。
   domain 邏輯有測試」，沒有真正跑過 Maestro flow**。這件事誠實寫進這個 PR 的
   「需要人類決策」，等 PR #5 merge 且真的跑過一次 CI 之後，之後的 phase 才能
   真的透過 CI 拿到 Maestro 驗證結果。
-- `.maestro/` 目錄目前還是只有說明用的 README，還沒有寫真正的 flow 檔案——
-  這也留給之後（可能 Phase 5 或更後面，一次把 E2E-1~E2E-5 的 flow 一起補上）。
+- `.maestro/` 已經補上 `E2E-1-first-launch.yaml`、`E2E-2-add-transaction.yaml`
+  兩支真正的 flow 檔案（對應 TESTCASES.md 的 Given/When/Then 逐行照寫）。
+  **但這兩支 flow 本身還沒有被真的執行過一次**——CI 的 `e2e` job 只在
+  push 到 `main` 或手動 `workflow_dispatch` 時才會跑，PR 上永遠是 skipped；
+  在寫這兩支 flow、逐行對照 `AddEditTransactionViewModel` 的金額邏輯時，
+  意外發現並修好了上面那個金額換算 bug，這代表「照著規格寫 Maestro flow」
+  這件事本身就有抓 bug 的價值，不是可有可無的附加工作。E2E-3~E2E-10 的
+  flow 留給之後對應的 phase（例如 E2E-3 需要 Phase 5 的預算卡才有意義）。
 
 ---
 

@@ -64,6 +64,7 @@ import com.jojomango.expensetracker.domain.TransactionType
 import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.Week
 import com.jojomango.expensetracker.domain.colorOf
+import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 import kotlinx.coroutines.launch
@@ -432,7 +433,7 @@ private fun FirstWalletOnboarding(
 
         Spacer(Modifier.height(24.dp))
         val decimalDigits = Currencies.builtIn[currency]?.decimalDigits ?: 2
-        val amountMinorUnits = amountText.toLongOrNull()?.let { it * pow10(decimalDigits) }
+        val amountMinorUnits = if (amountText.isEmpty()) null else majorDigitsToMinorUnits(amountText, decimalDigits)
         Button(
             onClick = {
                 onCreateWallet(
@@ -448,10 +449,4 @@ private fun FirstWalletOnboarding(
             Text("建立錢包")
         }
     }
-}
-
-private fun pow10(exponent: Int): Long {
-    var result = 1L
-    repeat(exponent) { result *= 10 }
-    return result
 }

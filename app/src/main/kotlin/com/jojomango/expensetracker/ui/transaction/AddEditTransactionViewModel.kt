@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.CategoryType
+import com.jojomango.expensetracker.domain.Currencies
 import com.jojomango.expensetracker.domain.Money
 import com.jojomango.expensetracker.domain.Transaction
 import com.jojomango.expensetracker.domain.TransactionRepository
@@ -14,6 +15,8 @@ import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.appendDigit
 import com.jojomango.expensetracker.domain.deleteDigit
+import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
+import com.jojomango.expensetracker.domain.minorUnitsToMajorDigits
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,7 +43,17 @@ data class AddEditTransactionUiState(
     val note: String = "",
     val submitted: Boolean = false,
 ) {
-    val amount: Long get() = amountDigits.toLongOrNull() ?: 0L
+    /**
+     * 自製鍵台輸入的是「幣別主要單位」的整數位數（跟 [amountDigits] 一樣的字串），
+     * 不是 [Money] 的最小單位——這裡要乘上 `10^decimalDigits` 換算，
+     * 對應 UI-SPEC.md §5「即時千分位格式化」與 TESTCASES.md E2E-2 的
+     * 「輸入金額「120」...顯示「NT$120.00」」（不是 NT$1.20）。
+     */
+    val amount: Long
+        get() {
+            val decimalDigits = wallet?.currency?.let { Currencies.builtIn[it]?.decimalDigits } ?: 2
+            return majorDigitsToMinorUnits(amountDigits, decimalDigits)
+        }
     val categoriesForType: List<Category> get() = categories.filter { it.type == categoryTypeOf(type) }
     val canSubmit: Boolean get() = amount > 0
 
@@ -78,10 +91,11 @@ class AddEditTransactionViewModel
                         loadedOriginal = existing
                         val w = existing?.walletId?.let { walletRepository.getWallet(it) }
                         if (existing != null) {
+                            val decimalDigits = w?.currency?.let { Currencies.builtIn[it]?.decimalDigits } ?: 2
                             internalState.value =
                                 internalState.value.copy(
                                     type = existing.type,
-                                    amountDigits = existing.amount.toString(),
+                                    amountDigits = minorUnitsToMajorDigits(existing.amount, decimalDigits),
                                     selectedCategoryId = existing.categoryId,
                                     date = existing.date,
                                     note = existing.note.orEmpty(),

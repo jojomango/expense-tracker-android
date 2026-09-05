@@ -1,0 +1,57 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-2 記一筆帳
+# Given 已有錢包「日常」（TWD，週預算 3000）且本週無交易
+# ——用 E2E-1 同樣的引導流程建立前提條件，這個 flow 本身不驗證 E2E-1 的內容。
+- launchApp:
+    clearState: true
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+# When 點擊新增按鈕
+- tapOn: "記帳"
+# And 輸入金額「120」、選擇分類「飲食」、日期保持預設（今天）
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "0"
+- tapOn: "飲食"
+- assertVisible: "今天"
+# And 送出
+- tapOn: "記一筆"
+
+# Then 交易出現在列表最上方，顯示「NT$120.00」與「🍜 飲食」
+# （TransactionRow 實際渲染會加上收支正負號前綴，支出是 "-NT$120.00"）
+- assertVisible: "-NT\\$120.00"
+- assertVisible: "飲食"
+# And 本週餘額立即變為「NT$2,880.00」（無需重新整理）
+- assertVisible: "NT$2,880.00"
+
+# When 將該筆金額編輯為「200」
+- tapOn: "飲食"
+- tapOn: "⌫"
+- tapOn: "⌫"
+- tapOn: "⌫"
+- tapOn: "2"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "儲存"
+# Then 本週餘額立即變為「NT$2,800.00」
+- assertVisible: "NT$2,800.00"
+
+# When 刪除該筆交易
+- swipe:
+    direction: LEFT
+    from:
+      text: "飲食"
+# Then 交易從列表消失
+# And 本週餘額立即回到「NT$3,000.00」
+- assertNotVisible: "-NT\\$200.00"
+- assertVisible: "NT$3,000.00"

@@ -53,4 +53,28 @@ class TransactionInputTest {
     fun `normal accumulation`() {
         assertEquals("12", appendDigit("1", "2"))
     }
+
+    @Test
+    @DisplayName("TESTCASES.md E2E-2 — 鍵台輸入 \"120\"，2 位小數幣別換算成 12000 最小單位")
+    fun `major digits to minor units`() {
+        assertEquals(12_000L, majorDigitsToMinorUnits("120", decimalDigits = 2))
+    }
+
+    @Test
+    @DisplayName("0 位小數幣別（如 JPY）不換算，字面值即最小單位")
+    fun `major digits to minor units with zero decimal digits`() {
+        assertEquals(120L, majorDigitsToMinorUnits("120", decimalDigits = 0))
+    }
+
+    @Test
+    @DisplayName("空字串換算為 0 最小單位")
+    fun `major digits to minor units with empty string`() {
+        assertEquals(0L, majorDigitsToMinorUnits("", decimalDigits = 2))
+    }
+
+    @Test
+    @DisplayName("反向換算：12000 最小單位、2 位小數 -> \"120\"（編輯既有交易時還原鍵台字串）")
+    fun `minor units to major digits`() {
+        assertEquals("120", minorUnitsToMajorDigits(12_000L, decimalDigits = 2))
+    }
 }
