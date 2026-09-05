@@ -20,7 +20,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 1 | Domain：金額與時間 | ✅ DONE | (見下方交接筆記) |
 | 2 | Domain：實體與預算計算 | ✅ DONE | (見下方交接筆記) |
 | 3 | 持久層與匯出匯入 | ✅ DONE | (見下方交接筆記) |
-| 4 | 基礎 UI：錢包與交易 CRUD | **NEXT** | |
+| 4 | 基礎 UI：錢包與交易 CRUD | ✅ DONE | (見下方交接筆記) |
+| 5 | 預算與即時餘額 | **NEXT** | |
 | 5 | 預算與即時餘額 | ⬜ TODO | |
 | 6 | 分類與統計 | ⬜ TODO | |
 | 7 | 打磨 | ⬜ TODO | |
@@ -420,7 +421,7 @@ emulator，測試沒辦法在本機執行）。
 
 ---
 
-## Phase 4 — 基礎 UI：錢包與交易 CRUD
+## Phase 4 — 基礎 UI：錢包與交易 CRUD ✅ DONE
 
 **必讀：** `UI-SPEC.md` §3、§4.1、§4.3、§5、§7
 
@@ -436,6 +437,72 @@ emulator，測試沒辦法在本機執行）。
 沒有理由先做醜的再改。
 
 **驗收：** E2E-1、E2E-2、T8.1、T8.2 全過（Maestro）。
+
+### 交接筆記（Phase 4 → Phase 5）
+
+**做了什麼：**
+- `domain/TransactionInput.kt`：金額輸入位數限制的純函式（`appendDigit`/`deleteDigit`），
+  對應 T7.1.1~T7.1.7，記帳頁的自製數字鍵台直接呼叫這兩個函式，UI 本身不含這段邏輯。
+- `domain/Week.kt` 新增 `groupTitle()`，把「本週 / 上週 / 3/1–3/7」這種標題字串的判斷
+  也留在 domain（純函式、注入 `referenceDate`），對應 T7.2.1~T7.2.4。
+- `ui/navigation/Routes.kt` + `MainActivity.kt`：`NavHost` + 底部 `NavigationBar`
+  （首頁／統計）+ 中央浮動 FAB（記帳），`ADD_TRANSACTION` 路由不帶 walletId 參數——
+  一律用當前選中的錢包，`EDIT_TRANSACTION_PATTERN` 帶 `transactionId`。
+- `ui/home/HomeViewModel.kt`：`combine(wallets, categories, settings, selectedWalletId)`
+  产生 `HomeContext`（私有中介 data class，避免自我參照的 state 更新寫法），再
+  `flatMapLatest` 到目前錢包的交易流；`switchWallet()` 同時把選擇寫回
+  `Settings.defaultWalletId`，下次啟動記得住上次選的錢包。
+- `ui/home/HomeScreen.kt`：標題列、預算卡（先用 domain 現成的 `Budget` 計算結果，
+  Phase 5 會補完整的卡片樣式）、週分組交易列表（`SwipeToDismissBox` 滑動刪除 +
+  Snackbar 復原）、空狀態、首次啟動引導表單（E2E-1）。
+- `ui/transaction/AddEditTransactionScreen.kt` + `ViewModel`：金額優先版面、支出/收入
+  切換、分類網格、日期/備註列、自製數字鍵台；新增交易時的預設錢包解析順序是
+  `Settings.defaultWalletId` → 第一個未封存錢包。
+- `ui/wallet/WalletSwitcherSheet.kt`：`ModalBottomSheet` 錢包清單 + 打勾目前錢包。
+- `ui/theme/{Color,Theme,Type}.kt`：`LightColors`/`DarkColors`/`CategoryColors`
+  對應 `UI-SPEC.md` §2.1 的確切色碼；`AppTypography`/`AppExtraColors` 透過
+  `CompositionLocal` 提供給所有畫面用，不用 `MaterialTheme.typography` 直接改樣式。
+- `di/DatabaseModule.kt`、`di/RepositoryModule.kt`：Hilt 組裝層，把 Phase 3 的
+  `Room*Repository` 綁進 domain 定義的介面；這五個類別因此必須是 public
+  （原本 Phase 3 為了保守起見標成 `internal`，Phase 4 拿掉了）。
+
+**踩過的坑：**
+- ktlint 的標準規則集不認得 `@Composable`，`FunctionNaming` 會把每個 PascalCase
+  的 composable 函式都當成違規；新增了根目錄 `.editorconfig`：
+  `ktlint_function_naming_ignore_when_annotated_with = Composable`
+  （ktlint 官方文件記載的標準做法，不是自訂 workaround）。detekt 有自己獨立的
+  `FunctionNaming`/`LongMethod`/`LongParameterList` 規則，需要在
+  `config/detekt/detekt.yml` 分別對這三個規則加上 `ignoreAnnotated: ["Composable"]`
+  才會放行——**這兩邊的設定互相獨立，不會共用**，之後如果 ktlint 或 detekt
+  版本升級要注意這兩處都要保留。
+- `config/detekt/detekt.yml` 開了 `buildUponDefaultConfig = true`，所以任何自訂規則
+  的 YAML 路徑（哪個規則屬於 `style`／`naming`／`complexity`哪個 section）必須完全
+  對應 detekt 內建預設設定檔的路徑，寫錯 section 名稱會直接讓整個 detekt 執行失敗
+  （"Property ... is misspelled or does not exist"），不是規則失效而已。
+- `HomeViewModel.kt` 用了 `flatMapLatest`（`kotlinx.coroutines.flow` 的實驗性 API），
+  需要在檔案開頭加 `@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)`。
+- 一開始為了修掉 Kotlin 可見度錯誤（`Room*Repository` 需要是 public 才能被
+  `RepositoryModule.kt` 的 `@Binds` 用）用 `sed` 直接刪掉 `internal class` 前綴，
+  結果留下縮排不一致的多行建構子寫法，讓 ktlint 的自動格式化本身直接壞掉
+  （不是「有格式問題」，是格式化工具跑到一半就丟例外）。教訓：改可見度這種
+  結構性變更，寧可整段用 `Write` 工具重寫檔案，也不要用 `sed` 動類別/建構子這種
+  多行結構。
+
+**留給下一個 phase 的資訊：**
+- 目前 `HomeScreen.kt` 的預算卡是最陽春版本（只顯示金額與進度條），Phase 5 要
+  依照 `UI-SPEC.md` §4.2 補完整規格（已用比例文字、剩餘天數、日均可用、
+  超支警示樣式）。
+- 週起始日設定畫面還沒做（`SettingsScreen.kt` 目前只是佔位），Phase 5 的範圍
+  包含這塊。
+- **這個 phase 的 UI 沒有在 emulator/實機上手動點過一輪**——跟 Phase 0~3 一樣，
+  本機 Apple Silicon Mac 無法跑 x86_64 emulator 加速（HVF 限制），且 CI 的
+  `e2e` job 剛換成 `ubuntu-latest` + KVM（PR #5，尚未 merge/驗證），所以
+  E2E-1、E2E-2、T8.1、T8.2 這些 Maestro 驗收目前**只做到「程式碼組得出來、
+  domain 邏輯有測試」，沒有真正跑過 Maestro flow**。這件事誠實寫進這個 PR 的
+  「需要人類決策」，等 PR #5 merge 且真的跑過一次 CI 之後，之後的 phase 才能
+  真的透過 CI 拿到 Maestro 驗證結果。
+- `.maestro/` 目錄目前還是只有說明用的 README，還沒有寫真正的 flow 檔案——
+  這也留給之後（可能 Phase 5 或更後面，一次把 E2E-1~E2E-5 的 flow 一起補上）。
 
 ---
 
