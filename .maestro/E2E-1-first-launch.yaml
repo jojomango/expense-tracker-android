@@ -17,6 +17,9 @@ appId: com.jojomango.expensetracker
 - tapOn: "每週"
 - tapOn: "預算金額"
 - inputText: "3000"
+# 收起系統鍵盤——這個表單是真正的系統 TextField（不是記帳頁的自製鍵台），
+# 鍵盤開著會蓋住畫面下方的「建立錢包」按鈕，導致 Maestro 找不到這個元素。
+- hideKeyboard
 # And 送出
 - tapOn: "建立錢包"
 

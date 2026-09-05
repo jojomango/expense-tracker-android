@@ -13,6 +13,8 @@ appId: com.jojomango.expensetracker
 - tapOn: "每週"
 - tapOn: "預算金額"
 - inputText: "3000"
+# 收起系統鍵盤——這個表單是真正的系統 TextField，鍵盤開著會蓋住「建立錢包」按鈕。
+- hideKeyboard
 - tapOn: "建立錢包"
 - assertVisible: "NT$3,000.00"
 

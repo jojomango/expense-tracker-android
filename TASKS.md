@@ -529,6 +529,18 @@ emulator，測試沒辦法在本機執行）。
   拆成獨立檔案、`on:` 只留 `push: branches: [main]` 和 `workflow_dispatch`
   （不寫 `pull_request`）之後，這個 job 完全不會出現在 PR 的 checks 裡，
   想手動驗證的話用 `workflow_dispatch` 觸發即可。
+- **PR #6 merge 進 main 後，`e2e` job 真的跑了一次，結果證實了兩件事：**
+  1. **`ubuntu-latest` + KVM 這個修正是有效的**——emulator 33 秒內開機完成、
+     APK 順利裝進去，跟本機/舊 `macos-14` 設定「boot timeout」的狀況完全不同。
+     這是 PR #5 那個修正第一次被真的驗證過，不再只是「照著官方文件猜應該可以」。
+  2. **`E2E-1`/`E2E-2` 這兩支 Maestro flow 本身第一次執行就抓到一個真的 bug**：
+     兩支都在 `tapOn: "建立錢包"` 這一步失敗（`Element not found`）——
+     原因是首次啟動引導表單用的是真正的系統 `TextField`（不像記帳頁用自製
+     鍵台），打完最後一個欄位後鍵盤沒收起來，把畫面下方的「建立錢包」按鈕
+     蓋住了。修法是在最後一次 `inputText` 之後、`tapOn: "建立錢包"` 之前
+     加一行 `hideKeyboard`。**這個修正還沒有再跑一次 CI 驗證過**，下一個
+     session 開場（或這個 phase 收尾前）應該先 `gh workflow run e2e.yml`
+     確認兩支 flow 真的變綠燈，再往下一個 phase 走。
 
 ---
 
