@@ -33,65 +33,67 @@ data class CategoryEditUiState(
 }
 
 @HiltViewModel
-class CategoryEditViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
-    private val categoryRepository: CategoryRepository,
-) : ViewModel() {
-    private val categoryId: String? = savedStateHandle.get<String>("categoryId")
+class CategoryEditViewModel
+    @Inject
+    constructor(
+        savedStateHandle: SavedStateHandle,
+        private val categoryRepository: CategoryRepository,
+    ) : ViewModel() {
+        private val categoryId: String? = savedStateHandle.get<String>("categoryId")
 
-    private val internalState = MutableStateFlow(CategoryEditUiState(categoryId = categoryId))
-    val uiState: StateFlow<CategoryEditUiState> = internalState.asStateFlow()
+        private val internalState = MutableStateFlow(CategoryEditUiState(categoryId = categoryId))
+        val uiState: StateFlow<CategoryEditUiState> = internalState.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            val existing = categoryId?.let { id -> categoryRepository.getAllOnce().firstOrNull { it.id == id } }
-            internalState.value =
-                if (existing != null) {
-                    internalState.value.copy(
-                        isLoading = false,
-                        isDefault = existing.isDefault,
-                        name = existing.name,
-                        type = existing.type,
-                        icon = existing.icon,
-                        color = existing.color,
+        init {
+            viewModelScope.launch {
+                val existing = categoryId?.let { id -> categoryRepository.getAllOnce().firstOrNull { it.id == id } }
+                internalState.value =
+                    if (existing != null) {
+                        internalState.value.copy(
+                            isLoading = false,
+                            isDefault = existing.isDefault,
+                            name = existing.name,
+                            type = existing.type,
+                            icon = existing.icon,
+                            color = existing.color,
+                        )
+                    } else {
+                        internalState.value.copy(isLoading = false)
+                    }
+            }
+        }
+
+        fun onNameChange(name: String) {
+            internalState.value = internalState.value.copy(name = name)
+        }
+
+        fun onTypeChange(type: CategoryType) {
+            internalState.value = internalState.value.copy(type = type)
+        }
+
+        fun onIconChange(icon: String) {
+            internalState.value = internalState.value.copy(icon = icon)
+        }
+
+        fun onColorChange(color: String) {
+            internalState.value = internalState.value.copy(color = color)
+        }
+
+        fun submit() {
+            val state = internalState.value
+            if (!state.canSubmit) return
+            viewModelScope.launch {
+                val category =
+                    Category(
+                        id = state.categoryId ?: UUID.randomUUID().toString(),
+                        name = state.name,
+                        type = state.type,
+                        icon = state.icon,
+                        color = state.color,
+                        isDefault = state.isDefault,
                     )
-                } else {
-                    internalState.value.copy(isLoading = false)
-                }
+                categoryRepository.upsert(category)
+                internalState.value = internalState.value.copy(saved = true)
+            }
         }
     }
-
-    fun onNameChange(name: String) {
-        internalState.value = internalState.value.copy(name = name)
-    }
-
-    fun onTypeChange(type: CategoryType) {
-        internalState.value = internalState.value.copy(type = type)
-    }
-
-    fun onIconChange(icon: String) {
-        internalState.value = internalState.value.copy(icon = icon)
-    }
-
-    fun onColorChange(color: String) {
-        internalState.value = internalState.value.copy(color = color)
-    }
-
-    fun submit() {
-        val state = internalState.value
-        if (!state.canSubmit) return
-        viewModelScope.launch {
-            val category =
-                Category(
-                    id = state.categoryId ?: UUID.randomUUID().toString(),
-                    name = state.name,
-                    type = state.type,
-                    icon = state.icon,
-                    color = state.color,
-                    isDefault = state.isDefault,
-                )
-            categoryRepository.upsert(category)
-            internalState.value = internalState.value.copy(saved = true)
-        }
-    }
-}

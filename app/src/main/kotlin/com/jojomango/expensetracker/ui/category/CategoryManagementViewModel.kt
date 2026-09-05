@@ -15,24 +15,29 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CategoryManagementViewModel @Inject constructor(
-    private val categoryRepository: CategoryRepository,
-) : ViewModel() {
-    val categories: StateFlow<List<Category>> =
-        categoryRepository.observeCategories().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+class CategoryManagementViewModel
+    @Inject
+    constructor(
+        private val categoryRepository: CategoryRepository,
+    ) : ViewModel() {
+        val categories: StateFlow<List<Category>> =
+            categoryRepository.observeCategories().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val _errorMessages = MutableSharedFlow<String>()
-    val errorMessages: SharedFlow<String> = _errorMessages
+        private val _errorMessages = MutableSharedFlow<String>()
+        val errorMessages: SharedFlow<String> = _errorMessages
 
-    /** SPEC.md §3.3：系統預設分類可改名但不可刪除——刪除時拋出 [DefaultCategoryException]，
-     * 這裡接住轉成給使用者看的錯誤訊息（TESTCASES.md E2E-8）。 */
-    fun deleteCategory(category: Category) {
-        viewModelScope.launch {
-            try {
-                categoryRepository.delete(category.id)
-            } catch (e: DefaultCategoryException) {
-                _errorMessages.emit("系統預設分類無法刪除")
+        /** SPEC.md §3.3：系統預設分類可改名但不可刪除——刪除時拋出 [DefaultCategoryException]，
+         * 這裡接住轉成給使用者看的錯誤訊息（TESTCASES.md E2E-8）。[DefaultCategoryException.message]
+         * 本身是英文（domain 層的內部訊息，不是面向使用者的文字），故意不拿來顯示，
+         * 一律換成固定的繁體中文訊息。 */
+        @Suppress("SwallowedException")
+        fun deleteCategory(category: Category) {
+            viewModelScope.launch {
+                try {
+                    categoryRepository.delete(category.id)
+                } catch (e: DefaultCategoryException) {
+                    _errorMessages.emit("系統預設分類無法刪除")
+                }
             }
         }
     }
-}
