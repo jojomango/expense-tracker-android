@@ -24,16 +24,16 @@ jobs:
     # runner 快 2-3 倍、也便宜很多，不需要煩惱 host 是什麼 CPU 架構。
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
@@ -65,7 +65,7 @@ jobs:
       # 的話，每次失敗都只能憑程式碼猜，猜錯了又要重跑一次 CI 才知道。
       - name: Upload Maestro debug artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: maestro-debug-output
           path: ~/.maestro/tests
