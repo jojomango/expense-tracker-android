@@ -18,8 +18,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 |---|---|---|---|
 | 0 | 地基 | ✅ DONE | (見下方交接筆記) |
 | 1 | Domain：金額與時間 | ✅ DONE | (見下方交接筆記) |
-| 2 | Domain：實體與預算計算 | **NEXT** | |
-| 3 | 持久層與匯出匯入 | ⬜ TODO | |
+| 2 | Domain：實體與預算計算 | ✅ DONE | (見下方交接筆記) |
+| 3 | 持久層與匯出匯入 | **NEXT** | |
 | 4 | 基礎 UI：錢包與交易 CRUD | ⬜ TODO | |
 | 5 | 預算與即時餘額 | ⬜ TODO | |
 | 6 | 分類與統計 | ⬜ TODO | |
@@ -238,7 +238,7 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 
 ---
 
-## Phase 2 — Domain：實體與預算計算
+## Phase 2 — Domain：實體與預算計算 ✅ DONE
 
 **必讀：** `SPEC.md` §3.1~§3.4、`TESTCASES.md` T3（Budget，含 T3.7/T3.8）、T6（Category）
 
@@ -254,6 +254,61 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
   包袱，第一天就做對
 
 **驗收：** T3、T6 全過。
+
+### 驗收（實際結果）
+
+- [x] T3（Budget，44 案）、T6（Category，10 案）全過
+- [x] domain 覆蓋率 94%（門檻 90%）
+- [x] `./gradlew verify` 全綠，乾淨重跑過一次確認可重現
+
+### 交接筆記（Phase 2 → Phase 3）
+
+**做了什麼：**
+- `domain/Wallet.kt`：`BudgetMode` enum + `Wallet` data class。`budgetAmount`
+  的合法性跟 `budgetMode` 綁在一起檢查（`NONE` 時必須是 `null`；
+  `WEEKLY`/`TOTAL` 時必須 `>= 0`——**注意是 `>= 0` 不是 `> 0`**，因為
+  T3.2.6 明確測了「總預算為 0」這個邊界情境，一開始寫成 `> 0` 會擋掉這個
+  合法測案，動工前沒想到，跑測試時才發現，Phase 3 如果要加其他數值欄位
+  的驗證，記得先對一遍 TESTCASES.md 的邊界值再決定要不要用嚴格不等式）
+- `domain/Transaction.kt`：`amount` 一律正整數（`type` 決定方向），`date`
+  是 `LocalDate`（不含時間），`createdAt`/`updatedAt` 是 `kotlinx.datetime.
+  Instant`——**由呼叫端注入，domain 不會自己 new 一個「現在」出來**
+- `domain/Category.kt`：`color` 驗證只接受 `#rrggbb` 六位（正規表達式），
+  `DefaultCategories.seedDefaults()` 產生 11 個預設分類，色票跟
+  `UI-SPEC.md` §2.2 逐字核對過。`colorOf(categoryId, categories)` 是顏色
+  查詢的唯一入口——**顏色永遠現查、不快取、不由排序結果決定**（T6.3）
+- `domain/Budget.kt`：`calculateWeeklyExpenseTotal`／`calculateWeeklyBalance`／
+  `calculateTotalBalance`／`summarizeByCategory`／`summarizeWeeklyTrend`／
+  `daysLeftInWeek`／`dailyAllowance` 七個函式全部是 `Budget` object 底下的
+  純函式，共用一個 private 的 `sumExpenses` helper 做「篩錢包＋篩支出＋篩
+  日期條件」
+
+**設計上比較值得記錄的兩個決定：**
+1. **`CategorySummary` 刻意不含 `color` 欄位**（TESTCASES.md T6.3.2 明講
+   「summarizeByCategory 的回傳不含任何顏色資訊」）。UI 層要顯示分類色時，
+   自己拿 `categoryId` 去呼叫 `colorOf(categoryId, categories)`，不要指望
+   從彙總結果裡拿顏色。Phase 6 做統計頁圓餅圖/長條圖時要記得這個介面設計。
+2. **`summarizeByCategory` 對「categoryId 指向一個已經不在 categories 清單
+   裡的分類」自動當成未分類處理**（不會拋錯、也不會另開一組）。這是為了
+   同時滿足 T3.5.3（分類被刪除後交易歸入未分類）又不用在 domain 層額外
+   實作「分類刪除時大量更新交易」這個 side-effecty 的操作——那個操作本身
+   應該在 Phase 3 的 Repository 層做（刪分類時把相關交易的 `categoryId`
+   一併更新為 `null`），`summarizeByCategory` 這裡的防禦性寫法只是確保
+   「就算 Repository 那層還沒來得及更新，彙總也不會遺失資料或炸掉」。
+
+**已知的坑／下一個 phase 要注意：**
+- `DefaultCategories.seedDefaults()` 用 `java.util.UUID.randomUUID()` 產生
+  id（可用 `idGenerator` 參數覆寫，測試都有指定固定 id，不受影響）。
+  `java.util.UUID` 是 JVM-only，如果之後真的要做 Kotlin Multiplatform
+  抽出 domain module 給 iOS 用，這裡要換成多平台的 UUID 函式庫——現在先
+  不處理，純 Android 專案階段沒有這個問題
+- Phase 3 寫 Room `@Entity` 時，`Wallet`/`Transaction`/`Category` 這幾個
+  domain 型別建議直接對應（欄位名稱幾乎可以照抄），不需要另外設計一套
+  「DB 版」型別再轉換——除非之後真的需要 Room 專屬的欄位（例如某些
+  index/foreign key 相關的東西無法用純 data class 表達）
+- `Budget` 裡所有函式都吃「已經篩選好的 `transactions: List<Transaction>`」
+  當參數，本身不管資料是從哪裡來、也不做任何 IO——Phase 3 的 Repository
+  查出資料後直接餵給這些函式即可，不需要在 domain 層再包一層查詢邏輯
 
 ---
 
