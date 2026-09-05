@@ -607,9 +607,13 @@ emulator，測試沒辦法在本機執行）。
        捕捉到了刪除前一刻的舊 `transaction` 物件）。
      - 這些修正在 [PR #7](https://github.com/jojomango/expense-tracker-android/pull/7)，
        已經在本機 arm64 emulator 上連續兩次全綠（`maestro test .maestro/`
-       兩支 flow都 Passed），`./gradlew verify` 也全綠。**CI 上還沒有再跑一次
-       確認**——照 `CLAUDE.md` 的精神，本機通過是很強的訊號，但綠色的 CI
-       才是最終證據，這個 phase 收尾前應該再跑一次 `workflow_dispatch` 確認。
+       兩支 flow 都 Passed），`./gradlew verify` 也全綠，**推上 CI 之後
+       `workflow_dispatch` 也真的跑出 `success`**（[run
+       33949964640](https://github.com/jojomango/expense-tracker-android/actions/runs/33949964640)）——
+       `e2e` job 本身、`Upload Maestro debug artifacts`、
+       `Fail job if Maestro flows failed` 全部通過，這是本機 + CI 雙重
+       確認過的結果，不是只憑本機推論。E2E-1、E2E-2、T8.1、T8.2 這幾個
+       Phase 4 的驗收項目到這裡才算真正拿到綠燈證據。
 
 ---
 
