@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,12 +40,15 @@ fun WalletManagementScreen(
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            wallets.forEach { wallet ->
+            wallets.forEachIndexed { index, wallet ->
                 ListItem(
                     headlineContent = { Text(wallet.name) },
                     supportingContent = { Text("${wallet.currency} · ${budgetModeLabel(wallet.budgetMode)}") },
                     modifier = Modifier.clickable { onEditWallet(wallet.id) },
                 )
+                if (index != wallets.lastIndex) {
+                    HorizontalDivider()
+                }
             }
         }
     }
