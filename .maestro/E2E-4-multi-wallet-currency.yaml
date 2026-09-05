@@ -1,0 +1,79 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-4 多錢包與多幣別
+# Given 已有錢包「日常」（TWD，週預算 3000，本週已支出 500）
+- launchApp:
+    clearState: true
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+- tapOn: "記帳"
+- tapOn: "5"
+- tapOn: "0"
+- tapOn: "0"
+- assertVisible: "居住"
+- tapOn: "居住"
+- tapOn: "記一筆"
+- assertVisible: "NT$2,500.00"
+
+# When 建立第二個錢包「日本旅遊」，幣別「JPY」，預算模式「總預算」，金額「200000」
+- tapOn: "日常"
+- tapOn: "管理錢包…"
+- tapOn: "新增"
+- tapOn: "錢包名稱"
+- inputText: "日本旅遊"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "JPY"
+- tapOn: "總預算"
+- tapOn: "預算金額"
+- inputText: "200000"
+- hideKeyboard
+- tapOn: "建立錢包"
+
+# And 切換至「日本旅遊」
+- assertVisible: "日本旅遊"
+- tapOn: "返回"
+- tapOn: "日常"
+- tapOn: "日本旅遊"
+
+# Then 顯示剩餘總預算「¥200,000」（無小數點）
+# And 交易列表為空
+- assertVisible: "¥200,000"
+- assertVisible: "這個錢包還沒有交易"
+
+# When 在「日本旅遊」新增支出「¥8,000」分類「飲食」
+- tapOn: "記帳"
+- tapOn: "8"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "0"
+- swipe:
+    direction: UP
+    from:
+      text: "交通"
+- waitForAnimationToEnd
+- tapOn: "飲食"
+- tapOn: "記一筆"
+
+# Then 剩餘總預算顯示「¥192,000」，已用「4%」
+- assertVisible: "¥192,000"
+- assertVisible: "已用 4%"
+
+# When 切換回「日常」
+- tapOn: "日本旅遊"
+- tapOn: "日常"
+
+# Then 本週餘額仍為「NT$2,500.00」（完全不受 JPY 交易影響）
+- assertVisible: "NT$2,500.00"
+- assertNotVisible: "¥"

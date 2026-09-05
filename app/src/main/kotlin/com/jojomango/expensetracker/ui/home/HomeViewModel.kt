@@ -47,6 +47,8 @@ data class HomeUiState(
     val weeklyBalance: BudgetStatus? = null,
     val totalBalance: TotalBudgetStatus? = null,
     val weeklyExpenseTotal: Money? = null,
+    val daysLeftInWeek: Int? = null,
+    val dailyAllowance: Money? = null,
     val transactionGroups: List<WeekGroup<Transaction>> = emptyList(),
 ) {
     val needsOnboarding: Boolean get() = !isLoading && wallets.isEmpty()
@@ -111,6 +113,17 @@ class HomeViewModel
             val weeklyExpenseTotal =
                 Budget.calculateWeeklyExpenseTotal(wallet, transactions, ctx.settings.weekStartDay, referenceDate)
             val groups = Week.groupByWeek(transactions, ctx.settings.weekStartDay) { it.date }
+            // 「還有 N 天」/「日均可用」是週預算特有的概念（總預算沒有週期，
+            // 不會重置），UI-SPEC.md §4.2 只有明講「budgetMode == NONE 時不顯示
+            // 進度條」，沒有明講這兩行在 TOTAL 模式下要不要出現——這裡選擇只在
+            // WEEKLY 模式顯示，見 TASKS.md Phase 5 交接筆記的說明。
+            val daysLeft = weeklyBalance?.let { Budget.daysLeftInWeek(ctx.settings.weekStartDay, referenceDate) }
+            val dailyAllowance =
+                if (weeklyBalance != null && daysLeft != null) {
+                    Money.of(Budget.dailyAllowance(weeklyBalance.balance.amount, daysLeft), wallet.currency)
+                } else {
+                    null
+                }
             return HomeUiState(
                 isLoading = false,
                 wallets = ctx.wallets,
@@ -120,6 +133,8 @@ class HomeViewModel
                 weeklyBalance = weeklyBalance,
                 totalBalance = totalBalance,
                 weeklyExpenseTotal = weeklyExpenseTotal,
+                daysLeftInWeek = daysLeft,
+                dailyAllowance = dailyAllowance,
                 transactionGroups = groups,
             )
         }

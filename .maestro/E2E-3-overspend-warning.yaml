@@ -1,0 +1,44 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-3 超支警示
+# Given 錢包「日常」週預算 3000，本週已支出 2900
+- launchApp:
+    clearState: true
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+- tapOn: "記帳"
+- tapOn: "2"
+- tapOn: "9"
+- tapOn: "0"
+- tapOn: "0"
+- assertVisible: "居住"
+- tapOn: "居住"
+- tapOn: "記一筆"
+- assertVisible: "NT$100.00"
+
+# When 新增一筆支出 500
+- tapOn: "記帳"
+- tapOn: "5"
+- tapOn: "0"
+- tapOn: "0"
+- assertVisible: "居住"
+- tapOn: "居住"
+- tapOn: "記一筆"
+
+# Then 本週餘額顯示「-NT$400.00」
+# And 餘額以警示樣式呈現（警示色 + 圖示）——用 Material Icon（不是 emoji）畫的
+# 警示圖示，contentDescription 是「已超支」，見 HomeScreen.kt BudgetCard 的說明。
+# And 畫面明確標示「已超支」
+- assertVisible: "-NT\\$400.00"
+- assertVisible: "已超支"

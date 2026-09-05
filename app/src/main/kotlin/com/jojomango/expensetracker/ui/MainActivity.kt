@@ -43,6 +43,8 @@ import com.jojomango.expensetracker.ui.settings.SettingsScreen
 import com.jojomango.expensetracker.ui.stats.StatsScreen
 import com.jojomango.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.jojomango.expensetracker.ui.transaction.AddEditTransactionScreen
+import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
+import com.jojomango.expensetracker.ui.wallet.WalletManagementScreen
 import com.jojomango.expensetracker.ui.wallet.WalletSwitcherSheet
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -124,10 +126,22 @@ private fun ExpenseTrackerApp() {
                     onEditTransaction = { id -> navController.navigate(Routes.editTransaction(id)) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     onSwitchWalletRequested = { showWalletSwitcher = true },
+                    // 一定要把上面已經拿到的 homeViewModel 傳進去，不能讓 HomeScreen
+                    // 用自己預設參數的 hiltViewModel() 另外生一個實例——那個實例的
+                    // scope 是 "home" 這個 NavBackStackEntry，跟這裡（ExpenseTrackerApp
+                    // 這層、scope 是整個 Activity）拿到的不是同一個物件，各自的
+                    // selectedWalletId 互不相通，切換錢包會完全沒反應（真的踩過這個
+                    // bug，見 TASKS.md Phase 5 交接筆記）。
+                    viewModel = homeViewModel,
                 )
             }
             composable(Routes.STATS) { StatsScreen() }
-            composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }) }
+            composable(Routes.SETTINGS) {
+                SettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onManageWallets = { navController.navigate(Routes.WALLET_MANAGEMENT) },
+                )
+            }
             composable(Routes.ADD_TRANSACTION) {
                 AddEditTransactionScreen(
                     onDone = { navController.popBackStack() },
@@ -143,6 +157,28 @@ private fun ExpenseTrackerApp() {
                     onCancel = { navController.popBackStack() },
                 )
             }
+            composable(Routes.WALLET_MANAGEMENT) {
+                WalletManagementScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddWallet = { navController.navigate(Routes.WALLET_NEW) },
+                    onEditWallet = { id -> navController.navigate(Routes.editWallet(id)) },
+                )
+            }
+            composable(Routes.WALLET_NEW) {
+                WalletEditScreen(
+                    onDone = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                )
+            }
+            composable(
+                Routes.WALLET_EDIT_PATTERN,
+                arguments = listOf(navArgument("walletId") { type = NavType.StringType }),
+            ) {
+                WalletEditScreen(
+                    onDone = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                )
+            }
         }
     }
 
@@ -154,7 +190,10 @@ private fun ExpenseTrackerApp() {
                 homeViewModel.switchWallet(walletId)
                 showWalletSwitcher = false
             },
-            onManageWallets = { showWalletSwitcher = false },
+            onManageWallets = {
+                showWalletSwitcher = false
+                navController.navigate(Routes.WALLET_MANAGEMENT)
+            },
             onDismiss = { showWalletSwitcher = false },
         )
     }

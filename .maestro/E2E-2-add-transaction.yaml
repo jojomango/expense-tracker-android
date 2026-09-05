@@ -67,9 +67,14 @@ appId: com.jojomango.expensetracker
 # When 刪除該筆交易
 # `direction: LEFT` + `from: 飲食` 錨定 swipe 的預設拖曳距離不夠長，
 # 沒辦法越過 SwipeToDismissBox 的刪除門檻；改用明確座標橫跨整列寬度。
+# 這個 Y 座標是「交易列表第一列」在目前畫面（週預算模式的完整預算卡，含
+# 已用/還有N天/日均可用三行）底下的實際位置，寫死的百分比——Phase 5 把
+# 預算卡加高之後，這裡就要跟著重新校準過一次。這是已知的脆弱點，見
+# TASKS.md「已知技術債」：更耐用的做法應該是給交易列的可滑動容器一個
+# 穩定的 testTag，用 tag 而不是座標百分比來定位，之後有空可以做。
 - swipe:
-    start: 88%,37%
-    end: 9%,37%
+    start: 88%,48%
+    end: 9%,48%
 # Then 交易從列表消失
 # And 本週餘額立即回到「NT$3,000.00」
 - assertNotVisible: "-NT\\$200.00"
