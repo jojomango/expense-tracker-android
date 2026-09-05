@@ -118,7 +118,8 @@ data class Money internal constructor(
     }
 }
 
-private fun pow10(exponent: Int): Long {
+/** 10 的 [exponent] 次方——用來在「使用者輸入的整數位數」與「幣別最小單位」之間換算。 */
+fun pow10(exponent: Int): Long {
     var result = 1L
     repeat(exponent) { result *= 10 }
     return result

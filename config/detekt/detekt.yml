@@ -4,12 +4,24 @@ build:
 style:
   MagicNumber:
     active: false # revisit once domain/Money/Week/Month land in Phase 1
+  MaxLineLength:
+    maxLineLength: 140
 
 complexity:
   LongMethod:
     threshold: 60
+    ignoreAnnotated: ["Composable"]
   LongParameterList:
     active: true
+    ignoreAnnotated: ["Composable"]
 
 naming:
   active: true
+  FunctionNaming:
+    ignoreAnnotated: ["Composable"]
+  MatchingDeclarationName:
+    active: false # ui/theme/{Color,Theme,Type}.kt is the standard Compose theming file layout
+
+performance:
+  SpreadOperator:
+    active: false # Migrations.all is a small fixed-size array built once at app startup

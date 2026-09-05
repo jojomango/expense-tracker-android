@@ -1,0 +1,40 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-1 首次使用
+# Given 使用者第一次開啟 app（無任何資料）
+# When  畫面載入
+# Then  顯示引導畫面，要求建立第一個錢包
+- launchApp:
+    clearState: true
+- assertVisible: "建立你的第一個錢包"
+
+# When 輸入名稱「日常」、幣別「TWD」、預算模式「每週」、金額「3000」
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+# And 送出
+- tapOn: "建立錢包"
+
+# Then 進入主畫面
+# And 顯示錢包「日常」
+# And 顯示本週餘額「NT$3,000.00」
+- assertVisible: "日常"
+- assertVisible: "NT$3,000.00"
+
+# And 分類清單已預先填入 7 個支出分類與 4 個收入分類
+# （domain/Category.kt DefaultCategories.seedDefaults() — T2.2.x 已用單元測試覆蓋
+# 種子內容本身；這裡只需要確認記帳頁的分類網格真的把種子資料渲染出來）
+- tapOn: "記帳"
+- assertVisible: "飲食"
+- assertVisible: "居住"
+- assertVisible: "其他"
+- tapOn: "收入"
+- assertVisible: "薪資"
+- assertVisible: "獎金"
+- assertVisible: "投資"
+- tapOn: "取消"

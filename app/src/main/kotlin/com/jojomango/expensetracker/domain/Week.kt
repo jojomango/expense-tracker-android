@@ -48,4 +48,27 @@ object Week {
             .sortedByDescending { (range, _) -> range.start }
             .map { (range, groupItems) -> WeekGroup(range, groupItems.sortedBy(dateOf)) }
     }
+
+    /**
+     * 交易列表的週分組標題——UI-SPEC.md §4.3「本週 · 8/31–9/6」風格，
+     * 絕對不輸出 `YYYY-MM-DD`（TESTCASES.md T7.2）。[weekStart] 是該組的週首
+     * （[WeekGroup.range] 的 `start`），[referenceDate] 是「今天」。
+     */
+    fun groupTitle(
+        weekStart: LocalDate,
+        weekStartDay: DayOfWeek,
+        referenceDate: LocalDate,
+    ): String {
+        val currentWeekStart = rangeOf(referenceDate, weekStartDay).start
+        val previousWeekStart = currentWeekStart.minus(7, DateTimeUnit.DAY)
+        val weekEnd = weekStart.plus(6, DateTimeUnit.DAY)
+        val range = "${weekStart.monthNumber}/${weekStart.dayOfMonth}–${weekEnd.monthNumber}/${weekEnd.dayOfMonth}"
+        val prefix =
+            when (weekStart) {
+                currentWeekStart -> "本週 · "
+                previousWeekStart -> "上週 · "
+                else -> ""
+            }
+        return prefix + range
+    }
 }
