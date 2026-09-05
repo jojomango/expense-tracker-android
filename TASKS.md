@@ -521,6 +521,14 @@ emulator，測試沒辦法在本機執行）。
   意外發現並修好了上面那個金額換算 bug，這代表「照著規格寫 Maestro flow」
   這件事本身就有抓 bug 的價值，不是可有可無的附加工作。E2E-3~E2E-10 的
   flow 留給之後對應的 phase（例如 E2E-3 需要 Phase 5 的預算卡才有意義）。
+- **`e2e` job 拆成獨立的 `.github/workflows/e2e.yml`**（原本跟 `verify` 一起放在
+  `ci.yml`）。原因：兩個 job 共用同一個 workflow 檔案時，只要 workflow 被
+  `pull_request` 事件觸發，GitHub Actions 就會把檔案裡所有 job 都攤出來評估，
+  `e2e` 就算被自己的 `if:` 擋掉不執行，還是會在 PR 的 checks 清單上留下一行
+  永遠顯示 `Skipped` 的項目，容易讓人誤以為「這個 PR 應該要跑 e2e 但沒跑」。
+  拆成獨立檔案、`on:` 只留 `push: branches: [main]` 和 `workflow_dispatch`
+  （不寫 `pull_request`）之後，這個 job 完全不會出現在 PR 的 checks 裡，
+  想手動驗證的話用 `workflow_dispatch` 觸發即可。
 
 ---
 
