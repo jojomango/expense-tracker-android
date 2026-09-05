@@ -3,8 +3,13 @@ appId: com.jojomango.expensetracker
 # TESTCASES.md E2E-2 記一筆帳
 # Given 已有錢包「日常」（TWD，週預算 3000）且本週無交易
 # ——用 E2E-1 同樣的引導流程建立前提條件，這個 flow 本身不驗證 E2E-1 的內容。
+# 不直接用 `launchApp: { clearState: true }`——clearState 拆掉舊 task 後會排一個
+# 約 1.15 秒的 destroy timeout，在那之內重新啟動的話，新 process 會被 AMS 誤殺，
+# App 一啟動就死掉（CI 上實際踩到 4 次）。詳見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
 - launchApp:
-    clearState: true
+    stopApp: false
 # launchApp 本身不保證第一幀畫完就回傳——E2E-1 因為緊接著有 assertVisible
 # （會重試等待），冷啟動的等待時間剛好夠；這支少了這一步，直接 tapOn 會在
 # 畫面還是全白的時候就撲空。補上同樣的 assertVisible 當作啟動完成的等待點。
