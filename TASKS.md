@@ -19,8 +19,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 0 | 地基 | ✅ DONE | (見下方交接筆記) |
 | 1 | Domain：金額與時間 | ✅ DONE | (見下方交接筆記) |
 | 2 | Domain：實體與預算計算 | ✅ DONE | (見下方交接筆記) |
-| 3 | 持久層與匯出匯入 | **NEXT** | |
-| 4 | 基礎 UI：錢包與交易 CRUD | ⬜ TODO | |
+| 3 | 持久層與匯出匯入 | ✅ DONE | (見下方交接筆記) |
+| 4 | 基礎 UI：錢包與交易 CRUD | **NEXT** | |
 | 5 | 預算與即時餘額 | ⬜ TODO | |
 | 6 | 分類與統計 | ⬜ TODO | |
 | 7 | 打磨 | ⬜ TODO | |
@@ -312,7 +312,7 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 
 ---
 
-## Phase 3 — 持久層與匯出匯入
+## Phase 3 — 持久層與匯出匯入 ✅ DONE
 
 **必讀：** `SPEC.md` §3.5、§3.6、`TESTCASES.md` T4（Persistence）
 
@@ -326,6 +326,88 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
   `OpenDocument`）——這塊碰 Android API，放在 `ui` 或 `data` 都可以，不能放 `domain`
 
 **驗收：** T4 全過（Room in-memory database 測）。
+
+### 驗收（實際結果）
+
+- [x] T4.1（Persistence，7 案）、T4.2（匯出/匯入，8 案）全過——**但跑在
+      `androidTest`，不是 TESTCASES.md 原本寫的 `data/src/test/`**，見下方
+      「需要人類決策」
+- [x] T4.2 的純函式部分（decodeBackup/validateBackup/mergeTransactionsById）
+      額外在 `test`（JVM）跑過一份，這些不需要 Room 就能測
+- [x] `./gradlew verify` 全綠，domain 覆蓋率 93%，乾淨重跑過一次確認可重現
+- [x] `./gradlew compileDebugAndroidTestKotlin` 確認 androidTest 程式碼編譯過
+      （**沒有**在本機實際跑過——這台機器的 emulator 問題跟 Phase 0 記錄的
+      一樣，等 CI 的 e2e job 在 GitHub 的 macOS runner 上跑）
+
+### 需要人類決策
+
+**T4 Persistence／Backup 測試跑在 `androidTest`，不是 TESTCASES.md 寫的
+`data/src/test/`。** 過程：
+
+1. TESTCASES.md 的分層表格明講 persistence 測試放 `data/src/test/`（JVM），
+   這在 Room 2.6 需要 Robolectric 才做得到（不在 SPEC.md §5 表格內）
+2. Room 2.7 有一個「bundled SQLite driver」理論上能讓 Room 在純 JVM 跑，
+   不需要 Robolectric——**實測過**，先遇到 `Context` 參數卡住（改用
+   `ContextWrapper(null)` 繞過）、又遇到 `JournalMode.AUTOMATIC` 會呼叫
+   `context.getSystemService()`（改成 `.setJournalMode(TRUNCATE)` 繞過），
+   最後卡在真正的死路：AGP（Android Gradle Plugin）模組的 Gradle
+   variant-aware 依賴解析，**永遠只會抓到 `androidx.sqlite:sqlite-bundled`
+   的 Android target artifact**（裡面包 Android ABI 的 `.so`），不會抓到
+   macOS/Linux 桌機能載入的 native library，跑到
+   `System.loadLibrary("sqliteJni")` 就 `UnsatisfiedLinkError`
+3. 兩條路都要脫離 TESTCASES.md 寫的位置：Robolectric（新套件，也要人類
+   批准）或 `androidTest`（標準做法，`androidx.test` 已核准，**不需要新
+   套件**）。選了影響較小的後者
+
+**這是一個規格（TESTCASES.md 測試分層表格）跟技術現實的落差**，不是我自己
+想改測試位置——過程都記錄在 `data/RoomTestDb.kt` 的註解裡。如果人類覺得
+`androidTest` 不能接受，替代方案是引入 Robolectric（需要另外批准）。
+
+### 交接筆記（Phase 3 → Phase 4）
+
+**做了什麼：**
+- Room `@Entity`／`@Dao`：`WalletEntity`／`TransactionEntity`／
+  `CategoryEntity`／`SettingsEntity`（單行表，`id` 固定 0）。`TransactionEntity`
+  用 `ForeignKey`（`walletId` CASCADE 刪除、`categoryId` SET_NULL）把
+  SPEC.md §3.1/§3.3 的刪除規則直接刻進 schema，不用在程式碼裡手動維護
+  一致性
+- `data/Converters.kt`：`LocalDate` 存 ISO 字串、`Instant` 存 epoch millis
+- Repository 介面在 `domain/Repositories.kt`，Room 實作在
+  `data/Repositories.kt`（`RoomWalletRepository` 等）。`WalletRepository.
+  delete`／`CategoryRepository.delete` 分別包了 `assertCanDeleteWallet`／
+  `assertCanDeleteCategory` 這兩個 Phase 2 就寫好的純函式守門
+- `domain/Backup.kt`：匯出/匯入的資料形狀（`BackupWallet`／
+  `BackupTransaction`／`BackupCategory`／`BackupSettings`／`BackupPayload`，
+  都用扁平的原生型別欄位，`LocalDate`/`Instant` 存成 String/Long，避開
+  kotlinx-datetime 需要額外 serializers 模組的麻煩）+ `encodeBackup`／
+  `decodeBackup`／`validateBackup`／`mergeTransactionsById` 四個純函式，
+  全部不碰 Room，可以直接在 `test`（JVM）測
+- `data/Repositories.kt` 的 `RoomBackupRepository`：`replace`/`merge` 都包
+  在同一個 `db.withTransaction {}` 裡，靠「先驗證、驗證通過才寫入」
+  保證原子性（T4.2.3），不需要額外的 DB 回滾邏輯
+- `data/Migrations.kt`：目前是純文件骨架（`AppDatabase.version` 還是 1，
+  `exportSchema = false`）。**T4.1.5（migration test）沒有寫成真正的測試**
+  ——沒有真的 v2 schema 可以測，硬做一個假的 v2 只是為了測而測，選擇誠實
+  記錄「這是骨架、真的要加 migration 時照 KDoc 裡的範例走」而不是生出一個
+  空洞的測試
+
+**已知的坑／下一個 phase 要注意：**
+- Storage Access Framework（`ActivityResultContracts.CreateDocument`／
+  `OpenDocument`）**還沒串接**——那需要一個真正的 Activity/Compose 畫面
+  去觸發檔案選擇器，Phase 0~3 刻意不碰 `ui/`，所以這塊留到 Phase 4 有畫面
+  之後（或 Phase 7 打磨時）再做。`BackupRepository.export()`／`import()`
+  已經把「資料要怎麼變成 JSON、JSON 要怎麼驗證寫回 DB」都準備好了，
+  Phase 4/7 的 UI 只需要拿 SAF 選出來的 `Uri` 讀/寫 bytes，呼叫這兩個函式
+  就好，不需要再碰 domain 或 data 層的邏輯
+- Hilt 的 DI 綁定（`@Module`／`@Provides` 提供 `AppDatabase`、把
+  `RoomWalletRepository` 等綁定到對應介面）**還沒寫**——Phase 0 建立的
+  `di/` package 目前是空的。等 Phase 4 真的有 `ViewModel` 需要注入
+  Repository 時再補，現在寫沒有東西可以驗證會不會漏綁
+- `Wallet`/`Category` 沒有 `updatedAt` 欄位，所以 merge 匯入時這兩種資料
+  「匯入端直接覆蓋同 id 的既有資料」，不像 `Transaction` 有時間戳可比較。
+  如果之後想讓 `Wallet`/`Category` 也支援更精細的 merge 衝突解決，要先
+  幫它們加 `updatedAt` 欄位（會是一次真正的 schema migration，正好可以
+  拿來練 `Migrations.kt` 裡說的那個流程）
 
 ---
 
