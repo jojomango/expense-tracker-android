@@ -1,0 +1,114 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-10 統計：本週／本月分類支出佔比與近 8 週趨勢
+# 用「今天」/「今天 ±7 天（保證同月）」取代 TESTCASES.md 給的固定日期
+# 2026-08-11——理由跟 E2E-5 一樣：這台 emulator 沒有 root，鎖不住系統時鐘。
+# 一開始用「這週一」/「上週一」寫過一版，但在「今天剛好落在這個月第一週」
+# 時會整個垮掉（這週一跨到上個月，Month.rangeOf(today()) 查當月會直接找不到
+# 任何一筆交易），細節見 scripts/e2e10-dates.js 檔頭註解。
+- runScript: scripts/e2e10-dates.js
+
+# Given 已有錢包「日常」，weekStartDay 為「週一」（Settings() 預設值）
+# 不直接用 `launchApp: { clearState: true }`——clearState 拆掉舊 task 後會排一個
+# 約 1.15 秒的 destroy timeout，在那之內重新啟動的話，新 process 會被 AMS 誤殺，
+# App 一啟動就死掉（CI 上實際踩到 4 次）。詳見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+# And 本週（今天）有支出「飲食 300」
+- tapOn: "記帳"
+- tapOn: "3"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "選日期"
+- repeat:
+    times: ${output.monthsBackToday}
+    commands:
+      - tapOn: "Change to previous month"
+- tapOn: "${output.todayLabel}"
+- tapOn: "確定"
+- swipe:
+    direction: UP
+    from:
+      text: "交通"
+- waitForAnimationToEnd
+- tapOn: "飲食"
+- tapOn: "記一筆"
+
+# And 本週（今天）有支出「交通 200」
+- tapOn: "記帳"
+- tapOn: "2"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "選日期"
+- repeat:
+    times: ${output.monthsBackToday}
+    commands:
+      - tapOn: "Change to previous month"
+- tapOn: "${output.todayLabel}"
+- tapOn: "確定"
+- tapOn: "交通"
+- tapOn: "記一筆"
+
+# And 同月但不同週有支出「飲食 100」（用 今天±7 天中保證同月的那一天，見
+# scripts/e2e10-dates.js 檔頭註解）
+- tapOn: "記帳"
+- tapOn: "1"
+- tapOn: "0"
+- tapOn: "0"
+- tapOn: "選日期"
+- repeat:
+    times: ${output.monthsBackOther}
+    commands:
+      - tapOn: "Change to previous month"
+- tapOn: "${output.otherLabel}"
+- tapOn: "確定"
+- swipe:
+    direction: UP
+    from:
+      text: "交通"
+- waitForAnimationToEnd
+- tapOn: "飲食"
+- tapOn: "記一筆"
+
+# When 進入統計頁（預設顯示「本週」）
+- tapOn: "統計"
+- assertVisible: "本週支出"
+# Then 分類佔比顯示「飲食 NT$300.00（60%）」與「交通 NT$200.00（40%）」
+- assertVisible: "NT\\$300.00（60%）"
+- assertVisible: "NT\\$200.00（40%）"
+
+# When 切換為「本月」
+- tapOn: "本月"
+# Then 分類佔比顯示「飲食 NT$400.00（66.67%）」與「交通 NT$200.00（33.33%）」
+- assertVisible: "本月支出"
+- assertVisible: "NT\\$400.00（66.67%）"
+- assertVisible: "NT\\$200.00（33.33%）"
+
+# Then 近 8 週趨勢長條圖顯示 8 筆資料（本週的週別標籤在；每根柱子確切高度
+# 是 Canvas 手畫的，Maestro 讀不到，數值本身已經由 domain 的 T3.6 單元測試
+# 覆蓋過）。
+# 註：不斷言「同月不同週」那筆交易所在週的標籤——這張趨勢圖只往回看 8 週
+# （不含未來週），而當「今天」剛好落在這個月第一週時，同月但不同週的日期
+# 只可能落在未來（下一週），不會出現在這張回顧式的趨勢圖裡。這是相對日期
+# 測試在特定月曆日子上的已知限制，跟 e2e10-dates.js 檔頭註解是同一件事，
+# 見 TASKS.md。
+- assertVisible: "近 8 週支出趨勢"
+- swipe:
+    start: 50%,80%
+    end: 50%,30%
+- assertVisible: "${output.thisMondayShort}"

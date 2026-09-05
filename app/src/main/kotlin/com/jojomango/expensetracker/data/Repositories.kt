@@ -54,6 +54,8 @@ class RoomTransactionRepository
         override fun observeByWallet(walletId: String): Flow<List<Transaction>> =
             dao.observeByWallet(walletId).map { list -> list.map { it.toDomain() } }
 
+        override fun observeAll(): Flow<List<Transaction>> = dao.observeAll().map { list -> list.map { it.toDomain() } }
+
         override suspend fun getAllOnce(): List<Transaction> = dao.getAllOnce().map { it.toDomain() }
 
         override suspend fun upsert(transaction: Transaction) = dao.upsert(TransactionEntity.fromDomain(transaction))

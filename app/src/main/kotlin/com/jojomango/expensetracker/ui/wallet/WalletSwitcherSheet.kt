@@ -23,11 +23,14 @@ import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
-/** UI-SPEC.md §7 — 錢包切換。 */
+/** UI-SPEC.md §7 — 錢包切換。[walletBalanceTexts] 是每個錢包 id 對應的已格式化
+ * 當期餘額字串（見 `HomeViewModel.walletBalanceTexts`），T8.3.2 要求每一列都要
+ * 顯示這個，不是只顯示幣別代碼。 */
 @Composable
 fun WalletSwitcherSheet(
     wallets: List<Wallet>,
     currentWalletId: String?,
+    walletBalanceTexts: Map<String, String>,
     onSelectWallet: (String) -> Unit,
     onManageWallets: () -> Unit,
     onDismiss: () -> Unit,
@@ -55,7 +58,12 @@ fun WalletSwitcherSheet(
                 ) {
                     Column {
                         Text(wallet.name)
-                        Text(wallet.currency, style = typography.caption, color = extraColors.fg3)
+                        val balanceText = walletBalanceTexts[wallet.id]
+                        Text(
+                            if (balanceText != null) "${wallet.currency} · $balanceText" else wallet.currency,
+                            style = typography.caption,
+                            color = extraColors.fg3,
+                        )
                     }
                     if (wallet.id == currentWalletId) {
                         Icon(Icons.Filled.Check, contentDescription = "目前錢包", tint = MaterialTheme.colorScheme.primary)

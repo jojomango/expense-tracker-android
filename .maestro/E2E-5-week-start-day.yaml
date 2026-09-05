@@ -9,8 +9,13 @@ appId: com.jojomango.expensetracker
 - runScript: scripts/e2e5-dates.js
 
 # Given weekStartDay 為「週一」（Settings() 預設值，onboarding 不用特別設）
+# 不直接用 `launchApp: { clearState: true }`——clearState 拆掉舊 task 後會排一個
+# 約 1.15 秒的 destroy timeout，在那之內重新啟動的話，新 process 會被 AMS 誤殺，
+# App 一啟動就死掉（CI 上實際踩到 4 次）。詳見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
 - launchApp:
-    clearState: true
+    stopApp: false
 - assertVisible: "建立你的第一個錢包"
 - tapOn: "錢包名稱"
 - inputText: "日常"

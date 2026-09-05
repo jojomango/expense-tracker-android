@@ -22,6 +22,10 @@ interface WalletRepository {
 interface TransactionRepository {
     fun observeByWallet(walletId: String): Flow<List<Transaction>>
 
+    /** 跨所有錢包——UI-SPEC.md §7 的錢包切換 sheet 需要同時顯示每個錢包各自的
+     * 當期餘額，不能只看目前選中的錢包。 */
+    fun observeAll(): Flow<List<Transaction>>
+
     suspend fun getAllOnce(): List<Transaction>
 
     suspend fun upsert(transaction: Transaction)

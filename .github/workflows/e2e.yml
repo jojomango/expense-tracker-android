@@ -41,6 +41,19 @@ jobs:
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
 
+      # `assembleDebug` 啟動的 Gradle daemon 是獨立的背景 process，這個 step
+      # 結束後不會自動關掉，會一直活著到 job 結束、跟 emulator 搶
+      # ubuntu-latest 這台 runner 只有的 2 個 vCPU。跑 Maestro 之前先關掉它，
+      # 把資源讓給 emulator。
+      #
+      # 註：這一步當初是為了修 TD-3（e2e 偶發失敗）加的，但**那個假設是錯的**
+      # ——加完之後 CI 照樣失敗，後來從 device logcat 才找到真正原因是
+      # ActivityManager 的 destroy-timeout race（解法見
+      # `.maestro/scripts/settle-after-clear.js` 檔頭）。這一步本身無害、也確實
+      # 省資源，所以留著，但它不是 TD-3 的解法，別誤會。
+      - name: Stop Gradle daemon
+        run: ./gradlew --stop
+
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

@@ -75,6 +75,23 @@ class HomeViewModel
 
         private fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
+        /** UI-SPEC.md §7／TESTCASES.md T8.3.2：錢包切換 sheet 要顯示每個錢包
+         * 各自的當期餘額，不是只看目前選中的錢包，所以另外用 [TransactionRepository.observeAll]
+         * 算一份「walletId -> 已格式化餘額字串」的 map。 */
+        val walletBalanceTexts: StateFlow<Map<String, String>> =
+            combine(
+                walletRepository.observeWallets(),
+                transactionRepository.observeAll(),
+                settingsRepository.observe(),
+            ) { wallets, allTransactions, settings ->
+                val referenceDate = today()
+                val transactionsByWallet = allTransactions.groupBy { it.walletId }
+                wallets.associate { wallet ->
+                    val transactions = transactionsByWallet[wallet.id].orEmpty()
+                    wallet.id to formatWalletBalance(wallet, transactions, settings.weekStartDay, referenceDate)
+                }
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
         val uiState: StateFlow<HomeUiState> =
             combine(
                 walletRepository.observeWallets(),
@@ -182,3 +199,21 @@ class HomeViewModel
             val defaultCategoryPreview = DefaultCategories.seedDefaults()
         }
     }
+
+/** 跟 [HomeViewModel.buildUiState] 的金額選擇邏輯一致（週預算優先、其次總預算、
+ * 否則本週支出），抽出來給 [HomeViewModel.walletBalanceTexts] 共用，因為那裡是
+ * 對「每一個」錢包各自算一次，不是只對目前選中的錢包。 */
+private fun formatWalletBalance(
+    wallet: Wallet,
+    transactions: List<Transaction>,
+    weekStartDay: DayOfWeek,
+    referenceDate: LocalDate,
+): String {
+    val weeklyBalance = Budget.calculateWeeklyBalance(wallet, transactions, weekStartDay, referenceDate)
+    val totalBalance = Budget.calculateTotalBalance(wallet, transactions)
+    return when {
+        weeklyBalance != null -> weeklyBalance.balance.format()
+        totalBalance != null -> totalBalance.balance.format()
+        else -> Budget.calculateWeeklyExpenseTotal(wallet, transactions, weekStartDay, referenceDate).format()
+    }
+}

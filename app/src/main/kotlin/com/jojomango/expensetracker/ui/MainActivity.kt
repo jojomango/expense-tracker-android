@@ -17,12 +17,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +38,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.jojomango.expensetracker.ui.category.CategoryEditScreen
+import com.jojomango.expensetracker.ui.category.CategoryManagementScreen
 import com.jojomango.expensetracker.ui.home.HomeScreen
 import com.jojomango.expensetracker.ui.home.HomeViewModel
 import com.jojomango.expensetracker.ui.navigation.Routes
@@ -47,6 +52,7 @@ import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
 import com.jojomango.expensetracker.ui.wallet.WalletManagementScreen
 import com.jojomango.expensetracker.ui.wallet.WalletSwitcherSheet
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -66,13 +72,17 @@ private fun ExpenseTrackerApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     var showWalletSwitcher by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     // 首頁的 ViewModel 在這一層取得，讓底部導覽的 FAB／錢包切換 sheet
     // 能拿到目前的錢包清單，跟 HomeScreen 共用同一個 HiltViewModel 實例。
     val homeViewModel: HomeViewModel = hiltViewModel()
     val homeState by homeViewModel.uiState.collectAsState()
+    val walletBalanceTexts by homeViewModel.walletBalanceTexts.collectAsState()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (!isBottomNavHiddenRoute(currentRoute)) {
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -140,6 +150,7 @@ private fun ExpenseTrackerApp() {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
                     onManageWallets = { navController.navigate(Routes.WALLET_MANAGEMENT) },
+                    onManageCategories = { navController.navigate(Routes.CATEGORY_MANAGEMENT) },
                 )
             }
             composable(Routes.ADD_TRANSACTION) {
@@ -179,6 +190,28 @@ private fun ExpenseTrackerApp() {
                     onCancel = { navController.popBackStack() },
                 )
             }
+            composable(Routes.CATEGORY_MANAGEMENT) {
+                CategoryManagementScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddCategory = { navController.navigate(Routes.CATEGORY_NEW) },
+                    onEditCategory = { id -> navController.navigate(Routes.editCategory(id)) },
+                )
+            }
+            composable(Routes.CATEGORY_NEW) {
+                CategoryEditScreen(
+                    onDone = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                )
+            }
+            composable(
+                Routes.CATEGORY_EDIT_PATTERN,
+                arguments = listOf(navArgument("categoryId") { type = NavType.StringType }),
+            ) {
+                CategoryEditScreen(
+                    onDone = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                )
+            }
         }
     }
 
@@ -186,9 +219,15 @@ private fun ExpenseTrackerApp() {
         WalletSwitcherSheet(
             wallets = homeState.wallets,
             currentWalletId = homeState.currentWallet?.id,
+            walletBalanceTexts = walletBalanceTexts,
             onSelectWallet = { walletId ->
                 homeViewModel.switchWallet(walletId)
                 showWalletSwitcher = false
+                // UI-SPEC.md §7：切換後用 Snackbar 顯示「已切換到 {名稱}」。
+                val walletName = homeState.wallets.firstOrNull { it.id == walletId }?.name
+                if (walletName != null) {
+                    scope.launch { snackbarHostState.showSnackbar("已切換到 $walletName") }
+                }
             },
             onManageWallets = {
                 showWalletSwitcher = false

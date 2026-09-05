@@ -23,14 +23,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.datetime.DayOfWeek
 
 /**
- * 週起始日設定（Phase 5）掛在這一頁；分類管理（Phase 6）、匯出/匯入 UI（Phase 7）
- * 留給後續 phase。錢包管理不掛在這裡——UI-SPEC.md §7 講的入口是錢包切換 sheet
- * 的「管理錢包…」，不是設定頁。
+ * 週起始日設定（Phase 5）、分類管理入口（Phase 6）掛在這一頁；匯出/還原 UI
+ * （Phase 7）留給後續 phase。錢包管理不掛在這裡——UI-SPEC.md §7 講的入口是
+ * 錢包切換 sheet 的「管理錢包…」，不是設定頁。
  */
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
     onManageWallets: () -> Unit,
+    onManageCategories: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
@@ -48,6 +49,10 @@ fun SettingsScreen(
                 headlineContent = { Text("管理錢包") },
                 modifier = Modifier.clickable(onClick = onManageWallets),
             )
+            ListItem(
+                headlineContent = { Text("分類管理") },
+                modifier = Modifier.clickable(onClick = onManageCategories),
+            )
 
             Text("週起始日", modifier = Modifier.padding(top = 20.dp, bottom = 8.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -60,7 +65,7 @@ fun SettingsScreen(
                 }
             }
 
-            Text("分類管理、備份/還原將在後續 phase 加入", modifier = Modifier.padding(top = 20.dp))
+            Text("備份/還原將在後續 phase 加入", modifier = Modifier.padding(top = 20.dp))
         }
     }
 }
