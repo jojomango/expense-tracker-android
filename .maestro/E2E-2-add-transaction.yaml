@@ -5,6 +5,10 @@ appId: com.jojomango.expensetracker
 # ——用 E2E-1 同樣的引導流程建立前提條件，這個 flow 本身不驗證 E2E-1 的內容。
 - launchApp:
     clearState: true
+# launchApp 本身不保證第一幀畫完就回傳——E2E-1 因為緊接著有 assertVisible
+# （會重試等待），冷啟動的等待時間剛好夠；這支少了這一步，直接 tapOn 會在
+# 畫面還是全白的時候就撲空。補上同樣的 assertVisible 當作啟動完成的等待點。
+- assertVisible: "建立你的第一個錢包"
 - tapOn: "錢包名稱"
 - inputText: "日常"
 - tapOn: "幣別（ISO 4217，如 TWD）"
