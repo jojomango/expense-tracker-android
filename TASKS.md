@@ -533,14 +533,34 @@ emulator，測試沒辦法在本機執行）。
   1. **`ubuntu-latest` + KVM 這個修正是有效的**——emulator 33 秒內開機完成、
      APK 順利裝進去，跟本機/舊 `macos-14` 設定「boot timeout」的狀況完全不同。
      這是 PR #5 那個修正第一次被真的驗證過，不再只是「照著官方文件猜應該可以」。
-  2. **`E2E-1`/`E2E-2` 這兩支 Maestro flow 本身第一次執行就抓到一個真的 bug**：
-     兩支都在 `tapOn: "建立錢包"` 這一步失敗（`Element not found`）——
-     原因是首次啟動引導表單用的是真正的系統 `TextField`（不像記帳頁用自製
-     鍵台），打完最後一個欄位後鍵盤沒收起來，把畫面下方的「建立錢包」按鈕
-     蓋住了。修法是在最後一次 `inputText` 之後、`tapOn: "建立錢包"` 之前
-     加一行 `hideKeyboard`。**這個修正還沒有再跑一次 CI 驗證過**，下一個
-     session 開場（或這個 phase 收尾前）應該先 `gh workflow run e2e.yml`
-     確認兩支 flow 真的變綠燈，再往下一個 phase 走。
+  2. **`E2E-1`/`E2E-2` 這兩支 Maestro flow 第一次執行就抓到兩個真的問題**（都是
+     flow 本身寫得不夠嚴謹，不是 app 的 bug）：
+     - 兩支都在 `tapOn: "建立錢包"` 這一步失敗（`Element not found`）——
+       首次啟動引導表單用的是真正的系統 `TextField`（不像記帳頁用自製鍵台），
+       打完最後一個欄位後鍵盤沒收起來，把畫面下方的「建立錢包」按鈕蓋住。
+       修法：最後一次 `inputText` 之後、`tapOn: "建立錢包"` 之前加一行
+       `hideKeyboard`。
+     - 修好上面那個之後，兩支又都在分類網格找不到「飲食」失敗。**一開始以為
+       是 app 的 bug，後來拉 CI 上傳的失敗截圖（見下面的 CI 改動）才看清楚
+       app 完全正常**：`CategoryDao.observeAll()`（`data/Daos.kt`）明確寫了
+       `ORDER BY isDefault DESC, name ASC`，分類網格是照名稱字母序排列，
+       不是 `DefaultCategories.seedDefaults()` 的插入順序——這是合理的實作
+       選擇，`UI-SPEC.md` 沒有規定分類網格一定要照種子表格順序顯示。「飲食」
+       照字母序排到 7 個支出分類的最後一個，掉到第二列、被 4 欄網格的可視
+       範圍裁掉，Maestro 的 `assertVisible`/`tapOn` 因此找不到。修法是把
+       `assertVisible: "飲食"` / `tapOn: "飲食"` 換成 `scrollUntilVisible`
+       先捲到看得到再操作，不能假設想要的分類一定在第一屏。
+     - **教訓：Maestro flow 失敗時不要光看程式碼猜，先想辦法把當下畫面截圖
+       撈出來看**——這次多花的力氣是把 `e2e.yml` 的 `Run emulator + Maestro
+       flows` 這步改成 `continue-on-error: true`，跑完不論成敗都用
+       `actions/upload-artifact` 把 Maestro 預設寫的 `~/.maestro/tests`
+       （每個失敗步驟的截圖 + view hierarchy JSON）上傳成 CI artifact，
+       再用一個獨立 step 依真正的 `outcome` 讓 job 該失敗就失敗。這個做法
+       比純推測快很多，之後任何 Maestro flow 卡住都可以先用這招。
+     - 這兩個修正在 [PR #7](https://github.com/jojomango/expense-tracker-android/pull/7)。
+       **還在用 `workflow_dispatch` 跑 CI 確認是否真的變綠燈**，還沒有拿到
+       結果前不要假設「應該修好了」——照 `CLAUDE.md` 的精神，綠色的 CI
+       才是證據，推論不是。
 
 ---
 
