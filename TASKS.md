@@ -27,6 +27,18 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 
 ---
 
+## 已知技術債
+
+> 跟 phase 進度無關的、可追蹤的優化項目——刻意選擇「現在不做」而不是「忘記
+> 做」，跟某個 phase 交接筆記裡順帶提到的坑不同，這裡是專門集中列的清單，
+> 之後任何一個 phase 開場讀 `TASKS.md` 都應該掃一眼這裡，看有沒有順手能做的。
+
+| # | 項目 | 狀態 | 觸發條件 |
+|---|---|---|---|
+| TD-1 | Persistence 測試（`data/RoomTestDb.kt`／`PersistenceTest.kt`／`BackupPersistenceTest.kt`）用 JUnit4（透過 Robolectric）+ `junit-vintage-engine` 橋接，跟 domain 層的 JUnit5 不一致。**不是 bug、不違反 SPEC.md §5**（那條 JUnit5 規定的範圍明文限定在 domain 層），純粹是工具選擇的殘留差異，見 Phase 3 交接筆記完整脈絡 | 擱置，不主動處理 | Robolectric 官方釋出 JUnit5 支援（目前只有一個 0.1.0 的社群 extension，未達生產可用門檻，見 [robolectric/robolectric#3477](https://github.com/robolectric/robolectric/issues/3477)）才評估遷移，沒有的話不用管 |
+
+---
+
 ## Phase 0 — 地基 ✅ DONE
 
 **這個 phase 建議人類主導或至少緊盯著做**，因為它決定了之後每個 phase 能不能順利跑。
