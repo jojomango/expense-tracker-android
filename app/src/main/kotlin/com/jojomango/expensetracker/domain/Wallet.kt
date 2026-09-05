@@ -30,3 +30,15 @@ data class Wallet(
         }
     }
 }
+
+/** 嘗試刪除最後一個錢包時拋出——SPEC.md §3.1「不可刪除最後一個錢包」。 */
+class LastWalletException(
+    message: String,
+) : IllegalStateException(message)
+
+/** [existingWalletCount] 是刪除前的錢包總數（含即將被刪的那一個）。 */
+fun assertCanDeleteWallet(existingWalletCount: Int) {
+    if (existingWalletCount <= 1) {
+        throw LastWalletException("Cannot delete the last remaining wallet")
+    }
+}

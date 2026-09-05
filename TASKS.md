@@ -19,11 +19,23 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 0 | 地基 | ✅ DONE | (見下方交接筆記) |
 | 1 | Domain：金額與時間 | ✅ DONE | (見下方交接筆記) |
 | 2 | Domain：實體與預算計算 | ✅ DONE | (見下方交接筆記) |
-| 3 | 持久層與匯出匯入 | **NEXT** | |
-| 4 | 基礎 UI：錢包與交易 CRUD | ⬜ TODO | |
+| 3 | 持久層與匯出匯入 | ✅ DONE | (見下方交接筆記) |
+| 4 | 基礎 UI：錢包與交易 CRUD | **NEXT** | |
 | 5 | 預算與即時餘額 | ⬜ TODO | |
 | 6 | 分類與統計 | ⬜ TODO | |
 | 7 | 打磨 | ⬜ TODO | |
+
+---
+
+## 已知技術債
+
+> 跟 phase 進度無關的、可追蹤的優化項目——刻意選擇「現在不做」而不是「忘記
+> 做」，跟某個 phase 交接筆記裡順帶提到的坑不同，這裡是專門集中列的清單，
+> 之後任何一個 phase 開場讀 `TASKS.md` 都應該掃一眼這裡，看有沒有順手能做的。
+
+| # | 項目 | 狀態 | 觸發條件 |
+|---|---|---|---|
+| TD-1 | Persistence 測試（`data/RoomTestDb.kt`／`PersistenceTest.kt`／`BackupPersistenceTest.kt`）用 JUnit4（透過 Robolectric）+ `junit-vintage-engine` 橋接，跟 domain 層的 JUnit5 不一致。**不是 bug、不違反 SPEC.md §5**（那條 JUnit5 規定的範圍明文限定在 domain 層），純粹是工具選擇的殘留差異，見 Phase 3 交接筆記完整脈絡 | 擱置，不主動處理 | Robolectric 官方釋出 JUnit5 支援（目前只有一個 0.1.0 的社群 extension，未達生產可用門檻，見 [robolectric/robolectric#3477](https://github.com/robolectric/robolectric/issues/3477)）才評估遷移，沒有的話不用管 |
 
 ---
 
@@ -312,7 +324,7 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
 
 ---
 
-## Phase 3 — 持久層與匯出匯入
+## Phase 3 — 持久層與匯出匯入 ✅ DONE
 
 **必讀：** `SPEC.md` §3.5、§3.6、`TESTCASES.md` T4（Persistence）
 
@@ -326,6 +338,85 @@ CI 全綠，`domain` 零依賴的檢查腳本已經就位。
   `OpenDocument`）——這塊碰 Android API，放在 `ui` 或 `data` 都可以，不能放 `domain`
 
 **驗收：** T4 全過（Room in-memory database 測）。
+
+### 驗收（實際結果）
+
+- [x] T4.1（Persistence，7 案）、T4.2（匯出/匯入，9 案）全過，**跑在
+      `data/src/test/`（純 JVM，用 Robolectric），符合 TESTCASES.md 原本的
+      測試分層**——見下方「已批准的新套件」
+- [x] T4.2 的純函式部分（decodeBackup/validateBackup/mergeTransactionsById）
+      額外在不需要 Robolectric 的 domain 測試裡跑過一份
+- [x] `./gradlew verify` 全綠，domain 覆蓋率 93%，乾淨重跑過一次確認可重現
+- [x] 全部 146 個測試（domain + persistence）都在本機**實際跑過並通過**，
+      不需要 emulator，也不受這台機器的 Apple Silicon/Rosetta 環境限制
+
+### 已批准的新套件：Robolectric
+
+**過程**（也記錄在 `data/RoomTestDb.kt` 的註解裡）：一開始想用 Room 2.7 的
+「bundled SQLite driver」在純 JVM 跑 Room，不需要新套件——實測後卡在真正的
+死路：AGP（Android Gradle Plugin）模組的 Gradle variant-aware 依賴解析，
+永遠只會抓到 `androidx.sqlite:sqlite-bundled` 的 **Android target**
+artifact（裡面包 Android ABI 的 `.so`），不會抓到桌機能載入的 native
+library。退而求其次先改用 `androidTest`（不需要新套件，但本機沒有堪用的
+emulator，測試沒辦法在本機執行）。
+
+跟人類討論後，確認 **Robolectric 才是業界對這個問題的主流答案**（在 AGP
+模組裡不開 emulator、純 JVM 跑 Room/`Context` 相關測試的標準做法），人類
+批准新增這個套件。改用 Robolectric 後：
+- Persistence／Backup 測試搬回 `data/src/test/`，符合 TESTCASES.md 原本的
+  分層
+- 全部在本機的 `testDebugUnitTest` 裡實際跑過、通過，不受 emulator 環境
+  限制
+- Robolectric 只支援 JUnit4（不是 domain 層要求的 JUnit5），用
+  `junit-vintage-engine` 讓兩種測試在同一個 Gradle test task 共存——這是
+  跟 TESTCASES.md 分層表格唯一還留著的一個小差異（JUnit4 vs JUnit5），
+  影響範圍很小（只有 persistence 測試用 JUnit4，domain 測試仍是 JUnit5）
+
+### 交接筆記（Phase 3 → Phase 4）
+
+**做了什麼：**
+- Room `@Entity`／`@Dao`：`WalletEntity`／`TransactionEntity`／
+  `CategoryEntity`／`SettingsEntity`（單行表，`id` 固定 0）。`TransactionEntity`
+  用 `ForeignKey`（`walletId` CASCADE 刪除、`categoryId` SET_NULL）把
+  SPEC.md §3.1/§3.3 的刪除規則直接刻進 schema，不用在程式碼裡手動維護
+  一致性
+- `data/Converters.kt`：`LocalDate` 存 ISO 字串、`Instant` 存 epoch millis
+- Repository 介面在 `domain/Repositories.kt`，Room 實作在
+  `data/Repositories.kt`（`RoomWalletRepository` 等）。`WalletRepository.
+  delete`／`CategoryRepository.delete` 分別包了 `assertCanDeleteWallet`／
+  `assertCanDeleteCategory` 這兩個 Phase 2 就寫好的純函式守門
+- `domain/Backup.kt`：匯出/匯入的資料形狀（`BackupWallet`／
+  `BackupTransaction`／`BackupCategory`／`BackupSettings`／`BackupPayload`，
+  都用扁平的原生型別欄位，`LocalDate`/`Instant` 存成 String/Long，避開
+  kotlinx-datetime 需要額外 serializers 模組的麻煩）+ `encodeBackup`／
+  `decodeBackup`／`validateBackup`／`mergeTransactionsById` 四個純函式，
+  全部不碰 Room，可以直接在 `test`（JVM）測
+- `data/Repositories.kt` 的 `RoomBackupRepository`：`replace`/`merge` 都包
+  在同一個 `db.withTransaction {}` 裡，靠「先驗證、驗證通過才寫入」
+  保證原子性（T4.2.3），不需要額外的 DB 回滾邏輯
+- `data/Migrations.kt`：目前是純文件骨架（`AppDatabase.version` 還是 1，
+  `exportSchema = false`）。**T4.1.5（migration test）沒有寫成真正的測試**
+  ——沒有真的 v2 schema 可以測，硬做一個假的 v2 只是為了測而測，選擇誠實
+  記錄「這是骨架、真的要加 migration 時照 KDoc 裡的範例走」而不是生出一個
+  空洞的測試
+
+**已知的坑／下一個 phase 要注意：**
+- Storage Access Framework（`ActivityResultContracts.CreateDocument`／
+  `OpenDocument`）**還沒串接**——那需要一個真正的 Activity/Compose 畫面
+  去觸發檔案選擇器，Phase 0~3 刻意不碰 `ui/`，所以這塊留到 Phase 4 有畫面
+  之後（或 Phase 7 打磨時）再做。`BackupRepository.export()`／`import()`
+  已經把「資料要怎麼變成 JSON、JSON 要怎麼驗證寫回 DB」都準備好了，
+  Phase 4/7 的 UI 只需要拿 SAF 選出來的 `Uri` 讀/寫 bytes，呼叫這兩個函式
+  就好，不需要再碰 domain 或 data 層的邏輯
+- Hilt 的 DI 綁定（`@Module`／`@Provides` 提供 `AppDatabase`、把
+  `RoomWalletRepository` 等綁定到對應介面）**還沒寫**——Phase 0 建立的
+  `di/` package 目前是空的。等 Phase 4 真的有 `ViewModel` 需要注入
+  Repository 時再補，現在寫沒有東西可以驗證會不會漏綁
+- `Wallet`/`Category` 沒有 `updatedAt` 欄位，所以 merge 匯入時這兩種資料
+  「匯入端直接覆蓋同 id 的既有資料」，不像 `Transaction` 有時間戳可比較。
+  如果之後想讓 `Wallet`/`Category` 也支援更精細的 merge 衝突解決，要先
+  幫它們加 `updatedAt` 欄位（會是一次真正的 schema migration，正好可以
+  拿來練 `Migrations.kt` 裡說的那個流程）
 
 ---
 

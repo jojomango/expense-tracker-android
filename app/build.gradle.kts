@@ -95,6 +95,15 @@ dependencies {
     testImplementation(libs.junit5.jupiter.api)
     testImplementation(libs.junit5.jupiter.params)
     testRuntimeOnly(libs.junit5.jupiter.engine)
+    testImplementation(libs.kotlinx.coroutines.test)
+
+    // Robolectric 跑 Room persistence 測試（TESTCASES.md 原本要的 data/src/test/
+    // JVM 分層）——Robolectric 本身只支援 JUnit4，用 junit-vintage-engine 讓它跟
+    // 其他 JUnit5 domain 測試在同一個 testDebugUnitTest task 裡共存。
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.room.testing)
+    testRuntimeOnly(libs.junit5.vintage.engine)
 
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
