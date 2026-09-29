@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- SPEC.md §3.6 備份提醒的本地通知（Android 13+ 需要執行期權限）。
+         刻意沒有 INTERNET 權限：SPEC.md P3「零網路」由系統層級保證。 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".ExpenseTrackerApplication"
         android:allowBackup="true"

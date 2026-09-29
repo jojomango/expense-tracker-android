@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.jojomango.expensetracker.domain.Wallet
-import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
 /** UI-SPEC.md §7 — 錢包切換。[walletBalanceTexts] 是每個錢包 id 對應的已格式化
@@ -36,14 +35,13 @@ fun WalletSwitcherSheet(
     onDismiss: () -> Unit,
 ) {
     val typography = LocalAppTypography.current
-    val extraColors = LocalAppExtraColors.current
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
             Text(
                 "切換錢包",
                 style = typography.caption,
-                color = extraColors.fg3,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
@@ -62,7 +60,7 @@ fun WalletSwitcherSheet(
                         Text(
                             if (balanceText != null) "${wallet.currency} · $balanceText" else wallet.currency,
                             style = typography.caption,
-                            color = extraColors.fg3,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     if (wallet.id == currentWalletId) {

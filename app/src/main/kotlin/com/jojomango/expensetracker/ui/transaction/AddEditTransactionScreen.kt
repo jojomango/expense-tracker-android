@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.TransactionType
+import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 import kotlinx.datetime.Clock
@@ -77,6 +78,10 @@ fun AddEditTransactionScreen(
     }
 
     Scaffold { padding ->
+        if (state.isLoading) {
+            LoadingState(modifier = Modifier.padding(padding))
+            return@Scaffold
+        }
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             // 標題列
             Row(
@@ -106,7 +111,11 @@ fun AddEditTransactionScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 state.wallet?.let { wallet ->
-                    Text("${wallet.name} · ${wallet.currency}", style = typography.caption, color = extraColors.fg3)
+                    Text(
+                        "${wallet.name} · ${wallet.currency}",
+                        style = typography.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 val amountColor =
                     when {
@@ -174,7 +183,7 @@ private fun CategoryGrid(
                     modifier =
                         Modifier
                             .size(50.dp)
-                            .background(color.copy(alpha = 0.12f), RoundedCornerShape(16.dp))
+                            .background(color.copy(alpha = LocalAppExtraColors.current.categoryTintAlpha), RoundedCornerShape(16.dp))
                             .then(
                                 if (selected) {
                                     Modifier.border(2.5.dp, color, RoundedCornerShape(16.dp))

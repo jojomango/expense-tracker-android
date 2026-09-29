@@ -21,6 +21,7 @@ import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.assertCanDeleteCategory
 import com.jojomango.expensetracker.domain.assertCanDeleteWallet
 import com.jojomango.expensetracker.domain.mergeTransactionsById
+import com.jojomango.expensetracker.domain.validateBackup
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
@@ -100,10 +101,10 @@ class RoomSettingsRepository
     }
 
 /**
- * 匯出／匯入的實作。匯入前**先驗證**（`validateBackup` 在呼叫端已經跑過），
- * 這裡假設拿到的 [BackupPayload] 已經合法，只負責原子地寫進資料庫——
- * `replace`/`merge` 都包在同一個 `db.withTransaction` 裡，中途任何一步失敗，
- * 整個 transaction 回滾，現有資料不會變動（T4.2.3 的原子性）。
+ * 匯出／匯入的實作。[import] 一開頭就先跑 `validateBackup`，驗證不過直接拋錯，
+ * 一筆都不會寫進資料庫——呼叫端（設定頁的 ViewModel）不需要、也不應該自己記得先驗證。
+ * 驗證通過後，`replace`/`merge` 都包在同一個 `db.withTransaction` 裡，中途任何一步
+ * 失敗，整個 transaction 回滾，現有資料不會變動（T4.2.3 的原子性）。
  */
 class RoomBackupRepository
     @Inject
@@ -132,6 +133,7 @@ class RoomBackupRepository
             payload: BackupPayload,
             mode: ImportMode,
         ) {
+            validateBackup(payload)
             db.withTransaction {
                 when (mode) {
                     ImportMode.REPLACE -> {
