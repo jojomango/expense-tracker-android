@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ExpenseTracker" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 視窗底色要跟 UI-SPEC.md §2.1 的 background 一致，否則 Compose 第一幀畫出來之前
+         會先閃一下系統主題的底色。 -->
+    <style name="Theme.ExpenseTracker" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@color/window_background</item>
+        <item name="android:navigationBarColor">@color/window_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

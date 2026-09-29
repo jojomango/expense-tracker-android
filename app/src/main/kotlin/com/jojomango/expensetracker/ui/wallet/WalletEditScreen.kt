@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.BudgetMode
+import com.jojomango.expensetracker.ui.common.LoadingState
 
 /** 新增／編輯錢包——UI-SPEC.md §7「管理錢包…」的入口沒有給完整畫面規格，
  * 這裡沿用首次啟動引導表單（`HomeScreen.FirstWalletOnboarding`）同樣的欄位跟風格，
@@ -48,6 +49,10 @@ fun WalletEditScreen(
             )
         },
     ) { padding ->
+        if (state.isLoading) {
+            LoadingState(modifier = Modifier.padding(padding))
+            return@Scaffold
+        }
         Column(modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
             OutlinedTextField(
                 value = state.name,

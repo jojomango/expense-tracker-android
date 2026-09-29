@@ -62,6 +62,8 @@ import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.Week
 import com.jojomango.expensetracker.domain.colorOf
 import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
+import com.jojomango.expensetracker.ui.common.LoadingState
+import com.jojomango.expensetracker.ui.notification.AutoRequestNotificationPermissionOnce
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 import kotlinx.coroutines.launch
@@ -84,14 +86,18 @@ fun HomeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        if (state.needsOnboarding) {
+        if (state.isLoading) {
+            LoadingState(modifier = Modifier.padding(padding))
+        } else if (state.needsOnboarding) {
             FirstWalletOnboarding(
                 modifier = Modifier.padding(padding),
                 onCreateWallet = { name, currency, budgetMode, amount ->
                     viewModel.createFirstWallet(name, currency, budgetMode, amount)
                 },
+                onRestoreFromBackup = onOpenSettings,
             )
         } else if (state.currentWallet != null) {
+            AutoRequestNotificationPermissionOnce()
             HomeContent(
                 state = state,
                 padding = padding,
@@ -192,7 +198,7 @@ private fun HomeContent(
                             Text(
                                 Week.groupTitle(group.range.start, state.weekStartDay, today),
                                 style = typography.label,
-                                color = extraColors.fg3,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -272,7 +278,10 @@ private fun TransactionRow(
                 modifier =
                     Modifier
                         .size(38.dp)
-                        .background(color = parsedColor.copy(alpha = 0.12f), shape = RoundedCornerShape(12.dp)),
+                        .background(
+                            color = parsedColor.copy(alpha = LocalAppExtraColors.current.categoryTintAlpha),
+                            shape = RoundedCornerShape(12.dp),
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(categoryIcon)
@@ -283,7 +292,13 @@ private fun TransactionRow(
                 val subtitle =
                     "${transaction.date.monthNumber}/${transaction.date.dayOfMonth}" +
                         (transaction.note?.let { " · $it" } ?: "")
-                Text(subtitle, style = typography.caption, color = extraColors.fg3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    subtitle,
+                    style = typography.caption,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             val isExpense = transaction.type == TransactionType.EXPENSE
             val sign = if (isExpense) "-" else "+"
@@ -311,8 +326,9 @@ private fun EmptyTransactionsState(onAddTransaction: () -> Unit) {
 
 @Composable
 private fun FirstWalletOnboarding(
-    modifier: Modifier = Modifier,
     onCreateWallet: (name: String, currency: String, budgetMode: BudgetMode, amount: Long?) -> Unit,
+    onRestoreFromBackup: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var name by remember { mutableStateOf("") }
     var currency by remember { mutableStateOf("TWD") }
@@ -377,6 +393,13 @@ private fun FirstWalletOnboarding(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("建立錢包")
+        }
+
+        // 換新裝置的使用者第一步是還原備份，不該被迫先建一個用不到的錢包（SPEC.md §3.6）。
+        // 網頁版引導頁也保留了「設定」入口，理由相同。
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onRestoreFromBackup, modifier = Modifier.fillMaxWidth()) {
+            Text("從備份還原")
         }
     }
 }

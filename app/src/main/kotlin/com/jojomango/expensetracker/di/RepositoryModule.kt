@@ -1,10 +1,12 @@
 package com.jojomango.expensetracker.di
 
+import com.jojomango.expensetracker.data.PreferencesBackupReminderRepository
 import com.jojomango.expensetracker.data.RoomBackupRepository
 import com.jojomango.expensetracker.data.RoomCategoryRepository
 import com.jojomango.expensetracker.data.RoomSettingsRepository
 import com.jojomango.expensetracker.data.RoomTransactionRepository
 import com.jojomango.expensetracker.data.RoomWalletRepository
+import com.jojomango.expensetracker.domain.BackupReminderRepository
 import com.jojomango.expensetracker.domain.BackupRepository
 import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.SettingsRepository
@@ -38,4 +40,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindBackupRepository(impl: RoomBackupRepository): BackupRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBackupReminderRepository(impl: PreferencesBackupReminderRepository): BackupReminderRepository
 }

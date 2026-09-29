@@ -1,8 +1,10 @@
 package com.jojomango.expensetracker.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -14,13 +16,17 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,8 +35,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -38,36 +49,100 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.jojomango.expensetracker.domain.BackupReminderRepository
+import com.jojomango.expensetracker.domain.SettingsRepository
 import com.jojomango.expensetracker.ui.category.CategoryEditScreen
 import com.jojomango.expensetracker.ui.category.CategoryManagementScreen
 import com.jojomango.expensetracker.ui.home.HomeScreen
 import com.jojomango.expensetracker.ui.home.HomeViewModel
 import com.jojomango.expensetracker.ui.navigation.Routes
 import com.jojomango.expensetracker.ui.navigation.isBottomNavHiddenRoute
+import com.jojomango.expensetracker.ui.notification.BackupReminderScheduler
+import com.jojomango.expensetracker.ui.notification.EXTRA_OPEN_SETTINGS
 import com.jojomango.expensetracker.ui.settings.SettingsScreen
 import com.jojomango.expensetracker.ui.stats.StatsScreen
 import com.jojomango.expensetracker.ui.theme.ExpenseTrackerTheme
+import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
+import com.jojomango.expensetracker.ui.theme.isDark
 import com.jojomango.expensetracker.ui.transaction.AddEditTransactionScreen
 import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
 import com.jojomango.expensetracker.ui.wallet.WalletManagementScreen
 import com.jojomango.expensetracker.ui.wallet.WalletSwitcherSheet
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var settingsRepository: SettingsRepository
+
+    @Inject lateinit var backupReminderRepository: BackupReminderRepository
+
+    // 備份提醒通知點下去時帶這個 extra 進來；app 已經開著的話走 onNewIntent。
+    private var openSettingsRequested by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        openSettingsRequested = intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false)
+
+        // 排程放這裡而不是 Application.onCreate：Robolectric 的持久層測試也會建立
+        // Application，但那個環境沒有初始化 WorkManager，放在 Application 會讓那些測試全掛。
+        BackupReminderScheduler.ensureChannel(this)
+        BackupReminderScheduler.schedule(this)
+        lifecycleScope.launch { backupReminderRepository.recordFirstLaunchIfAbsent(Clock.System.now()) }
+
+        val themeFlow = settingsRepository.observe().map { it.theme }
         setContent {
-            ExpenseTrackerTheme {
-                ExpenseTrackerApp()
+            // theme 還沒從 Room 讀回來之前先不畫——不然使用者選了「深色」、系統卻是淺色時，
+            // 開 app 會先閃一下淺色畫面。這段時間看到的是視窗底色（values-night 已經對齊）。
+            val theme by themeFlow.collectAsState(initial = null)
+            val resolvedTheme = theme ?: return@setContent
+            val darkTheme = resolvedTheme.isDark(isSystemInDarkTheme())
+            ExpenseTrackerTheme(darkTheme = darkTheme) {
+                SystemBarsAppearance(darkTheme)
+                ExpenseTrackerApp(
+                    openSettingsRequested = openSettingsRequested,
+                    onOpenSettingsHandled = { openSettingsRequested = false },
+                )
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false)) openSettingsRequested = true
+    }
+}
+
+/**
+ * 使用者在設定頁明確選了淺色/深色、跟系統不一樣時，狀態列/導覽列的圖示明暗要跟著 app
+ * 主題走，不能跟著系統——不然深色畫面上會出現深色圖示，完全看不見。
+ */
+@Composable
+private fun SystemBarsAppearance(darkTheme: Boolean) {
+    val view = LocalView.current
+    val background = MaterialTheme.colorScheme.background.toArgb()
+    SideEffect {
+        val window = (view.context as ComponentActivity).window
+        @Suppress("DEPRECATION") // Android 15 起強制 edge-to-edge 會忽略這兩個值；14 以下仍然有效
+        run {
+            window.statusBarColor = background
+            window.navigationBarColor = background
+        }
+        WindowCompat.getInsetsController(window, view).apply {
+            isAppearanceLightStatusBars = !darkTheme
+            isAppearanceLightNavigationBars = !darkTheme
         }
     }
 }
 
 @Composable
-private fun ExpenseTrackerApp() {
+private fun ExpenseTrackerApp(
+    openSettingsRequested: Boolean,
+    onOpenSettingsHandled: () -> Unit,
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -80,18 +155,39 @@ private fun ExpenseTrackerApp() {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val homeState by homeViewModel.uiState.collectAsState()
     val walletBalanceTexts by homeViewModel.walletBalanceTexts.collectAsState()
+    val extraColors = LocalAppExtraColors.current
+
+    LaunchedEffect(openSettingsRequested) {
+        if (openSettingsRequested) {
+            navController.navigate(Routes.SETTINGS) { launchSingleTop = true }
+            onOpenSettingsHandled()
+        }
+    }
+
+    // 還沒有任何錢包（引導頁、或還在讀取）時不顯示底部導覽：中央的「+」會帶到記帳頁，
+    // 但沒有錢包根本沒辦法記帳；「統計」也沒有東西可以統計。
+    val showBottomBar = !isBottomNavHiddenRoute(currentRoute) && homeState.wallets.isNotEmpty()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            if (!isBottomNavHiddenRoute(currentRoute)) {
+            if (showBottomBar) {
                 Box(modifier = Modifier.fillMaxWidth()) {
-                    NavigationBar {
+                    // UI-SPEC.md §3.1：選取態 primary、未選取 fg3；底色用 barbg token。
+                    val itemColors =
+                        NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = extraColors.fg3,
+                            unselectedTextColor = extraColors.fg3,
+                        )
+                    NavigationBar(containerColor = extraColors.barBg) {
                         NavigationBarItem(
                             selected = currentRoute == Routes.HOME,
                             onClick = { navController.navigateSingleTopTo(Routes.HOME) },
-                            icon = { Icon(Icons.Filled.Home, contentDescription = "首頁") },
+                            icon = { Icon(Icons.Filled.Home, contentDescription = null) },
                             label = { Text("首頁") },
+                            colors = itemColors,
                         )
                         // 中間留空給疊在上面的中央 FAB（UI-SPEC.md §3.1）。
                         NavigationBarItem(
@@ -104,12 +200,17 @@ private fun ExpenseTrackerApp() {
                         NavigationBarItem(
                             selected = currentRoute == Routes.STATS,
                             onClick = { navController.navigateSingleTopTo(Routes.STATS) },
-                            icon = { Icon(Icons.Filled.BarChart, contentDescription = "統計") },
+                            icon = { Icon(Icons.Filled.BarChart, contentDescription = null) },
                             label = { Text("統計") },
+                            colors = itemColors,
                         )
                     }
+                    // UI-SPEC.md §3.1：「primary 底、白色 +」。不指定的話 Material 3 預設用
+                    // primaryContainer，就是之前截圖裡那個淡紫色的 FAB。
                     FloatingActionButton(
                         onClick = { navController.navigate(Routes.ADD_TRANSACTION) },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
                         modifier =
                             Modifier
                                 .align(Alignment.TopCenter)
@@ -127,7 +228,7 @@ private fun ExpenseTrackerApp() {
             startDestination = Routes.HOME,
             modifier =
                 Modifier.padding(
-                    bottom = if (isBottomNavHiddenRoute(currentRoute)) 0.dp else padding.calculateBottomPadding(),
+                    bottom = if (showBottomBar) padding.calculateBottomPadding() else 0.dp,
                 ),
         ) {
             composable(Routes.HOME) {

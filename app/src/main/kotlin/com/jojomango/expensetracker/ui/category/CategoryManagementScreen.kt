@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryType
+import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 
 /** UI-SPEC.md §6 沒有給分類管理頁完整規格（只提到分類色票），這裡沿用
  * `WalletManagementScreen` 一樣的「列表 + 新增/編輯表單」骨架。刪除用
@@ -143,7 +144,11 @@ private fun CategoryRow(
         ) {
             val color = runCatching { Color(android.graphics.Color.parseColor(category.color)) }.getOrDefault(Color.Gray)
             Box(
-                modifier = Modifier.size(38.dp).background(color.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                modifier =
+                    Modifier
+                        .size(
+                            38.dp,
+                        ).background(color.copy(alpha = LocalAppExtraColors.current.categoryTintAlpha), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(category.icon)
