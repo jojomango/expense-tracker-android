@@ -23,7 +23,9 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 4 | 基礎 UI：錢包與交易 CRUD | ✅ DONE | (見下方交接筆記) |
 | 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
 | 6 | 分類與統計 | ✅ DONE | [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) |
-| 7 | 打磨 | 🚧 待實機驗收 | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12) |
+| 7 | 打磨 | ✅ DONE | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12)（實機驗收併入 Phase 8 的封閉測試） |
+| 8 | 上架準備 | **NEXT** | |
+| 9 | 匿名使用分析與贊助 | ⬜ TODO | |
 
 ---
 
@@ -38,6 +40,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | TD-1 | Persistence 測試（`data/RoomTestDb.kt`／`PersistenceTest.kt`／`BackupPersistenceTest.kt`）用 JUnit4（透過 Robolectric）+ `junit-vintage-engine` 橋接，跟 domain 層的 JUnit5 不一致。**不是 bug、不違反 SPEC.md §5**（那條 JUnit5 規定的範圍明文限定在 domain 層），純粹是工具選擇的殘留差異，見 Phase 3 交接筆記完整脈絡 | 擱置，不主動處理 | Robolectric 官方釋出 JUnit5 支援（目前只有一個 0.1.0 的社群 extension，未達生產可用門檻，見 [robolectric/robolectric#3477](https://github.com/robolectric/robolectric/issues/3477)）才評估遷移，沒有的話不用管 |
 | TD-2 | Maestro flow 裡刪除列表項目的滑動手勢（`SwipeToDismissBox`）用明確座標百分比（例如 `88%,67%`）而不是錨定元素，因為 `swipe: { direction: LEFT, from: { text: X } }` 常常跨不過 dismiss 門檻。已在 Phase 4（E2E-2）、Phase 5、Phase 6（E2E-8 刪飲食、E2E-9 刪咖啡）踩過同一件事，共 5 次。座標寫死在畫面目前的版面高度上，之後任何 phase 改動上方版面（預算卡、分類清單頭部等）都可能讓座標失準，需要重新校準 | 擱置，不主動處理（座標校準成本目前還算低，重新校準只要跑一次失敗、看截圖、調整 Y% 即可） | 之後有餘裕時，把可滑動刪除的列表項目都加上穩定的 `testTag`，Maestro 改用 tag 定位，一勞永逸解決這個脆弱點；或是這個座標校準成本明顯升高（例如又發生一次「改版面高度、忘記重新校準」的 CI 失敗）時，優先處理 |
 | TD-3 | ~~`e2e.yml` CI 偶發失敗~~ **已解決**：`launchApp: { clearState: true }` 之後的第一個斷言會在 CI 上偶發失敗（約 18 秒逾時、截圖是空白視窗、view hierarchy 裡完全沒有 App 的視窗），每次中獎的 flow 都不一樣，本機 arm64 emulator 從來不會踩到。從 CI 上傳的 device logcat 找到真正原因是 **ActivityManager 的 destroy-timeout race**：`pm clear` 拆掉舊 task 後會排一個約 1.15 秒才觸發的 destroy timeout，而 Maestro 在 0.69 秒後就重新啟動 App，timeout 觸發時 AMS 把「這個 package 目前的 process」當成要清掉的對象，於是把剛啟動的新 process 殺掉（`Killing 2998 (adj -10000): remove task`）。解法：把 `launchApp: { clearState: true }` 拆成 `clearState` → 等 3 秒（`scripts/settle-after-clear.js`）→ `launchApp: { stopApp: false }`，讓 destroy timeout 在還沒有新 process 存在時就先觸發完畢 | ✅ 已解決（CI 8/8 全綠，見 [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11)） | 教訓兩條，之後遇到 CI-only 的偶發失敗請直接照做：(1) **先去看 CI artifact 裡的 device logcat 跟 failure 截圖/hierarchy**（`e2e.yml` 每次都有上傳），不要憑程式碼猜——這次前後猜錯兩次（資源競爭、Gradle daemon），都是看了 logcat 才在幾分鐘內定案；(2) 「斷言逾時」不一定等於「等不夠久」，要先確認**元素所屬的 process 還活著**，這次就是 process 已經被殺掉，把 timeout 拉長再久都不會過 |
+| TD-4 | 色彩對比的三個已知不足，人類於 2026-10-18 決定**接受現狀**：(1) 深色模式記帳頁未輸入時的 `NT$0` 佔位字照 UI-SPEC §5 用 fg3，對背景只有 4.03:1；(2) 深色模式主按鈕文字維持 Phase 7 改的 `#111114`（5.35:1，取代白字的 3.52:1）；(3) 淺色模式有幾組文字不到 4.5:1（fg3 2.2～2.5、danger/income 3.6～4.3、accent 壓背景 4.18），UI-SPEC §9 只要求深色模式 | 已接受，不主動處理 | 之後若要讓淺色模式也達到 4.5:1，需要人類修改 UI-SPEC §2.1 色票本身 |
 
 ---
 
@@ -1043,23 +1046,43 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
 
 ---
 
+## Phase 8 — 上架準備
+
+**必讀：** `SPEC.md` §3.1（錢包封存/刪除規則）、§3.6（Auto Backup）、§6 Phase 8；`UI-SPEC.md` §11；
+`TESTCASES.md` E2E-13、T4.1.8～T4.1.9、T4.3
+
+**要做的事：**
+- 錢包封存／取消封存／刪除 UI（v1 漏做，見 Phase 7 交接筆記「發現但沒有處理的既有缺口」）
+- `compileSdk`／`targetSdk` 36（連帶升級 AGP），在 API 36 上驗證 edge-to-edge 與預測式返回；
+  CI 的 e2e 增加 API 36
+- release 簽章（keystore 不進 repo）、R8、版本 1.0.0、AAB
+- Auto Backup 排除規則
+- 上架文件草稿：商店說明、隱私權政策（網頁版 repo 的 Pages）、Play Console 各項聲明的填寫建議
+
+**驗收：** 所有 E2E 在 API 34 與 API 36 都全過；release AAB 組得出來且開 R8 後主要流程正常；
+人類上傳到封閉測試軌道並開始 14 天測試（Phase 7 的實機驗收在此一併完成）。
+
+**只有人類能做、建議現在就開始的事：** 申請 Play 開發者帳號並完成身分驗證（可能需要數天）、
+找至少 12 位（建議 15～20 位，有人中途退出會讓 14 天重算）願意安裝測試的 Google 帳號。
+
+---
+
+## Phase 9 — 匿名使用分析與贊助
+
+**必讀：** `SPEC.md` P3、§3.7、§3.8、§6 Phase 9；`UI-SPEC.md` §10；`TESTCASES.md` E2E-11、E2E-12、T9
+
+**要做的事：** 見 `SPEC.md` §6 Phase 9。
+
+**開工前人類要準備的：** Firebase 專案與 `google-services.json`（不進 repo，CI 從 GitHub Secret
+還原）、Play Console 商家帳戶。三個贊助商品要等含 Billing 的版本上傳到測試軌道之後才能在
+Console 建立，所以會落在 Phase 9 中段。
+
+---
+
 ## 待人類決策的問題
 
 > Agent 發現規格矛盾或需要批准時，寫在這裡，並同時寫進 PR 描述。
 > 人類回覆後會把該項移除。
 
-1. **UI-SPEC §2.1 的 fg3 色值與 §9「深色模式文字對比 ≥ 4.5:1」互相矛盾**：§5 規定記帳頁
-   未輸入時的 `NT$0` 用 fg3，但深色 fg3 `#6C6C72` 壓在背景上只有 4.03:1。其他原本用 fg3
-   的文字都已經改回規格指定的 fg2，只剩這一處是規格本身指定的。選項：(a) 接受——這是
-   佔位字，WCAG 對 placeholder 通常視為附帶文字；(b) 把 §5 改成 fg2；(c) 調亮深色 fg3。
-2. **深色模式主按鈕文字改成 `#111114`**（原本是白字）：UI-SPEC 沒規定 onPrimary，
-   白字壓 dark accent `#D9673F` 只有 3.52:1、達不到 §9。改成重用淺色模式主文字 token 的
-   `#111114`（5.35:1）。這是一個看得見的視覺變動（深色模式的「記一筆」「建立錢包」等
-   按鈕變成深色字），需要確認可以接受。
-3. **淺色模式也有好幾組不到 4.5:1**（§9 只要求深色模式，所以沒有動）：fg3 文字 2.2～2.5、
-   danger/income 文字 3.6～4.3、accent 文字壓在背景上 4.18。如果之後想讓淺色模式也達到
-   4.5:1，需要調整色票本身。
-4. **封存錢包／刪除錢包的 UI 從來沒做過**（SPEC.md §3.1、§6 Phase 4），見 Phase 7
-   交接筆記。要排進哪個 phase？
-5. **實機驗收**：Phase 7 驗收條件要求實機跑一輪「建立錢包 → 記帳 → 看統計 → 匯出備份 →
-   清除資料 → 匯入還原」，以及用 TalkBack 操作一輪記帳流程，這兩項 agent 做不到。
+_（目前無。2026-10-18 人類回覆：Phase 7 的三個配色問題接受現狀 → TD-4；封存/刪除錢包 UI
+排進 Phase 8；實機驗收併入 Phase 8 的封閉測試。）_

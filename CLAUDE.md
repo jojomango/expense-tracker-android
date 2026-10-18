@@ -64,7 +64,7 @@ Phase 0 建立）。
 **特別提醒（Android 生態的常見陷阱）：** 不要因為「方便」就加分析 SDK、廣告 SDK、
 或任何會發網路請求的函式庫，即使只是「先加著，之後再決定要不要用」。
 
-v2（Phase 8）起，`SPEC.md` §5 只例外允許 **Firebase Analytics、Firebase Crashlytics、
+v2（Phase 9）起，`SPEC.md` §5 只例外允許 **Firebase Analytics、Firebase Crashlytics、
 Google Play Billing Library** 這三個，而且用途被 `SPEC.md` P3／§3.7／§3.8 綁死：
 - 分析與當機回報**預設關閉**，只能送 §3.7 表列的事件與參數；**任何記帳資料**（金額、
   分類、備註、錢包名稱、幣別、日期）都不得出現在事件、參數、log 或當機報告的自訂鍵裡
