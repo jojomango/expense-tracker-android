@@ -34,10 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -140,6 +143,7 @@ private fun SystemBarsAppearance(darkTheme: Boolean) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class) // testTagsAsResourceId
 @Composable
 private fun ExpenseTrackerApp(
     openSettingsRequested: Boolean,
@@ -171,6 +175,9 @@ private fun ExpenseTrackerApp(
     val showBottomBar = !isBottomNavHiddenRoute(currentRoute) && homeState.wallets.isNotEmpty()
 
     Scaffold(
+        // 讓 Modifier.testTag 在無障礙樹裡以 resource-id 出現，Maestro 才能用 `id:` 定位
+        // （UI 測試用途，對使用者沒有影響）。
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (showBottomBar) {

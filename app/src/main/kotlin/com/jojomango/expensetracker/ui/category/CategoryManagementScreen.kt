@@ -34,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -123,6 +124,9 @@ private fun CategoryRow(
         )
     SwipeToDismissBox(
         state = dismissState,
+        // E2E 用穩定的 tag 定位這一列，不用螢幕座標百分比——座標會隨裝置解析度與版面高度
+        // 改變（TD-2：API 36 的 1080×2400 emulator 上真的滑錯列）。
+        modifier = Modifier.testTag("category-row-${category.name}"),
         enableDismissFromStartToEnd = false,
         backgroundContent = {
             Box(
