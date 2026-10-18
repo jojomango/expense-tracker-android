@@ -61,10 +61,17 @@ Phase 0 建立）。
 需要新套件時，在 PR 描述說明理由並**停止**，等待人類批准。
 先試著用現有工具或手寫解決。
 
-**特別提醒（Android 生態的常見陷阱）：** 不要因為「方便」就加分析 SDK
-（Firebase Analytics、Crashlytics）、廣告 SDK、或任何會發網路請求的函式庫，
-即使只是「先加著，之後再決定要不要用」——`SPEC.md` P3「零網路」是硬約束，
-沒有例外。
+**特別提醒（Android 生態的常見陷阱）：** 不要因為「方便」就加分析 SDK、廣告 SDK、
+或任何會發網路請求的函式庫，即使只是「先加著，之後再決定要不要用」。
+
+v2（Phase 8）起，`SPEC.md` §5 只例外允許 **Firebase Analytics、Firebase Crashlytics、
+Google Play Billing Library** 這三個，而且用途被 `SPEC.md` P3／§3.7／§3.8 綁死：
+- 分析與當機回報**預設關閉**，只能送 §3.7 表列的事件與參數；**任何記帳資料**（金額、
+  分類、備註、錢包名稱、幣別、日期）都不得出現在事件、參數、log 或當機報告的自訂鍵裡
+- Firebase 的**其他產品**（Remote Config、Cloud Messaging、Firestore、A/B Testing、
+  In-App Messaging…）都不在例外內，要用一樣得先停下來請人類批准
+- **廣告 SDK、廣告 ID、畫面錄影（session replay）類工具，任何情況都禁止**
+- 贊助只能走 Play Billing，**不得放外部付款連結**（PayPal、Buy Me a Coffee…）
 
 ---
 
