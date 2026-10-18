@@ -47,19 +47,19 @@ appId: com.jojomango.expensetracker
 # Then 分類清單新增一筆「☕ 咖啡」，不標示「系統預設」
 # 自訂分類排在所有系統預設分類之後（CategoryDao.observeAll() 的
 # ORDER BY isDefault DESC, name ASC），要往下捲才看得到。
-- swipe:
-    start: 50%,80%
-    end: 50%,30%
+- scrollUntilVisible:
+    element:
+      id: "category-row-咖啡"
 - assertVisible: "咖啡"
 
 # When 嘗試刪除系統預設分類「飲食」
-# `direction: LEFT` + `from: 飲食` 錨定 swipe 的預設拖曳距離常常跨不過
-# SwipeToDismissBox 的門檻（Phase 4/5 都踩過同一件事），改用明確座標橫跨
-# 整列寬度——「飲食」這時候在畫面上的位置是螢幕高度 67% 左右（跟這支 flow
-# 前面「往下捲一次」之後的畫面位置對應，若之後這頁版面改了要重新校準）。
+# 用 tag 定位這一列、從列的正中間往左滑。之前用寫死的螢幕座標百分比（TD-2），在 API 36 的
+# 1080×2400 emulator 上滑錯了列；之前也試過從文字往左滑，但文字靠左、往左能滑的距離太短，
+# 跨不過 SwipeToDismissBox 的門檻。從整列的中心滑就有半個螢幕寬可以用。
 - swipe:
-    start: 88%,67%
-    end: 9%,67%
+    from:
+      id: "category-row-飲食"
+    direction: LEFT
 # Then 刪除被拒絕（顯示錯誤訊息）
 # And 「🍜 飲食」仍存在於分類清單
 - assertVisible: "系統預設分類無法刪除"

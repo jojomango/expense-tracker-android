@@ -34,10 +34,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,6 +68,8 @@ import com.jojomango.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.isDark
 import com.jojomango.expensetracker.ui.transaction.AddEditTransactionScreen
+import com.jojomango.expensetracker.ui.wallet.WALLET_MESSAGE_KEY
+import com.jojomango.expensetracker.ui.wallet.WalletEditResult
 import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
 import com.jojomango.expensetracker.ui.wallet.WalletManagementScreen
 import com.jojomango.expensetracker.ui.wallet.WalletSwitcherSheet
@@ -138,6 +143,7 @@ private fun SystemBarsAppearance(darkTheme: Boolean) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class) // testTagsAsResourceId
 @Composable
 private fun ExpenseTrackerApp(
     openSettingsRequested: Boolean,
@@ -169,6 +175,9 @@ private fun ExpenseTrackerApp(
     val showBottomBar = !isBottomNavHiddenRoute(currentRoute) && homeState.wallets.isNotEmpty()
 
     Scaffold(
+        // 讓 Modifier.testTag 在無障礙樹裡以 resource-id 出現，Maestro 才能用 `id:` 定位
+        // （UI 測試用途，對使用者沒有影響）。
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (showBottomBar) {
@@ -269,16 +278,19 @@ private fun ExpenseTrackerApp(
                     onCancel = { navController.popBackStack() },
                 )
             }
-            composable(Routes.WALLET_MANAGEMENT) {
+            composable(Routes.WALLET_MANAGEMENT) { entry ->
+                val walletMessage by entry.savedStateHandle.getStateFlow<String?>(WALLET_MESSAGE_KEY, null).collectAsState()
                 WalletManagementScreen(
                     onBack = { navController.popBackStack() },
                     onAddWallet = { navController.navigate(Routes.WALLET_NEW) },
                     onEditWallet = { id -> navController.navigate(Routes.editWallet(id)) },
+                    message = walletMessage,
+                    onMessageShown = { entry.savedStateHandle[WALLET_MESSAGE_KEY] = null },
                 )
             }
             composable(Routes.WALLET_NEW) {
                 WalletEditScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { result -> navController.finishWalletEdit(result) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -287,7 +299,7 @@ private fun ExpenseTrackerApp(
                 arguments = listOf(navArgument("walletId") { type = NavType.StringType }),
             ) {
                 WalletEditScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { result -> navController.finishWalletEdit(result) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -345,4 +357,16 @@ private fun androidx.navigation.NavController.navigateSingleTopTo(route: String)
         launchSingleTop = true
         restoreState = true
     }
+}
+
+/** 回到錢包管理頁，並把要顯示的 Snackbar 訊息放進它的 SavedStateHandle（UI-SPEC.md §11）。 */
+private fun androidx.navigation.NavController.finishWalletEdit(result: WalletEditResult) {
+    val message =
+        when (result) {
+            WalletEditResult.Saved -> null
+            is WalletEditResult.Archived -> "已封存 ${result.name}"
+            is WalletEditResult.Deleted -> "已刪除 ${result.name}"
+        }
+    previousBackStackEntry?.savedStateHandle?.set(WALLET_MESSAGE_KEY, message)
+    popBackStack()
 }

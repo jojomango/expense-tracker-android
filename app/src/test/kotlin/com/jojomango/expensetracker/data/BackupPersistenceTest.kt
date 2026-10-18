@@ -163,6 +163,28 @@ class BackupPersistenceTest {
     }
 
     @Test
+    fun t4_2_6_mergeThroughDatabaseKeepsBothSides() =
+        runTest {
+            // 上面的 T4.2.6 只測了純函式 mergeTransactionsById；這條真的經過 Room。merge 會先
+            // upsert 同 id 的錢包，如果那是「先刪再插」，本機這個錢包的交易會先被連帶刪掉，
+            // 之後才讀「現有交易」來合併——等於本機資料直接消失。
+            backupRepo.import(samplePayload(), ImportMode.REPLACE)
+            val local = samplePayload().transactions.single()
+            val incoming = samplePayload().copy(transactions = listOf(local.copy(id = "t2")))
+
+            backupRepo.import(incoming, ImportMode.MERGE)
+
+            assertEquals(
+                setOf("t1", "t2"),
+                backupRepo
+                    .export()
+                    .transactions
+                    .map { it.id }
+                    .toSet(),
+            )
+        }
+
+    @Test
     fun t4_2_8_transactionReferencingMissingWalletIsRejected() {
         val payload = samplePayload().copy(wallets = emptyList())
         assertThrows(BackupIntegrityException::class.java) { validateBackup(payload) }

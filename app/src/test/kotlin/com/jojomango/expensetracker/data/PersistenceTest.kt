@@ -48,7 +48,10 @@ class PersistenceTest {
         db.close()
     }
 
-    private fun wallet(id: String = "w1") = Wallet(id, "日常", "TWD", BudgetMode.NONE, null)
+    private fun wallet(
+        id: String = "w1",
+        archived: Boolean = false,
+    ) = Wallet(id, "日常", "TWD", BudgetMode.NONE, null, archived)
 
     private fun transaction(
         id: String = "t1",
@@ -101,6 +104,81 @@ class PersistenceTest {
                 kotlinx.coroutines.runBlocking { walletRepo.delete("only") }
             }
             assertEquals(1, walletRepo.getAllOnce().size)
+        }
+
+    @Test
+    fun t4_1_8_archivingLastActiveWalletIsRejected() =
+        runTest {
+            walletRepo.upsert(wallet("active"))
+            walletRepo.upsert(wallet("old", archived = true))
+            // 還有一個已封存的錢包也不行：封存掉唯一使用中的錢包，主畫面一樣沒有錢包可顯示
+            assertThrows(LastWalletException::class.java) {
+                kotlinx.coroutines.runBlocking { walletRepo.setArchived("active", true) }
+            }
+            assertEquals(false, walletRepo.getWallet("active")?.archived)
+        }
+
+    @Test
+    fun t4_1_9_archiveThenUnarchiveKeepsTransactions() =
+        runTest {
+            walletRepo.upsert(wallet("w1"))
+            walletRepo.upsert(wallet("w2"))
+            transactionRepo.upsert(transaction(id = "t1", walletId = "w2"))
+            transactionRepo.upsert(transaction(id = "t2", walletId = "w2"))
+
+            walletRepo.setArchived("w2", true)
+            assertEquals(true, walletRepo.getWallet("w2")?.archived)
+            assertEquals(2, transactionRepo.countByWallet("w2"))
+
+            walletRepo.setArchived("w2", false)
+            assertEquals(false, walletRepo.getWallet("w2")?.archived)
+            assertEquals(2, transactionRepo.countByWallet("w2"))
+        }
+
+    @Test
+    fun deletingLastActiveWalletIsRejectedEvenWhenArchivedWalletsExist() =
+        runTest {
+            // T4.1.3 只看錢包總數；這裡總數是 2，但刪掉使用中那個之後一樣沒有錢包可顯示（UI-SPEC §11）
+            walletRepo.upsert(wallet("active"))
+            walletRepo.upsert(wallet("old", archived = true))
+            assertThrows(LastWalletException::class.java) {
+                kotlinx.coroutines.runBlocking { walletRepo.delete("active") }
+            }
+            assertEquals(2, walletRepo.getAllOnce().size)
+        }
+
+    @Test
+    fun deletingAnArchivedWalletIsAllowedWhileAnActiveOneRemains() =
+        runTest {
+            walletRepo.upsert(wallet("active"))
+            walletRepo.upsert(wallet("old", archived = true))
+            walletRepo.delete("old")
+            assertEquals(listOf("active"), walletRepo.getAllOnce().map { it.id })
+        }
+
+    // ---- 回歸測試：Phase 8 發現 @Insert(REPLACE) 的「先刪再插」會觸發外鍵的連帶動作 ----
+
+    @Test
+    fun editingWalletKeepsItsTransactions() =
+        runTest {
+            // transactions.walletId 是 ON DELETE CASCADE：如果「存檔」其實是先刪除再插入，
+            // 錢包底下的交易會被連帶刪光
+            walletRepo.upsert(wallet("w1"))
+            transactionRepo.upsert(transaction(id = "t1", walletId = "w1"))
+            walletRepo.upsert(wallet("w1").copy(name = "日常（改名）"))
+            assertEquals(1, transactionRepo.countByWallet("w1"))
+        }
+
+    @Test
+    fun editingCategoryKeepsItsTransactionsCategorized() =
+        runTest {
+            // transactions.categoryId 是 ON DELETE SET NULL：同樣的問題會讓交易全部變成「未分類」
+            categoryRepo.seedDefaultsIfEmpty()
+            val food = categoryRepo.getAllOnce().first()
+            walletRepo.upsert(wallet("w1"))
+            transactionRepo.upsert(transaction(id = "t1", walletId = "w1", categoryId = food.id))
+            categoryRepo.upsert(food.copy(name = "吃飯"))
+            assertEquals(food.id, transactionRepo.getAllOnce().single().categoryId)
         }
 
     @Test

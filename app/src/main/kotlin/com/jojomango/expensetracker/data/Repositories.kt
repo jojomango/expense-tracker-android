@@ -20,6 +20,7 @@ import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.assertCanDeleteCategory
 import com.jojomango.expensetracker.domain.assertCanDeleteWallet
+import com.jojomango.expensetracker.domain.assertCanRemoveActiveWallet
 import com.jojomango.expensetracker.domain.mergeTransactionsById
 import com.jojomango.expensetracker.domain.validateBackup
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +44,18 @@ class RoomWalletRepository
 
         override suspend fun delete(id: String) {
             assertCanDeleteWallet(dao.count())
+            if (dao.getById(id)?.archived == false) assertCanRemoveActiveWallet(dao.countActive())
             dao.deleteById(id)
+        }
+
+        override suspend fun setArchived(
+            id: String,
+            archived: Boolean,
+        ) {
+            val current = dao.getById(id) ?: return
+            if (current.archived == archived) return
+            if (archived) assertCanRemoveActiveWallet(dao.countActive())
+            dao.upsert(current.copy(archived = archived))
         }
     }
 
@@ -52,6 +64,8 @@ class RoomTransactionRepository
     constructor(
         private val dao: TransactionDao,
     ) : TransactionRepository {
+        override suspend fun countByWallet(walletId: String): Int = dao.countByWallet(walletId)
+
         override fun observeByWallet(walletId: String): Flow<List<Transaction>> =
             dao.observeByWallet(walletId).map { list -> list.map { it.toDomain() } }
 

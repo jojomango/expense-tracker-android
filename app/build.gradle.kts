@@ -14,21 +14,43 @@ plugins {
 
 android {
     namespace = "com.jojomango.expensetracker"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.jojomango.expensetracker"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // 上傳金鑰（upload key）與密碼**絕對不進 repo**：從 ~/.gradle/gradle.properties 或環境變數讀
+    // （CI 從 GitHub Secret 還原）。四個值都沒設定時 release 退回用 debug 金鑰簽，只是為了能在
+    // emulator 上實測 R8 版本——Play Console 會直接拒收 debug 簽章的檔案，不會被誤傳上去。
+    val releaseSigning =
+        listOf("EXPENSE_UPLOAD_STORE_FILE", "EXPENSE_UPLOAD_STORE_PASSWORD", "EXPENSE_UPLOAD_KEY_ALIAS", "EXPENSE_UPLOAD_KEY_PASSWORD")
+            .associateWith { key -> providers.gradleProperty(key).orElse(providers.environmentVariable(key)).orNull }
+    val hasReleaseSigning = releaseSigning.values.all { !it.isNullOrBlank() }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseSigning.getValue("EXPENSE_UPLOAD_STORE_FILE")!!) // hasReleaseSigning 已確認四個值都非空
+                storePassword = releaseSigning.getValue("EXPENSE_UPLOAD_STORE_PASSWORD")
+                keyAlias = releaseSigning.getValue("EXPENSE_UPLOAD_KEY_ALIAS")
+                keyPassword = releaseSigning.getValue("EXPENSE_UPLOAD_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
         debug {
             enableUnitTestCoverage = true

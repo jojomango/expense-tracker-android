@@ -71,4 +71,17 @@ class WalletTest {
     fun `can delete when more than one wallet remains`() {
         assertCanDeleteWallet(2)
     }
+
+    @Test
+    @DisplayName("T4.1.8 — 只剩一個未封存的錢包時，assertCanRemoveActiveWallet 拋 LastWalletException")
+    fun `T4 1 8`() {
+        assertThrows(LastWalletException::class.java) { assertCanRemoveActiveWallet(1) }
+        assertThrows(LastWalletException::class.java) { assertCanRemoveActiveWallet(0) }
+    }
+
+    @Test
+    @DisplayName("還有兩個以上未封存的錢包時，assertCanRemoveActiveWallet 不拋錯")
+    fun `can remove active wallet when another active exists`() {
+        assertCanRemoveActiveWallet(2)
+    }
 }

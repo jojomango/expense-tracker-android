@@ -10,3 +10,8 @@ build/
 .cxx/
 *.apk
 *.aab
+
+# 上傳金鑰與其密碼絕對不進 repo（見 app/build.gradle.kts 的 signingConfigs）
+*.jks
+*.keystore
+keystore.properties

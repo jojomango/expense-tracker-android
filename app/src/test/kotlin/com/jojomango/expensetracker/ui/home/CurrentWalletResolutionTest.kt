@@ -56,4 +56,18 @@ class CurrentWalletResolutionTest {
     fun `no wallets`() {
         assertNull(resolveCurrentWalletId(emptyList(), selectedId = "a", defaultWalletId = "a"))
     }
+
+    @Test
+    @DisplayName("手動選過的錢包已被封存，改用預設錢包（UI-SPEC §11：不能停在已封存的錢包上）")
+    fun `archived selection falls back to default`() {
+        val list = listOf(wallet("a"), wallet("b", archived = true), wallet("c"))
+        assertEquals("c", resolveCurrentWalletId(list, selectedId = "b", defaultWalletId = "c"))
+    }
+
+    @Test
+    @DisplayName("預設錢包已被封存，退回第一個未封存的錢包")
+    fun `archived default falls back to first active`() {
+        val list = listOf(wallet("a", archived = true), wallet("b"))
+        assertEquals("b", resolveCurrentWalletId(list, selectedId = null, defaultWalletId = "a"))
+    }
 }

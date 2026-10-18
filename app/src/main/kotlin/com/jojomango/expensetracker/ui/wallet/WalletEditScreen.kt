@@ -9,8 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,20 +31,30 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.ui.common.LoadingState
+import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
 /** 新增／編輯錢包——UI-SPEC.md §7「管理錢包…」的入口沒有給完整畫面規格，
  * 這裡沿用首次啟動引導表單（`HomeScreen.FirstWalletOnboarding`）同樣的欄位跟風格，
  * 保持一致；幣別建立後不可改（domain/Wallet.kt 的規則），編輯時欄位停用。 */
 @Composable
 fun WalletEditScreen(
-    onDone: () -> Unit,
+    onDone: (WalletEditResult) -> Unit,
     onCancel: () -> Unit,
     viewModel: WalletEditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(state.saved) {
-        if (state.saved) onDone()
+    LaunchedEffect(state.result) {
+        state.result?.let(onDone)
+    }
+
+    state.pendingDeleteTransactionCount?.let { count ->
+        DeleteWalletDialog(
+            walletName = state.name,
+            transactionCount = count,
+            onConfirm = viewModel::confirmDelete,
+            onDismiss = viewModel::dismissDelete,
+        )
     }
 
     Scaffold(
@@ -53,7 +69,14 @@ fun WalletEditScreen(
             LoadingState(modifier = Modifier.padding(padding))
             return@Scaffold
         }
-        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(20.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+        ) {
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::onNameChange,
@@ -97,6 +120,69 @@ fun WalletEditScreen(
             ) {
                 Text(if (state.isEditing) "儲存" else "建立錢包")
             }
+
+            if (state.isEditing && !state.archived) {
+                ArchiveAndDeleteSection(
+                    isLastActive = state.isLastActive,
+                    onArchive = viewModel::archive,
+                    onDelete = viewModel::requestDelete,
+                )
+            }
         }
     }
+}
+
+/** UI-SPEC.md §11：只有編輯既有錢包時才有；最後一個未封存的錢包兩個鍵都停用。 */
+@Composable
+private fun ArchiveAndDeleteSection(
+    isLastActive: Boolean,
+    onArchive: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Spacer(Modifier.height(24.dp))
+    HorizontalDivider()
+    Spacer(Modifier.height(8.dp))
+    TextButton(onClick = onArchive, enabled = !isLastActive) { Text("封存錢包") }
+    TextButton(
+        onClick = onDelete,
+        enabled = !isLastActive,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+    ) { Text("刪除錢包") }
+    if (isLastActive) {
+        Text(
+            "至少要保留一個錢包",
+            style = LocalAppTypography.current.caption,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+    }
+}
+
+@Composable
+private fun DeleteWalletDialog(
+    walletName: String,
+    transactionCount: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("刪除「$walletName」？") },
+        text = {
+            Text(
+                if (transactionCount == 0) {
+                    "這個錢包沒有任何交易。"
+                } else {
+                    "這個錢包的 $transactionCount 筆交易會一併刪除，無法復原。"
+                },
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { Text("刪除") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+    )
 }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 以下的 Auto Backup 規則，內容與 data_extraction_rules.xml 的 cloud-backup 相同。 -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="backup_reminder.xml" />
+    <exclude domain="sharedpref" path="notification_permission.xml" />
+    <exclude domain="database" path="androidx.work.workdb" />
+    <exclude domain="database" path="androidx.work.workdb-shm" />
+    <exclude domain="database" path="androidx.work.workdb-wal" />
+</full-backup-content>

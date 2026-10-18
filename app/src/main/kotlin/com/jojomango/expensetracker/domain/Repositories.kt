@@ -16,12 +16,24 @@ interface WalletRepository {
 
     suspend fun upsert(wallet: Wallet)
 
-    /** 刪除最後一個錢包會拋出 [LastWalletException]（SPEC.md §3.1）。 */
+    /**
+     * 刪除最後一個錢包、或刪除最後一個未封存的錢包，都會拋出 [LastWalletException]
+     * （SPEC.md §3.1、UI-SPEC.md §11）。
+     */
     suspend fun delete(id: String)
+
+    /** 封存最後一個未封存的錢包會拋出 [LastWalletException]（SPEC.md §3.1 v2.1）。 */
+    suspend fun setArchived(
+        id: String,
+        archived: Boolean,
+    )
 }
 
 interface TransactionRepository {
     fun observeByWallet(walletId: String): Flow<List<Transaction>>
+
+    /** 刪除錢包的確認對話框要顯示「會一併刪除 N 筆交易」（SPEC.md §3.1）。 */
+    suspend fun countByWallet(walletId: String): Int
 
     /** 跨所有錢包——UI-SPEC.md §7 的錢包切換 sheet 需要同時顯示每個錢包各自的
      * 當期餘額，不能只看目前選中的錢包。 */

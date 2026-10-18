@@ -30,6 +30,7 @@ appId: com.jojomango.expensetracker
 - assertVisible: "NT$3,000.00"
 
 # And 在「這週一的前一天（週日）」有一筆支出 1000
+# （今天剛好是週日時改用明天，原因見 scripts/e2e5-dates.js 檔頭）
 - tapOn: "記帳"
 - tapOn: "1"
 - tapOn: "0"
@@ -40,6 +41,10 @@ appId: com.jojomango.expensetracker
     times: ${output.monthsBackA}
     commands:
       - tapOn: "Change to previous month"
+- repeat:
+    times: ${output.monthsForwardA}
+    commands:
+      - tapOn: "Change to next month"
 - tapOn: "${output.dateALabel}"
 - tapOn: "確定"
 - tapOn: "居住"
@@ -55,6 +60,10 @@ appId: com.jojomango.expensetracker
     times: ${output.monthsBackB}
     commands:
       - tapOn: "Change to previous month"
+- repeat:
+    times: ${output.monthsForwardB}
+    commands:
+      - tapOn: "Change to next month"
 - tapOn: "${output.dateBLabel}"
 - tapOn: "確定"
 - tapOn: "居住"

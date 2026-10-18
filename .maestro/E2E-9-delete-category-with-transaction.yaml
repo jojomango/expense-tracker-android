@@ -31,9 +31,9 @@ appId: com.jojomango.expensetracker
 - eraseText: 10
 - inputText: "☕"
 - tapOn: "建立分類"
-- swipe:
-    start: 50%,80%
-    end: 50%,30%
+- scrollUntilVisible:
+    element:
+      id: "category-row-咖啡"
 - assertVisible: "咖啡"
 - tapOn: "返回"
 - tapOn: "返回"
@@ -56,13 +56,16 @@ appId: com.jojomango.expensetracker
 # When 刪除分類「咖啡」
 - tapOn: "設定"
 - tapOn: "分類管理"
+- scrollUntilVisible:
+    element:
+      id: "category-row-咖啡"
+# 用 tag 定位這一列、從列的正中間往左滑。之前用寫死的螢幕座標百分比（TD-2），在 API 36 的
+# 1080×2400 emulator 上滑錯了列；之前也試過從文字往左滑，但文字靠左、往左能滑的距離太短，
+# 跨不過 SwipeToDismissBox 的門檻。從整列的中心滑就有半個螢幕寬可以用。
 - swipe:
-    start: 50%,80%
-    end: 50%,30%
-- assertVisible: "咖啡"
-- swipe:
-    start: 88%,56%
-    end: 9%,56%
+    from:
+      id: "category-row-咖啡"
+    direction: LEFT
 # Then 分類從清單消失
 - assertNotVisible: "咖啡"
 - tapOn: "返回"
