@@ -316,3 +316,43 @@ fun dailyAllowance(
 - 深色模式下每個畫面的文字對比 ≥ 4.5:1
 - 所有可點目標 ≥ 48×48 dp
 - `./gradlew test`（domain 單元測試）與 Maestro flow 全綠
+- （v2）設定頁「協助改善 App」開關首次安裝為關閉
+- （v2）「支持開發者」區塊進入設定頁時永遠是收合的；首頁、記帳頁、統計頁、底部導覽不出現任何贊助入口或提示
+
+---
+
+## §10 設定頁新增元件（v2，Phase 8）
+
+對應 `SPEC.md` §3.7、§3.8。設定頁區塊順序：管理錢包／分類管理 → 週起始日 → 外觀 →
+**隱私** → 備份與還原 → **支持開發者**（最下方）。
+
+### §10.1 隱私：「協助改善 App」開關
+
+- 區塊標題「隱私」（跟其他區塊標題同樣式，`cardTitle`，heading 語意）
+- 一列 `ListItem`：標題「協助改善 App」（`rowTitle`），副標（`caption`，fg2）
+  「傳送匿名的使用情形與當機資訊，不會傳送任何記帳內容。」，右側 Material 3 `Switch`
+  （開啟色 primary）
+- **整列可點**切換開關（不是只有 Switch 本身），整列用 `Modifier.toggleable(role = Role.Switch)`，
+  Switch 本身 `onCheckedChange = null`——TalkBack 才會把整列唸成一個開關
+- 首次安裝為關閉；不跳任何詢問對話框、不在其他畫面提示使用者打開
+
+### §10.2 支持開發者（收合區塊）
+
+**收合狀態（預設，每次進入設定頁都是收合）：**
+- 一列 `ListItem`：標題「支持開發者」（`rowTitle`），右側展開圖示
+  （`Icons.Filled.ExpandMore`，fg2），整列可點、高度 ≥ 48dp
+- 無障礙：`stateDescription` 為「已收合」／「已展開」，`Role.Button`
+
+**展開狀態：**
+- 圖示換成 `Icons.Filled.ExpandLess`，展開/收合用 `AnimatedVisibility` 的預設動畫
+- 說明文字（`bodyMedium`，fg2）：「這個 App 沒有廣告，也不收集你的記帳資料。如果它對你
+  有幫助，歡迎請開發者喝杯咖啡。」
+- 三個整寬 `FilledTonalButton`，由上而下（文字左邊是名稱、右邊是 Play 回傳的在地化價格）：
+  - 「☕ 一杯咖啡」／ 價格（`donation_small`）
+  - 「🍱 一份便當」／ 價格（`donation_medium`）
+  - 「🎉 大力支持」／ 價格（`donation_large`）
+- 價格還沒從 Play 載入：價格位置顯示「—」，按鈕 disabled
+- Play 無法連線或查不到商品：三個按鈕都不顯示，改顯示一行（`caption`，fg2）
+  「目前無法連線到 Google Play，請稍後再試」
+- 付款完成：`Snackbar`「謝謝你的支持！」；使用者在 Play 付款畫面按取消：什麼都不顯示
+- **不顯示**累計贊助金額、「已贊助」徽章或任何讓贊助者與非贊助者介面不同的東西
