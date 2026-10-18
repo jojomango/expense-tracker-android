@@ -24,7 +24,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
 | 6 | 分類與統計 | ✅ DONE | [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) |
 | 7 | 打磨 | ✅ DONE | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12)（實機驗收併入 Phase 8 的封閉測試） |
-| 8 | 上架準備 | 🚧 待人類上傳封閉測試 | (見下方交接筆記) |
+| 8 | 上架準備 | 🚧 待人類上傳封閉測試 | [PR #15](https://github.com/jojomango/expense-tracker-android/pull/15) |
 | 9 | 匿名使用分析與贊助 | **NEXT**（可與 Phase 8 的 14 天封閉測試平行） | |
 
 ---
