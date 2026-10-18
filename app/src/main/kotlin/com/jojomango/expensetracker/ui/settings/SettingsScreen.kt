@@ -2,8 +2,12 @@
 
 package com.jojomango.expensetracker.ui.settings
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -19,15 +23,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +45,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -43,19 +53,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.ImportMode
 import com.jojomango.expensetracker.domain.Theme
+import com.jojomango.expensetracker.ui.donation.DonationOffers
+import com.jojomango.expensetracker.ui.donation.DonationTier
+import com.jojomango.expensetracker.ui.donation.UNAVAILABLE_MESSAGE
 import com.jojomango.expensetracker.ui.notification.rememberEnableNotifications
 import com.jojomango.expensetracker.ui.notification.rememberNotificationsEnabled
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
@@ -65,7 +82,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * 設定頁：錢包/分類管理入口、週起始日、外觀、備份與還原（SPEC.md §3.5、§3.6）。
+ * 設定頁：錢包/分類管理入口、週起始日、外觀、隱私、備份與還原、支持開發者
+ * （SPEC.md §3.5–§3.8；區塊順序見 UI-SPEC.md §10）。
  *
  * 還沒有任何錢包時也進得來（首次啟動引導頁的「從備份還原」）——換新裝置的使用者第一步
  * 就是匯入備份，不該被迫先建一個用不到的錢包。這點跟網頁版 `Home.tsx` 的設計一致。
@@ -76,6 +94,7 @@ fun SettingsScreen(
     onManageWallets: () -> Unit,
     onManageCategories: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
+    supportViewModel: PrivacyAndSupportViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -83,6 +102,9 @@ fun SettingsScreen(
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+    }
+    LaunchedEffect(Unit) {
+        supportViewModel.donationMessages.collect { snackbarHostState.showSnackbar(it) }
     }
 
     Scaffold(
@@ -136,7 +158,11 @@ fun SettingsScreen(
                 }
             }
 
+            PrivacySection(supportViewModel)
+
             BackupSection(viewModel)
+
+            DonationSection(supportViewModel)
         }
     }
 }
@@ -147,6 +173,26 @@ private fun SectionTitle(text: String) {
         text,
         style = LocalAppTypography.current.cardTitle,
         modifier = Modifier.padding(top = 24.dp, bottom = 8.dp).semantics { heading() },
+    )
+}
+
+/** UI-SPEC.md §10.1。整列是一個開關，TalkBack 唸成「協助改善 App，開關，已關閉」。 */
+@Composable
+private fun PrivacySection(viewModel: PrivacyAndSupportViewModel) {
+    val enabled by viewModel.analyticsEnabled.collectAsState()
+    val typography = LocalAppTypography.current
+    SectionTitle("隱私")
+    ListItem(
+        headlineContent = { Text("協助改善 App", style = typography.rowTitle) },
+        supportingContent = {
+            Text(
+                "傳送匿名的使用情形與當機資訊，不會傳送任何記帳內容。",
+                style = typography.caption,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        trailingContent = { Switch(checked = enabled, onCheckedChange = null) },
+        modifier = Modifier.toggleable(value = enabled, role = Role.Switch, onValueChange = viewModel::setAnalyticsEnabled),
     )
 }
 
@@ -254,6 +300,78 @@ private fun BackupSection(viewModel: SettingsViewModel) {
     NotificationRow()
     Spacer(Modifier.height(24.dp))
 }
+
+/**
+ * UI-SPEC.md §10.2。展開狀態用 `remember` 而不是 `rememberSaveable`：規格要求每次進入設定頁
+ * 都是收合的，離開這個畫面（composable 離開 composition）就該忘掉。
+ */
+@Composable
+private fun DonationSection(viewModel: PrivacyAndSupportViewModel) {
+    var expanded by remember { mutableStateOf(false) }
+    val offers by viewModel.donationOffers.collectAsState()
+    val typography = LocalAppTypography.current
+    val activity = LocalContext.current.findActivity()
+
+    HorizontalDivider()
+    ListItem(
+        headlineContent = { Text("支持開發者", style = typography.rowTitle) },
+        trailingContent = {
+            Icon(
+                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        modifier =
+            Modifier
+                .heightIn(min = 48.dp)
+                .semantics { stateDescription = if (expanded) "已展開" else "已收合" }
+                .clickable(role = Role.Button) {
+                    expanded = !expanded
+                    if (expanded) viewModel.onDonationSectionOpened()
+                },
+    )
+    AnimatedVisibility(visible = expanded) {
+        Column(modifier = Modifier.padding(bottom = 24.dp)) {
+            Text(
+                "這個 App 沒有廣告，也不收集你的記帳資料。如果它對你有幫助，歡迎請開發者喝杯咖啡。",
+                style = typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            when (val current = offers) {
+                DonationOffers.Unavailable ->
+                    Text(UNAVAILABLE_MESSAGE, style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else ->
+                    donationTierLabels.forEach { (tier, label) ->
+                        val price = (current as? DonationOffers.Available)?.prices?.get(tier)
+                        FilledTonalButton(
+                            onClick = { activity?.let { viewModel.donate(it, tier) } },
+                            enabled = price != null && activity != null,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        ) {
+                            Text(label, modifier = Modifier.weight(1f))
+                            Text(price ?: "—")
+                        }
+                    }
+            }
+        }
+    }
+}
+
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }
+
+private val donationTierLabels =
+    listOf(
+        DonationTier.SMALL to "☕ 一杯咖啡",
+        DonationTier.MEDIUM to "🍱 一份便當",
+        DonationTier.LARGE to "🎉 大力支持",
+    )
 
 @Composable
 private fun NotificationRow() {

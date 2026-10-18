@@ -24,6 +24,8 @@ class BackupRulesTest {
         setOf(
             Rule("sharedpref", "backup_reminder.xml"),
             Rule("sharedpref", "notification_permission.xml"),
+            // 「協助改善 App」的同意要在每台裝置上重新取得：還原到新裝置時不該默默繼承成開啟。
+            Rule("sharedpref", "analytics_consent.xml"),
             Rule("database", "androidx.work.workdb"),
         )
 

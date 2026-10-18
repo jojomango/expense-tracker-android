@@ -3,6 +3,7 @@
 <full-backup-content>
     <exclude domain="sharedpref" path="backup_reminder.xml" />
     <exclude domain="sharedpref" path="notification_permission.xml" />
+    <exclude domain="sharedpref" path="analytics_consent.xml" />
     <exclude domain="database" path="androidx.work.workdb" />
     <exclude domain="database" path="androidx.work.workdb-shm" />
     <exclude domain="database" path="androidx.work.workdb-wal" />

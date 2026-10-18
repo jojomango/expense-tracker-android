@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- SPEC.md §3.6 備份提醒的本地通知（Android 13+ 需要執行期權限）。
-         刻意沒有 INTERNET 權限：SPEC.md P3「零網路」由系統層級保證。 -->
+    <!-- SPEC.md §3.6 備份提醒的本地通知（Android 13+ 需要執行期權限）。 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- INTERNET 由 Firebase 與 Play Billing 的 manifest 合併進來，只用於 SPEC.md P3 第 2 點的兩件事。
+         Firebase Analytics 會自動帶進廣告 ID、Privacy Sandbox 歸因與安裝來源（install referrer）的權限；
+         SPEC.md P3 第 3 點禁止廣告 ID 與歸因，全部在這裡拿掉。 -->
+    <uses-permission
+        android:name="com.google.android.gms.permission.AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+        tools:node="remove" />
+    <uses-permission
+        android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE"
+        tools:node="remove" />
 
     <application
         android:name=".ExpenseTrackerApplication"
@@ -14,6 +30,35 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.ExpenseTracker">
+
+        <!-- SPEC.md §3.7：預設關閉。SDK 在 App 啟動時就讀這些值，比任何 Kotlin 程式碼都早，
+             所以首次啟動、使用者還沒看到設定頁之前也不會送出任何東西。使用者打開開關後才在執行期開啟。 -->
+        <meta-data
+            android:name="firebase_analytics_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
+        <!-- screen_view 由 App 自己送固定的畫面名稱（§3.7）；自動回報會帶 Activity 類別名稱，關掉。 -->
+        <meta-data
+            android:name="google_analytics_automatic_screen_reporting_enabled"
+            android:value="false" />
+        <!-- 不收集廣告 ID、Android ID，不給任何廣告用途的同意 -->
+        <meta-data
+            android:name="google_analytics_adid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_ssaid_collection_enabled"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_personalization_signals"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_storage"
+            android:value="false" />
+        <meta-data
+            android:name="google_analytics_default_allow_ad_user_data"
+            android:value="false" />
 
         <activity
             android:name=".ui.MainActivity"

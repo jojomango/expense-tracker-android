@@ -18,6 +18,8 @@ import com.jojomango.expensetracker.domain.backupFileName
 import com.jojomango.expensetracker.domain.decodeBackup
 import com.jojomango.expensetracker.domain.encodeBackup
 import com.jojomango.expensetracker.domain.isBackupDue
+import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
+import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +45,8 @@ import javax.inject.Inject
 /** 跟網頁版 `Settings.tsx` 的 `REPLACE_CONFIRM_PHRASE` 同一個字，兩邊行為一致。 */
 const val REPLACE_CONFIRM_PHRASE = "確認取代"
 
+private const val IMPORT_DONE_MESSAGE = "匯入完成"
+
 data class BackupUiState(
     /** 預設合併，跟網頁版一樣——取代會清空資料，不該是不小心就選到的預設值。 */
     val importMode: ImportMode = ImportMode.MERGE,
@@ -57,6 +61,7 @@ class SettingsViewModel
         private val settingsRepository: SettingsRepository,
         private val backupRepository: BackupRepository,
         private val backupReminderRepository: BackupReminderRepository,
+        private val analyticsTracker: AnalyticsTracker,
         @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val settings: StateFlow<Settings> =
@@ -90,7 +95,10 @@ class SettingsViewModel
 
         fun setTheme(theme: Theme) {
             viewModelScope.launch {
-                settingsRepository.update(settingsRepository.get().copy(theme = theme))
+                val current = settingsRepository.get()
+                if (current.theme == theme) return@launch
+                settingsRepository.update(current.copy(theme = theme))
+                analyticsTracker.track(AnalyticsEvent.ThemeChanged(theme))
             }
         }
 
@@ -130,6 +138,7 @@ class SettingsViewModel
                 if (written.isSuccess) {
                     // 只有真的寫成功才算備份過——寫到一半失敗不能重設提醒的計時。
                     backupReminderRepository.recordBackup(Clock.System.now())
+                    analyticsTracker.track(AnalyticsEvent.BackupExported)
                     messageFlow.emit("已匯出 ${displayNameOf(uri) ?: suggestedBackupFileName()}")
                 } else {
                     messageFlow.emit("匯出失敗：無法寫入這個位置，請換一個位置再試")
@@ -153,7 +162,7 @@ class SettingsViewModel
                         // TESTCASES.md T4.2.7：一萬筆也要 3 秒內完成、UI 不凍結，解析跟寫入都不在主執行緒。
                         withContext(Dispatchers.Default) { backupRepository.import(decodeBackup(json), mode) }
                         backupState.update { it.copy(confirmText = "") }
-                        "匯入完成"
+                        IMPORT_DONE_MESSAGE
                     } catch (e: IOException) {
                         "匯入失敗：無法讀取這個檔案"
                     } catch (e: SecurityException) {
@@ -166,6 +175,7 @@ class SettingsViewModel
                     } catch (e: BackupParseException) {
                         "匯入失敗：這不是有效的備份檔"
                     }
+                analyticsTracker.track(AnalyticsEvent.BackupImported(mode, success = message == IMPORT_DONE_MESSAGE))
                 messageFlow.emit(message)
             }
         }

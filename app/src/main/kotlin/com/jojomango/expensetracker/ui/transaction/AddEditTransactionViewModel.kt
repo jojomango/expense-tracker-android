@@ -17,6 +17,8 @@ import com.jojomango.expensetracker.domain.appendDigit
 import com.jojomango.expensetracker.domain.deleteDigit
 import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
 import com.jojomango.expensetracker.domain.minorUnitsToMajorDigits
+import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
+import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -72,6 +74,7 @@ class AddEditTransactionViewModel
         private val transactionRepository: TransactionRepository,
         private val categoryRepository: CategoryRepository,
         private val settingsRepository: com.jojomango.expensetracker.domain.SettingsRepository,
+        private val analyticsTracker: AnalyticsTracker,
     ) : ViewModel() {
         private val transactionId: String? = savedStateHandle.get<String>("transactionId")
 
@@ -154,6 +157,7 @@ class AddEditTransactionViewModel
                         updatedAt = now,
                     )
                 transactionRepository.upsert(transaction)
+                analyticsTracker.track(AnalyticsEvent.TransactionSaved.from(transaction, isEdit = loadedOriginal != null))
                 internalState.value = internalState.value.copy(submitted = true)
             }
         }
