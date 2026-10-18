@@ -24,8 +24,8 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
 | 6 | 分類與統計 | ✅ DONE | [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) |
 | 7 | 打磨 | ✅ DONE | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12)（實機驗收併入 Phase 8 的封閉測試） |
-| 8 | 上架準備 | **NEXT** | |
-| 9 | 匿名使用分析與贊助 | ⬜ TODO | |
+| 8 | 上架準備 | 🚧 待人類上傳封閉測試 | (見下方交接筆記) |
+| 9 | 匿名使用分析與贊助 | **NEXT**（可與 Phase 8 的 14 天封閉測試平行） | |
 
 ---
 
@@ -38,9 +38,10 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | # | 項目 | 狀態 | 觸發條件 |
 |---|---|---|---|
 | TD-1 | Persistence 測試（`data/RoomTestDb.kt`／`PersistenceTest.kt`／`BackupPersistenceTest.kt`）用 JUnit4（透過 Robolectric）+ `junit-vintage-engine` 橋接，跟 domain 層的 JUnit5 不一致。**不是 bug、不違反 SPEC.md §5**（那條 JUnit5 規定的範圍明文限定在 domain 層），純粹是工具選擇的殘留差異，見 Phase 3 交接筆記完整脈絡 | 擱置，不主動處理 | Robolectric 官方釋出 JUnit5 支援（目前只有一個 0.1.0 的社群 extension，未達生產可用門檻，見 [robolectric/robolectric#3477](https://github.com/robolectric/robolectric/issues/3477)）才評估遷移，沒有的話不用管 |
-| TD-2 | Maestro flow 裡刪除列表項目的滑動手勢（`SwipeToDismissBox`）用明確座標百分比（例如 `88%,67%`）而不是錨定元素，因為 `swipe: { direction: LEFT, from: { text: X } }` 常常跨不過 dismiss 門檻。已在 Phase 4（E2E-2）、Phase 5、Phase 6（E2E-8 刪飲食、E2E-9 刪咖啡）踩過同一件事，共 5 次。座標寫死在畫面目前的版面高度上，之後任何 phase 改動上方版面（預算卡、分類清單頭部等）都可能讓座標失準，需要重新校準 | 擱置，不主動處理（座標校準成本目前還算低，重新校準只要跑一次失敗、看截圖、調整 Y% 即可） | 之後有餘裕時，把可滑動刪除的列表項目都加上穩定的 `testTag`，Maestro 改用 tag 定位，一勞永逸解決這個脆弱點；或是這個座標校準成本明顯升高（例如又發生一次「改版面高度、忘記重新校準」的 CI 失敗）時，優先處理 |
+| TD-2 | ~~Maestro 滑動刪除用寫死的螢幕座標百分比~~ **已解決（Phase 8）**：Phase 4～6 共踩了 5 次，Phase 8 在 API 36 的 CI emulator（1080×2400，跟本機 2280 不同）上 E2E-8/E2E-9 真的滑錯列。給交易列與分類列加上 `testTag`（`transaction-row`、`category-row-{名稱}`，MainActivity 開 `testTagsAsResourceId`），flow 改成 `swipe: { from: { id: ... }, direction: LEFT }`——從**整列的中心**往左滑；往下捲改用 `scrollUntilVisible`。之前「從文字往左滑」跨不過門檻，是因為文字靠左、往左能滑的距離太短 | ✅ 已解決 | 之後新增可滑動的列表項目，一律照這個模式給 tag，不要再寫座標 |
 | TD-3 | ~~`e2e.yml` CI 偶發失敗~~ **已解決**：`launchApp: { clearState: true }` 之後的第一個斷言會在 CI 上偶發失敗（約 18 秒逾時、截圖是空白視窗、view hierarchy 裡完全沒有 App 的視窗），每次中獎的 flow 都不一樣，本機 arm64 emulator 從來不會踩到。從 CI 上傳的 device logcat 找到真正原因是 **ActivityManager 的 destroy-timeout race**：`pm clear` 拆掉舊 task 後會排一個約 1.15 秒才觸發的 destroy timeout，而 Maestro 在 0.69 秒後就重新啟動 App，timeout 觸發時 AMS 把「這個 package 目前的 process」當成要清掉的對象，於是把剛啟動的新 process 殺掉（`Killing 2998 (adj -10000): remove task`）。解法：把 `launchApp: { clearState: true }` 拆成 `clearState` → 等 3 秒（`scripts/settle-after-clear.js`）→ `launchApp: { stopApp: false }`，讓 destroy timeout 在還沒有新 process 存在時就先觸發完畢 | ✅ 已解決（CI 8/8 全綠，見 [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11)） | 教訓兩條，之後遇到 CI-only 的偶發失敗請直接照做：(1) **先去看 CI artifact 裡的 device logcat 跟 failure 截圖/hierarchy**（`e2e.yml` 每次都有上傳），不要憑程式碼猜——這次前後猜錯兩次（資源競爭、Gradle daemon），都是看了 logcat 才在幾分鐘內定案；(2) 「斷言逾時」不一定等於「等不夠久」，要先確認**元素所屬的 process 還活著**，這次就是 process 已經被殺掉，把 timeout 拉長再久都不會過 |
 | TD-4 | 色彩對比的三個已知不足，人類於 2026-10-18 決定**接受現狀**：(1) 深色模式記帳頁未輸入時的 `NT$0` 佔位字照 UI-SPEC §5 用 fg3，對背景只有 4.03:1；(2) 深色模式主按鈕文字維持 Phase 7 改的 `#111114`（5.35:1，取代白字的 3.52:1）；(3) 淺色模式有幾組文字不到 4.5:1（fg3 2.2～2.5、danger/income 3.6～4.3、accent 壓背景 4.18），UI-SPEC §9 只要求深色模式 | 已接受，不主動處理 | 之後若要讓淺色模式也達到 4.5:1，需要人類修改 UI-SPEC §2.1 色票本身 |
+| TD-5 | Robolectric 4.14.1 最高只支援 SDK 35，App 從 Phase 8 起 target 36，所以 `app/src/test/resources/robolectric.properties` 固定 `sdk=35`。這批是 Room 持久層測試，跟平台 API 等級無關，目前沒有實際影響 | 擱置 | 之後如果要用 Robolectric 測跟 Android 16 行為有關的東西，或升級 Robolectric 時，順便拿掉這個固定值 |
 
 ---
 
@@ -1064,6 +1065,70 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
 
 **只有人類能做、建議現在就開始的事：** 申請 Play 開發者帳號並完成身分驗證（可能需要數天）、
 找至少 12 位（建議 15～20 位，有人中途退出會讓 14 天重算）願意安裝測試的 Google 帳號。
+
+### 交接筆記（Phase 8）
+
+**做了什麼：**
+- **錢包封存／取消封存／刪除**（UI-SPEC §11）：編輯頁下方「封存錢包」「刪除錢包」，刪除前跳確認對話框
+  顯示「這個錢包的 N 筆交易會一併刪除」（筆數按下刪除時即時查）；錢包管理頁的「已封存」區塊可以取消封存；
+  最後一個未封存的錢包兩個鍵都停用並顯示「至少要保留一個錢包」。規則在 domain
+  （`assertCanRemoveActiveWallet`）與 repository 都擋：**刪除也要檢查「未封存的錢包數」**，不能只看
+  T4.1.3 的錢包總數——「一個使用中＋一個已封存」時刪掉使用中那個，首頁一樣沒有錢包可以顯示。
+  `resolveCurrentWalletId` 也改成跳過已封存的錢包（之前只檢查存不存在）。
+- **`targetSdk`／`compileSdk` 36**：AGP 8.6.1 → **8.13**（8.x 最後一版；最低支援 API 36 的是 8.9.1，
+  刻意不跳 AGP 9，那是內建 Kotlin 的大改版）、Gradle 8.9 → 8.13。Kotlin／KSP／Hilt／Compose BOM 都沒動，
+  一次就編譯過。Robolectric 4.14.1 不支援 SDK 36 → `robolectric.properties` 固定 `sdk=35`（TD-5）。
+- **release 建置**：R8 + 資源壓縮（APK 18 MB → 1.7 MB）、`versionName 1.0.0`、保留行號給 Android vitals
+  對堆疊。簽章從 `~/.gradle/gradle.properties` 或環境變數的 `EXPENSE_UPLOAD_*` 四個值讀，**金鑰與密碼不進 repo**
+  （`.gitignore` 擋了 `*.jks`）；沒設定時退回 debug 金鑰（Play 會拒收，所以不會被誤傳）。`verify` 加上
+  `bundleRelease`，每個 PR 都會組一次 R8 版本。
+- **Auto Backup 排除裝置狀態**（`res/xml/data_extraction_rules.xml`＋`backup_rules.xml`，T4.3 直接解析這兩個檔）：
+  雲端備份與裝置間轉移都排除 `backup_reminder`、`notification_permission` 兩個 SharedPreferences 與
+  WorkManager 資料庫，記帳資料庫照常備份。
+- **上架文件**（`docs/store/`）：隱私權政策、商店說明、Play Console 各表單的填寫建議、給人類的操作清單
+  `release-checklist.md`（建立上傳金鑰的指令、內部測試→封閉測試→正式版的步驟）。
+- CI 的 e2e 改成 matrix：**API 34（default 映像）＋ API 36（google_apis 映像）**。
+
+**途中發現並修掉的既有 bug（這個 phase 最重要的發現）：**
+- **編輯錢包會刪光那個錢包的所有交易**，而且從 Phase 4 就存在。錢包與分類的 DAO 用
+  `@Insert(onConflict = REPLACE)`——SQLite 的 REPLACE 是「先刪除舊列再插入」，那一下刪除觸發了外鍵動作：
+  錢包是 `ON DELETE CASCADE`（交易全被刪）、分類是 `ON DELETE SET NULL`（**編輯分類會讓它底下的交易全部
+  變成未分類**）；**合併模式匯入**同 id 的錢包時，也會先把本機那個錢包的交易刪掉，再去讀「現有交易」合併，
+  等於本機資料直接消失。改用 Room 的 `@Upsert`（已存在就 UPDATE、不經過刪除）。三個情境都加了經過真正
+  Room 的回歸測試（`editingWalletKeepsItsTransactions`、`editingCategoryKeepsItsTransactionsCategorized`、
+  `t4_2_6_mergeThroughDatabaseKeepsBothSides`）。**為什麼一直沒被抓到**：沒有任何 E2E 去編輯「已經有交易的」
+  錢包或分類；T4.2.5／T4.2.6 只測了純函式 `mergeTransactionsById`，沒有經過資料庫。這是在寫封存功能時，
+  T4.1.9（封存後交易要還在）測試失敗才發現的。App 還沒上架，沒有使用者資料受影響，也不需要 migration。
+- 編輯頁存檔時沒有帶 `archived`，存檔會把已封存的錢包默默取消封存——一併修正。
+- E2E-5 **只要今天是星期日就一定失敗**（Phase 8 剛好在週日跑到）：週日起始的本週從今天才開始，過去的日期
+  不可能同時滿足「週日起始的本週有、週一起始的本週沒有」，改成週日時用明天（SPEC §3.2 允許未來日期）。
+  教訓已寫進 memory：相對日期的 flow 要把 7 個星期幾與月初月底都推一遍。
+
+**Maestro 新踩的坑（已寫進 memory）：**
+- Compose 按鈕的 `enabled` 狀態跟 FilterChip 的 `checked` 一樣在**父節點**，要寫
+  `{ enabled: false, containsChild: { text: ... } }`。
+- 非同步換頁（按「建立錢包」）之後，不能用「上一頁也有的文字」確認已經換頁：`assertVisible: "舊帳"` 比對到
+  新增頁欄位裡的文字而立刻通過，接著 `tapOn` 用欄位的座標，點下去時已經是管理頁，點到了第一列「日常」
+  （封存錯錢包）。改用只有目的地才有的文字。
+- 從一個畫面把結果帶回上一頁的 Snackbar：要寫進上一頁的 `NavBackStackEntry.savedStateHandle`，而且要在
+  **Composable 那層**讀——上一頁 ViewModel 拿到的 `SavedStateHandle` 是另一個物件，讀不到。另外
+  `LaunchedEffect(message)` 裡**不能先清掉 message 再 showSnackbar**，清掉會改變 key、Compose 會立刻取消
+  這個 effect，Snackbar 一出現就被收掉。
+
+**驗證：**
+- `rm -rf app/build .gradle` 後乾淨重跑 `./gradlew verify`（現在包含 `bundleRelease`）全綠：195 個單元測試、
+  domain 行覆蓋率 97.9%。
+- **本機 arm64 emulator（API 34）上用 R8 release 版**連續兩輪 11/11（各約 21～25 分鐘）。
+- **CI（x86_64，API 34 與 API 36）** 11/11 / 11/11：[run 39115877512](https://github.com/jojomango/expense-tracker-android/actions/runs/39115877512)。
+  第一次 CI 時 API 36 是 9/11（E2E-8/9 的座標滑動滑錯列，見 TD-2），改成 tag 定位後兩邊都全過。
+- 途中兩次「全部失敗」都是環境問題、不是 App：一次是我裝了 tag 改動**之前**組的舊 release APK
+  （`verify` 只重組 AAB，要另外 `assembleRelease`）；一次是 emulator 跑了數小時後 QEMU 卡死 crash，
+  cold boot（`-no-snapshot-load`）重開後就正常。
+- **本機沒有 arm64 的 API 36 映像**（只有不能硬體加速的 x86_64），API 36 的驗證完全靠 CI。
+
+**人類接下來要做的事：** 照 `docs/store/release-checklist.md`——申請開發者帳號、建立上傳金鑰、組 AAB、
+內部測試（**在實機上跑一輪，這就是 Phase 7 欠著的實機驗收**）、填應用程式內容、發布隱私權政策、
+封閉測試 14 天。
 
 ---
 
