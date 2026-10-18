@@ -16,13 +16,24 @@ concurrency:
 
 jobs:
   e2e:
-    name: e2e (Maestro on emulator)
+    name: e2e (Maestro on emulator, API ${{ matrix.api-level }})
     # 原本用 macos-14，但 macos-14 runner 是 Apple Silicon（arm64），設定裡
     # 卻寫死 arch: x86_64，導致 emulator 拿不到硬體加速、每次都 boot timeout
     # （見 TASKS.md「已知技術債」）。改用 ubuntu-latest + KVM 是
     # reactivecircus/android-emulator-runner 官方文件建議的做法：比 macOS
     # runner 快 2-3 倍、也便宜很多，不需要煩惱 host 是什麼 CPU 架構。
     runs-on: ubuntu-latest
+    # Phase 8 起 targetSdk 36：Android 16 會強制 edge-to-edge、預設開啟預測式返回，
+    # 這些只會在 API 36 的裝置上出現，所以 34 跟 36 都要跑。API 36 用 google_apis 映像
+    # （E2E-6 需要系統的檔案挑選器 DocumentsUI）。
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 34
+            target: default
+          - api-level: 36
+            target: google_apis
     steps:
       - uses: actions/checkout@v7
 
@@ -65,7 +76,8 @@ jobs:
         continue-on-error: true
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
           arch: x86_64
           profile: pixel_6
           script: |
@@ -80,7 +92,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: maestro-debug-output
+          name: maestro-debug-output-api${{ matrix.api-level }}
           path: ~/.maestro/tests
           if-no-files-found: ignore
 

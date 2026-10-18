@@ -42,3 +42,15 @@ fun assertCanDeleteWallet(existingWalletCount: Int) {
         throw LastWalletException("Cannot delete the last remaining wallet")
     }
 }
+
+/**
+ * 封存或刪除一個**未封存**的錢包之前檢查（SPEC.md §3.1 v2.1、UI-SPEC.md §11）。
+ * [activeWalletCount] 是操作前未封存的錢包數（含這一個）。只剩它一個的話，封存或刪除之後
+ * 主畫面就沒有錢包可以顯示——就算還有已封存的錢包也一樣，所以不能只看 [assertCanDeleteWallet]
+ * 的錢包總數。
+ */
+fun assertCanRemoveActiveWallet(activeWalletCount: Int) {
+    if (activeWalletCount <= 1) {
+        throw LastWalletException("Cannot archive or delete the last active wallet")
+    }
+}

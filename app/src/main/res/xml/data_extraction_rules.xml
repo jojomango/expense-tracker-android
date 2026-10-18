@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ 的 Auto Backup／裝置間轉移規則（SPEC.md §3.6 v2.1、D10）。
+  記帳資料（expense-tracker.db）照常備份到使用者自己的 Google Drive、換機時還原；
+  只排除「屬於這台裝置」的狀態——還原到新裝置的話，新裝置會繼承舊裝置的備份提醒計時、
+  通知權限詢問紀錄與 WorkManager 排程。裝置間轉移（device-transfer）用同一套理由。
+  T4.3 的單元測試會直接解析這個檔案。
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="backup_reminder.xml" />
+        <exclude domain="sharedpref" path="notification_permission.xml" />
+        <exclude domain="database" path="androidx.work.workdb" />
+        <exclude domain="database" path="androidx.work.workdb-shm" />
+        <exclude domain="database" path="androidx.work.workdb-wal" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="backup_reminder.xml" />
+        <exclude domain="sharedpref" path="notification_permission.xml" />
+        <exclude domain="database" path="androidx.work.workdb" />
+        <exclude domain="database" path="androidx.work.workdb-shm" />
+        <exclude domain="database" path="androidx.work.workdb-wal" />
+    </device-transfer>
+</data-extraction-rules>

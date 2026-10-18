@@ -29,7 +29,7 @@ tasks.register("domainPurityCheck") {
 
 tasks.register("verify") {
     group = "verification"
-    description = "Aggregate: domain purity -> ktlint -> detekt -> unit tests + coverage -> assembleDebug"
+    description = "Aggregate: domain purity -> ktlint -> detekt -> unit tests + coverage -> assembleDebug -> bundleRelease (R8)"
     dependsOn(
         ":domainPurityCheck",
         ":app:ktlintCheck",
@@ -37,12 +37,15 @@ tasks.register("verify") {
         ":app:testDebugUnitTest",
         ":app:jacocoTestReport",
         ":app:assembleDebug",
+        // release 版開了 R8：每個 PR 都組一次，R8 規則或 release 設定壞掉時馬上知道，不要等到要上架才發現
+        ":app:bundleRelease",
     )
     tasks.findByPath(":app:ktlintCheck")?.mustRunAfter(":domainPurityCheck")
     tasks.findByPath(":app:detekt")?.mustRunAfter(":app:ktlintCheck")
     tasks.findByPath(":app:testDebugUnitTest")?.mustRunAfter(":app:detekt")
     tasks.findByPath(":app:jacocoTestReport")?.mustRunAfter(":app:testDebugUnitTest")
     tasks.findByPath(":app:assembleDebug")?.mustRunAfter(":app:jacocoTestReport")
+    tasks.findByPath(":app:bundleRelease")?.mustRunAfter(":app:assembleDebug")
 }
 
 subprojects {

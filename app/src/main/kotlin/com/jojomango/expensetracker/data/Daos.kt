@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -21,10 +22,17 @@ interface WalletDao {
     @Query("SELECT COUNT(*) FROM wallets")
     suspend fun count(): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Query("SELECT COUNT(*) FROM wallets WHERE archived = 0")
+    suspend fun countActive(): Int
+
+    // 一定要用 @Upsert，不能用 @Insert(onConflict = REPLACE)：SQLite 的 REPLACE 是「先刪除
+    // 舊列再插入」，這一下刪除會觸發 transactions 的外鍵動作——錢包是 ON DELETE CASCADE
+    // （交易被刪光）、分類是 ON DELETE SET NULL（交易全變成未分類）。Phase 8 才發現
+    // 「編輯錢包/分類」與「合併匯入」一直都會這樣弄丟資料（見 PersistenceTest 的回歸測試）。
+    @Upsert
     suspend fun upsert(wallet: WalletEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAll(wallets: List<WalletEntity>)
 
     @Query("DELETE FROM wallets WHERE id = :id")
@@ -48,10 +56,14 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // 一定要用 @Upsert，不能用 @Insert(onConflict = REPLACE)：SQLite 的 REPLACE 是「先刪除
+    // 舊列再插入」，這一下刪除會觸發 transactions 的外鍵動作——錢包是 ON DELETE CASCADE
+    // （交易被刪光）、分類是 ON DELETE SET NULL（交易全變成未分類）。Phase 8 才發現
+    // 「編輯錢包/分類」與「合併匯入」一直都會這樣弄丟資料（見 PersistenceTest 的回歸測試）。
+    @Upsert
     suspend fun upsert(category: CategoryEntity)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAll(categories: List<CategoryEntity>)
 
     @Query("DELETE FROM categories WHERE id = :id")
@@ -75,6 +87,9 @@ interface CategoryDao {
 interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE walletId = :walletId ORDER BY date DESC")
     fun observeByWallet(walletId: String): Flow<List<TransactionEntity>>
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE walletId = :walletId")
+    suspend fun countByWallet(walletId: String): Int
 
     @Query("SELECT * FROM transactions")
     fun observeAll(): Flow<List<TransactionEntity>>

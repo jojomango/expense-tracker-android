@@ -65,6 +65,8 @@ import com.jojomango.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.isDark
 import com.jojomango.expensetracker.ui.transaction.AddEditTransactionScreen
+import com.jojomango.expensetracker.ui.wallet.WALLET_MESSAGE_KEY
+import com.jojomango.expensetracker.ui.wallet.WalletEditResult
 import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
 import com.jojomango.expensetracker.ui.wallet.WalletManagementScreen
 import com.jojomango.expensetracker.ui.wallet.WalletSwitcherSheet
@@ -269,16 +271,19 @@ private fun ExpenseTrackerApp(
                     onCancel = { navController.popBackStack() },
                 )
             }
-            composable(Routes.WALLET_MANAGEMENT) {
+            composable(Routes.WALLET_MANAGEMENT) { entry ->
+                val walletMessage by entry.savedStateHandle.getStateFlow<String?>(WALLET_MESSAGE_KEY, null).collectAsState()
                 WalletManagementScreen(
                     onBack = { navController.popBackStack() },
                     onAddWallet = { navController.navigate(Routes.WALLET_NEW) },
                     onEditWallet = { id -> navController.navigate(Routes.editWallet(id)) },
+                    message = walletMessage,
+                    onMessageShown = { entry.savedStateHandle[WALLET_MESSAGE_KEY] = null },
                 )
             }
             composable(Routes.WALLET_NEW) {
                 WalletEditScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { result -> navController.finishWalletEdit(result) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -287,7 +292,7 @@ private fun ExpenseTrackerApp(
                 arguments = listOf(navArgument("walletId") { type = NavType.StringType }),
             ) {
                 WalletEditScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { result -> navController.finishWalletEdit(result) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -345,4 +350,16 @@ private fun androidx.navigation.NavController.navigateSingleTopTo(route: String)
         launchSingleTop = true
         restoreState = true
     }
+}
+
+/** 回到錢包管理頁，並把要顯示的 Snackbar 訊息放進它的 SavedStateHandle（UI-SPEC.md §11）。 */
+private fun androidx.navigation.NavController.finishWalletEdit(result: WalletEditResult) {
+    val message =
+        when (result) {
+            WalletEditResult.Saved -> null
+            is WalletEditResult.Archived -> "已封存 ${result.name}"
+            is WalletEditResult.Deleted -> "已刪除 ${result.name}"
+        }
+    previousBackStackEntry?.savedStateHandle?.set(WALLET_MESSAGE_KEY, message)
+    popBackStack()
 }

@@ -1,0 +1,151 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-13 錢包封存與刪除（v2.1）
+#
+# 寫這支 flow 前先看過 memory 裡整理的 Maestro 坑：中文 inputText 之後不接 hideKeyboard
+# （會變成返回上一頁）；要收鍵盤時，讓最後一次輸入是英文/數字，那種輸入一定會叫出系統鍵盤。
+
+# Given 已有錢包「日常」（1 筆交易）與「日本旅遊」（3 筆交易）
+# 不直接用 `launchApp: { clearState: true }`——見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- tapOn: "記帳"
+- tapOn: "1"
+- tapOn: "00"
+- tapOn: "交通"
+- tapOn: "記一筆"
+- assertVisible: "NT$2,900.00"
+
+# 第二個錢包「日本旅遊」（步驟同 E2E-4），切過去記 3 筆
+- tapOn: "日常"
+- tapOn: "管理錢包…"
+- tapOn: "新增"
+- tapOn: "錢包名稱"
+- inputText: "日本旅遊"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "JPY"
+- tapOn: "總預算"
+- tapOn: "預算金額"
+- inputText: "200000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "日本旅遊"
+- tapOn: "返回"
+- tapOn: "日常"
+- tapOn: "日本旅遊"
+- repeat:
+    times: 3
+    commands:
+      - tapOn: "記帳"
+      - tapOn: "1"
+      - tapOn: "0"
+      - tapOn: "00"
+      - tapOn: "交通"
+      - tapOn: "記一筆"
+- assertVisible: "¥197,000"
+
+# When 在錢包管理頁進入「日本旅遊」，點「刪除錢包」
+- tapOn: "日本旅遊"
+- tapOn: "管理錢包…"
+- tapOn: "日本旅遊"
+- scrollUntilVisible:
+    element: "刪除錢包"
+- tapOn: "刪除錢包"
+# Then 確認對話框顯示「這個錢包的 3 筆交易會一併刪除」
+- assertVisible: "這個錢包的 3 筆交易會一併刪除，無法復原。"
+
+# When 按「取消」 Then「日本旅遊」仍在錢包清單中
+# 對話框背後編輯頁的標題列也有一個「取消」（點了會直接離開編輯頁），所以用位置限定成
+# 對話框內文下方的那一個。
+- tapOn:
+    text: "取消"
+    below:
+      text: "這個錢包的 3 筆交易會一併刪除，無法復原。"
+- assertNotVisible: "這個錢包的 3 筆交易會一併刪除，無法復原。"
+- tapOn: "刪除錢包"
+# When 再次點「刪除錢包」並按「刪除」
+- tapOn: "刪除"
+# Then 「日本旅遊」從錢包管理頁消失
+- assertVisible: "已刪除 日本旅遊"
+- assertNotVisible: "日本旅遊"
+- tapOn: "返回"
+# And 首頁自動改顯示「日常」，它的交易完全不受影響（UI-SPEC §11：刪掉的是目前錢包）
+- assertVisible: "NT$2,900.00"
+- assertVisible: "-NT\\$100.00"
+# And 錢包切換清單裡也沒有「日本旅遊」
+- tapOn: "日常"
+- assertVisible: "切換錢包"
+- assertNotVisible: "日本旅遊"
+
+# When 進入「日常」的編輯頁
+# Then 「封存錢包」與「刪除錢包」都不可用（這是最後一個未封存的錢包）
+- tapOn: "管理錢包…"
+- tapOn: "日常"
+- scrollUntilVisible:
+    element: "至少要保留一個錢包"
+# Compose 按鈕的 enabled 狀態在父節點、文字在子節點（跟 FilterChip 的 checked 一樣），
+# 所以要寫成「一個 disabled 的元素、裡面包著那段文字」。
+- assertVisible:
+    enabled: false
+    containsChild:
+      text: "封存錢包"
+- assertVisible:
+    enabled: false
+    containsChild:
+      text: "刪除錢包"
+- tapOn: "取消"
+
+# Given 新增錢包「舊帳」
+- tapOn: "新增"
+- tapOn: "錢包名稱"
+- inputText: "舊帳"
+# 最後一次輸入改成英文（幣別），之後的 hideKeyboard 才安全
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- hideKeyboard
+- tapOn: "不設定"
+- tapOn: "建立錢包"
+# 不能用 assertVisible: "舊帳" 確認回到管理頁：存檔是非同步的，那一瞬間新增頁還在，會比對到
+# 「錢包名稱」欄位裡的「舊帳」；接著 tapOn 用的是欄位的座標，點下去時已經換成管理頁，
+# 剛好點到第一列的「日常」（實際踩到：封存的變成了日常）。改用只有管理頁那一列才有的副標。
+- assertVisible: "TWD · 不設定"
+
+# When 封存「舊帳」
+- tapOn: "TWD · 不設定"
+- scrollUntilVisible:
+    element: "封存錢包"
+- tapOn: "封存錢包"
+# Then 錢包管理頁的「已封存」區塊顯示「舊帳」
+- assertVisible: "已封存 舊帳"
+- assertVisible: "已封存"
+- assertVisible: "取消封存"
+# And 錢包切換清單不顯示「舊帳」
+- tapOn: "返回"
+- tapOn: "日常"
+- assertVisible: "切換錢包"
+- assertNotVisible: "舊帳"
+
+# When 在「已封存」區塊對「舊帳」按「取消封存」
+- tapOn: "管理錢包…"
+- tapOn: "取消封存"
+- assertNotVisible: "取消封存"
+# Then 「舊帳」回到錢包切換清單
+- tapOn: "返回"
+- tapOn: "日常"
+- assertVisible: "切換錢包"
+- assertVisible: "舊帳"
