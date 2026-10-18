@@ -2,7 +2,7 @@
 
 > **草稿（Phase 8，對應版本 1.0.0）。** 要發布到網頁版 repo 的 GitHub Pages
 > （`https://jojomango.github.io/expense-tracker/`）底下，Play Console 填那個網址。
-> `{聯絡信箱}` 要換成你願意公開的聯絡信箱。Phase 9 加入匿名使用分析與贊助時，這份政策
+> 聯絡信箱用 jojomango99@gmail.com（人類 2026-10-18 決定：跟 Play Console 的登入帳號分開）。`{發布日期}` 在發布時填上。Phase 9 加入匿名使用分析與贊助時，這份政策
 > **必須跟著改寫**（見文末）。
 
 最後更新：{發布日期}
@@ -45,7 +45,7 @@
 
 ## 聯絡方式
 
-{聯絡信箱}
+jojomango99@gmail.com
 
 ---
 

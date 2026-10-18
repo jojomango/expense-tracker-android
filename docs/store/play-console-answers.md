@@ -6,6 +6,8 @@
 
 ## 隱私權政策
 
+公開聯絡信箱：jojomango99@gmail.com（Play Console「開發人員帳戶 → 帳戶詳細資料」設定，跟登入用的帳號分開）
+
 網址：發布 `docs/store/privacy-policy.md` 之後的網址（建議放在網頁版 repo 的 GitHub Pages）。
 
 ## 廣告
@@ -40,9 +42,8 @@
 | 資料在傳輸過程中是否加密？ | 不適用 | 沒有傳輸 |
 | 使用者能否要求刪除資料？ | 不適用（沒有收集） | 使用者可以在 App 內刪除或直接解除安裝 |
 
-- ⚠️ 需確認：**Android 系統的 Auto Backup**（資料備份到使用者自己的 Google 帳號）。這是 Android 系統服務把資料
-  存到使用者自己的帳號，開發者拿不到，我判斷不算「開發者收集」，但沒有找到 Google 針對這點的明確官方說法。
-  填表時可以看 Console 上的說明，或參考 [Data safety 說明頁](https://support.google.com/googleplay/android-developer/answer/10787469)。
+- **Android 系統的 Auto Backup 不算「收集」**（人類 2026-10-18 決定）：資料是 Android 系統服務備份到
+  **使用者自己的** Google 帳號，開發者拿不到，所以不需要申報。
 
 ## 財務功能聲明
 

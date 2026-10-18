@@ -52,6 +52,8 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
 
 - [ ] 建立應用程式：名稱「記帳本」、預設語言「中文（台灣）」、App（不是遊戲）、免費
 - [ ] 啟用 **Play App Signing**（建立時預設會啟用）
+- [ ] 「開發人員帳戶 → 帳戶詳細資料」的**公開聯絡信箱**設成 jojomango99@gmail.com（會寄驗證信過去；
+      建議在 99 設自動轉寄到你常用的信箱，使用者來信才不會漏看）
 
 ## 4. 先上「內部測試」確認上傳流程
 
@@ -76,7 +78,7 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
 
 ## 6. 隱私權政策網址
 
-- [ ] 把 `docs/store/privacy-policy.md` 的 `{聯絡信箱}`、`{發布日期}` 換掉
+- [ ] 把 `docs/store/privacy-policy.md` 的 `{發布日期}` 換掉（聯絡信箱已填 jojomango99@gmail.com）
 - [ ] 發布到網頁版 repo（`jojomango/expense-tracker`）的 GitHub Pages，例如
       `https://jojomango.github.io/expense-tracker/android-privacy.html`
       （要我幫忙發 PR 到那個 repo 的話跟我說，那是另一個 repo，我不會自己動）
