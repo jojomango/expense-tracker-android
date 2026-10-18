@@ -23,7 +23,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 4 | 基礎 UI：錢包與交易 CRUD | ✅ DONE | (見下方交接筆記) |
 | 5 | 預算與即時餘額 | ✅ DONE | (見下方交接筆記) |
 | 6 | 分類與統計 | ✅ DONE | [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) |
-| 7 | 打磨 | **NEXT** | |
+| 7 | 打磨 | 🚧 待實機驗收 | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12) |
 
 ---
 
@@ -900,6 +900,147 @@ timeout 拉多長都不會過。
 **驗收：** 所有 E2E／T8 案例全過，實機（不是只有 emulator）安裝測試通過一輪
 「建立錢包 → 記帳 → 看統計 → 匯出備份 → 清除資料 → 匯入還原」完整流程。
 
+### 交接筆記（Phase 7）
+
+> 狀態標成「🚧 待實機驗收」而不是 ✅ DONE：驗收條件的後半段「實機（不是只有
+> emulator）安裝測試通過一輪」agent 做不到，需要人類用真的手機跑一次。其餘項目
+> （所有 E2E flow、單元測試、verify）都已經在本機 emulator 與 CI 驗證過。
+
+**做了什麼：**
+- **備份提醒（SPEC.md §3.6）**：`domain/BackupReminder.kt` 的 `isBackupDue`／
+  `shouldSendBackupReminder`／`backupFileName` 三個純函式，12 個單元測試（其中 6 個
+  是從網頁版 `tests/domain/backup-reminder.test.ts` 逐條移植，數值完全相同）。
+  **Android 版比網頁版多一層通知節流**（`lastRemindedAt`）：網頁版的提醒是頁內
+  banner，出現幾次都無所謂；Android 版是系統通知、WorkManager 每天檢查一次，只看
+  「距上次備份滿 7 天」的話，使用者一直不備份就會變成天天跳通知，不符合「每 7 天
+  提醒一次」。設定頁的 banner 仍然用不節流的 `isBackupDue`。
+- 三個時間點（首次啟動／上次備份／上次提醒）存在 **SharedPreferences 而不是 Room**
+  （`data/PreferencesBackupReminderRepository.kt`）：這是「這台裝置」的狀態不是使用者
+  資料，放 Room 就得跟著 migration 走、還會被一起匯出；換新裝置還原備份後，新裝置應該
+  從自己的第一次啟動重新計時。
+- `ui/notification/BackupReminder.kt`：每天一次的 `PeriodicWorkRequest`（不是 7 天
+  週期——使用者一匯出計時就要重新起算，固定週期做不到）。Worker 沒辦法用 Hilt 建構子
+  注入（需要 `hilt-work`，不在 SPEC.md §5 清單內），改用 hilt-android 本來就有的
+  `EntryPoint`。**排程放在 `MainActivity.onCreate` 而不是 `Application.onCreate`**：
+  Robolectric 的持久層測試也會建立 Application，那個環境沒有初始化 WorkManager。
+  通知點下去直接開設定頁（`EXTRA_OPEN_SETTINGS`）。
+- 通知權限（Android 13+）：**等使用者建好第一個錢包之後才自動問一次**，之後想開走
+  設定頁的「開啟通知」（被拒兩次後系統不再跳對話框，會直接帶去系統的 App 通知設定頁）。
+- **匯出／匯入 UI**（設定頁「備份與還原」區塊）：SAF 的 `CreateDocument`／
+  `OpenDocument`。確認字串「確認取代」、預設合併、兩個選項的文案都跟網頁版
+  `Settings.tsx` 相同。使用者在挑選器按取消 = 什麼都不做（不是錯誤、也不算備份過）；
+  寫入失敗不會重設提醒計時；各種失敗都轉成繁體中文訊息（例外本身的 message 是英文）。
+  挑選器允許的 MIME type 放寬到 `text/plain`／`application/octet-stream`——有些檔案
+  管理員/雲端硬碟 app 回報的 JSON MIME type 不是 `application/json`，只收那一種的話
+  使用者可能選不到自己匯出的檔案。
+- **首次啟動引導頁加了「從備份還原」**（直接進設定頁）：換新裝置的使用者第一步就是
+  還原，不該被迫先建一個用不到的錢包。網頁版 `Home.tsx` 也保留了這個入口，理由相同。
+  **沒有這個入口的話 E2E-6 根本無法完成**（清除資料後 App 停在引導頁、設定頁要先有
+  錢包才進得去）。
+- **外觀設定**（跟隨系統／淺色／深色），`MainActivity` 依設定決定主題，狀態列/導覽列
+  的圖示明暗跟著 App 主題走（不跟系統）；新增 `values-night/themes.xml` 讓 Compose
+  第一幀之前的視窗底色也對齊色票，不會閃白。
+- 載入狀態：`ui/common/LoadingState.kt`，首頁／統計／記帳／錢包編輯／分類編輯在
+  Room 還沒回來之前顯示轉圈，不再是一片空白。
+
+**踩過的坑／順手修掉的既有 bug（都是在 emulator 上實際看畫面抓到的）：**
+- **Material 3 預設的紫色一直漏進畫面**：`ColorScheme` 之前只設了一部分欄位，
+  `surfaceContainerHighest`（Card 的預設底色）、`secondaryContainer`（FilterChip／
+  SegmentedButton 選取態）、`primaryContainer`（FAB 預設底色）都還是 Material 預設的
+  紫色——Phase 5/6 截圖裡淡紫色的 FAB、淡紫灰的卡片就是這個。`Theme.kt` 現在把所有
+  欄位都用 UI-SPEC 色票填滿；FAB 另外指定 `primary` 底、白色「+」（§3.1）；底部導覽的
+  選取/未選取色照 §3.1 設成 primary/fg3。
+- **好幾處文字用了 fg3，但 UI-SPEC 規定是 fg2**：預算卡標籤（§4.2）、交易列副標
+  （§4.3）、錢包切換 sheet 標題（§7）。深色模式下 fg3 壓在卡片上只有 3.26:1，改回規格
+  指定的 fg2 之後就過了 4.5:1。**唯一由 UI-SPEC 明確指定用 fg3 的文字只剩記帳頁的
+  `NT$0` 佔位字（§5）**，那一項寫進「待人類決策」。
+- **分類色塊的淡色底寫死 12%**，但 UI-SPEC §2.2 規定深色模式是 18%——深色模式下
+  色塊幾乎看不出顏色。改成 `AppExtraColors.categoryTintAlpha` 跟著主題走。
+- **統計頁圓環上緣被裁掉、下緣蓋住第一列圖例**（Phase 6 留下的）：外框是 1.4:1、
+  Canvas 用 `fillMaxSize().aspectRatio(1f)`——`aspectRatio` 在尺寸已經被 `fillMaxSize`
+  鎖死時會忽略約束，畫出一個以寬度為直徑的圓。改成外框本身就是正方形。
+- **分類編輯頁的顏色選擇器，最後 4 個顏色（灰、翠綠、金黃、靛藍）根本點不到**
+  （Phase 6 留下的）：10 個 48dp 色塊加間距約 560dp 放在一個 `Row` 裡，一般手機螢幕寬
+  只有 ~393dp。改成 `FlowRow` 自動換行；每個色塊加上中文顏色名稱（TalkBack 原本只會
+  唸「按鈕」）與單選語意。Phase 6 的 E2E-8/9 都用預設顏色，所以沒測出來。
+- **replace 匯入之後首頁可能一片空白**：`HomeViewModel` 選錢包時 `selectedId` 只要
+  非 null 就直接採用、不檢查那個錢包還在不在。replace 匯入把錢包整批換掉之後，
+  `currentWallet` 變 null、錢包清單又不是空的，兩個畫面分支都不進。抽成
+  `resolveCurrentWalletId` 純函式（6 個單元測試），錢包不存在就往下退。
+- **`RoomBackupRepository.import()` 本身沒有驗證**：Phase 3 的設計是「呼叫端要記得
+  先 `validateBackup`」，但介面註解又寫「驗證失敗時拋出」。Phase 7 的 UI 就是那個呼叫端，
+  與其讓每個呼叫端都得記得，改成 `import()` 自己先驗證。新增的測試用「schema 太新但
+  內容本身合法」的 payload——沒驗證的話這種檔案會被成功寫進去蓋掉現有資料；拿掉
+  `validateBackup` 時測試確實失敗、加回來才通過。
+- 引導頁（還沒有錢包）時底部導覽跟中央「+」原本會顯示，點「+」會進到一個沒有錢包
+  可記帳的頁面。現在沒有錢包時不顯示底部導覽；設定頁也加進隱藏清單（§3.1「設定不進
+  底部導覽」，而且中央 FAB 會蓋住匯入表單）。
+- 底部導覽的圖示原本同時有 `contentDescription` 跟文字標籤，TalkBack 會唸成「首頁
+  首頁」，圖示改成 `contentDescription = null`（中央 FAB 沒有文字標籤，保留「記帳」）。
+
+**深色模式對比度（UI-SPEC §9「深色模式文字對比 ≥ 4.5:1」）**：用 WCAG 公式把色票
+全部算過一遍。修完之後深色模式只剩兩處不到 4.5:1，都寫進「待人類決策」：
+（1）記帳頁 `NT$0` 佔位字用規格指定的 fg3（4.03:1 on 背景）；（2）主按鈕文字——
+UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 `#111114`（5.35:1，
+重用淺色模式的主文字 token）**，這是一個看得見的設計變動，需要人類確認。FAB 的「+」
+是圖示不是文字（只需 3:1），照 §3.1 維持白色。
+
+**無障礙檢查**：寫了一個腳本逐頁抓 view hierarchy，自動找出「可點但寬或高 < 48dp」與
+「可點但沒有任何文字/contentDescription」的元素，跑過引導頁、首頁、記帳頁、日期選擇器、
+統計、錢包切換 sheet、錢包管理/編輯、設定（上下兩半）、分類管理/編輯共 12 個畫面。
+真正的問題只有上面那個顏色選擇器，修完後 0 個；其餘報出來的都是被捲動容器裁掉一半的
+項目（量到的是可見範圍，不是真的觸控區太小）。**但這不等於用真的 TalkBack 操作過一輪**
+——那需要人類在實機上開 TalkBack 走一次記帳流程，寫進「我沒做的事」。
+
+**E2E-6／E2E-7：**
+- E2E-6 操作的是系統的 Storage Access Framework 挑選器（DocumentsUI，不是我們的 App）。
+  挑選器預設開在 Downloads、檔名欄位的 id 是 `android:id/title`，flow 先斷言帶入的檔名
+  符合 `expense-backup-\d{8}-\d{4}\.json`，再用 `copyTextFrom` 記下**這次實際匯出的
+  檔名**，匯入時精準點那一個——Downloads 裡可能還留著之前跑測試時匯出的舊備份，點錯的
+  話餘額驗證會失敗。SAVE 用 id `android:id/button1` 不用文字，不綁死語系。FilterChip 的
+  選取狀態在 hierarchy 裡是**父節點** `checked=true`、文字在子節點，所以要寫成
+  `{ checked: true, containsChild: { text: "週日" } }`。
+- **收鍵盤的坑（E2E-8 踩過 `hideKeyboard`，這次又連續踩了兩種變形）**：E2E-6 輸入「確認取代」
+  之後要收鍵盤，才點得到下面的「選擇備份檔並匯入」。
+  1. 先用 `hideKeyboard`：單獨跑通過、整套一起跑失敗，被退回引導頁。`hideKeyboard` 送的是
+     BACK；Maestro 輸入**中文**時會切換成它自己的輸入法（logcat 裡的 `MaestroIME`），不一定
+     有可見的鍵盤，BACK 就變成返回上一頁。
+  2. 改成欄位加 `ImeAction.Done`、flow 送 `pressKey: Enter`：第一輪整套全過、**第二輪又失敗**，
+     一樣被退回引導頁。從 logcat 的時間軸對到 Enter 之後 1 秒內引導頁的欄位取得焦點；用
+     adb 送 `KEYCODE_ENTER` 實際重現——**實體按鍵會讓裝置離開觸控模式，欄位失去焦點後焦點
+     跳到第一個可聚焦的元素，也就是標題列的「返回」**（截圖看得到焦點框），下一個 Enter
+     事件就把它點下去了。
+  3. 最後的解法是**完全不送按鍵、改用觸控**：設定頁點空白處收起鍵盤（`detectTapGestures` →
+     `clearFocus()`，對真實使用者也是常見的操作習慣），flow 點一下「匯入備份」這個純文字標題。
+  **教訓：在 Maestro flow 裡收鍵盤不要送任何按鍵（BACK 跟 Enter 都不安全），用觸控；而且
+  「單獨跑過一次」、甚至「整套跑過一輪」都不足以證明修好了**——第 2 種修法就是整套過了一輪
+  才在第二輪失敗。數字/英文 `inputText` 後面接 `hideKeyboard` 目前是穩定的（那種輸入一定會
+  叫出系統鍵盤，其他 flow 建錢包那步從 Phase 4 以來沒出過事），但同樣的風險原則上存在。
+- E2E-6 要建 15 筆交易，每次點擊 Maestro 要等 ~3 秒畫面穩定，整支 flow 約 9 分鐘；
+  金額用「1」「00」兩下輸入（不是「1」「0」「0」），省下約 1 分鐘，順便測到「00」鍵。
+- E2E-7：**強制關閉後重開一樣會踩到 TD-3 那個 destroy-timeout race**（force-stop 一樣
+  會拆掉 task），所以重開前一樣要先跑 `settle-after-clear.js`。飛航模式的還原放在
+  `onFlowComplete`，flow 中途失敗也會關回來。有實際確認 Maestro 的 `setAirplaneMode`
+  在 emulator 上真的生效（`airplane_mode_on=1`、連線中的網路 0 個），不是 no-op。
+- 備份提醒通知也在 emulator 上實際驗證過：啟動前把 `first_launch_at` 改成 8 天前
+  （`run-as` 直接改 SharedPreferences XML）、預先 `pm grant` 通知權限，啟動後週期性 work
+  的第一次立即執行就發出了「該備份資料了」通知、寫入 `last_reminded_at`、點通知直達設定頁。
+  **注意：用 `cmd jobscheduler run -f` 強制觸發一個還沒到期的週期性 work，WorkManager 會
+  直接略過（`Status is ENQUEUED; not doing any work`）**，要測只能用「第一次排程會立即
+  執行」這個特性。
+
+**本機驗證：** JDK 17 改放 `~/.local/jdk17`（之前放 `/tmp` 的那份被重開機清掉了）。
+`rm -rf app/build .gradle` 後乾淨重跑 `./gradlew verify` 全綠：181 個單元測試全過、domain
+行覆蓋率 97.8%。10 支 Maestro flow（新增 E2E-6、E2E-7）在本機 arm64 emulator **連續兩輪
+10/10**（各約 17 分鐘，E2E-6 單獨佔 5 分多鐘）；在那之前 E2E-6 有兩次「第一輪過、下一輪失敗」，
+見上面收鍵盤的坑。
+
+**發現但沒有處理的既有缺口（寫進「待人類決策」）：**
+- **整個 UI 沒有封存錢包、也沒有刪除錢包的入口。** SPEC.md §3.1 的「刪除錢包（二次
+  確認並提示交易筆數）」、§6 Phase 4 列的「封存」從來沒有做過，TASKS.md 之前的交接筆記
+  也沒記錄這個缺口（domain 的 `LastWalletException` 跟 T4.1.3 測試都在，只是沒有 UI）。
+  這是 Phase 4 的範圍、沒有任何 E2E 測案涵蓋，照「只做那一個 phase」的原則沒有順手補。
+
 ---
 
 ## 待人類決策的問題
@@ -907,4 +1048,18 @@ timeout 拉多長都不會過。
 > Agent 發現規格矛盾或需要批准時，寫在這裡，並同時寫進 PR 描述。
 > 人類回覆後會把該項移除。
 
-_（目前無）_
+1. **UI-SPEC §2.1 的 fg3 色值與 §9「深色模式文字對比 ≥ 4.5:1」互相矛盾**：§5 規定記帳頁
+   未輸入時的 `NT$0` 用 fg3，但深色 fg3 `#6C6C72` 壓在背景上只有 4.03:1。其他原本用 fg3
+   的文字都已經改回規格指定的 fg2，只剩這一處是規格本身指定的。選項：(a) 接受——這是
+   佔位字，WCAG 對 placeholder 通常視為附帶文字；(b) 把 §5 改成 fg2；(c) 調亮深色 fg3。
+2. **深色模式主按鈕文字改成 `#111114`**（原本是白字）：UI-SPEC 沒規定 onPrimary，
+   白字壓 dark accent `#D9673F` 只有 3.52:1、達不到 §9。改成重用淺色模式主文字 token 的
+   `#111114`（5.35:1）。這是一個看得見的視覺變動（深色模式的「記一筆」「建立錢包」等
+   按鈕變成深色字），需要確認可以接受。
+3. **淺色模式也有好幾組不到 4.5:1**（§9 只要求深色模式，所以沒有動）：fg3 文字 2.2～2.5、
+   danger/income 文字 3.6～4.3、accent 文字壓在背景上 4.18。如果之後想讓淺色模式也達到
+   4.5:1，需要調整色票本身。
+4. **封存錢包／刪除錢包的 UI 從來沒做過**（SPEC.md §3.1、§6 Phase 4），見 Phase 7
+   交接筆記。要排進哪個 phase？
+5. **實機驗收**：Phase 7 驗收條件要求實機跑一輪「建立錢包 → 記帳 → 看統計 → 匯出備份 →
+   清除資料 → 匯入還原」，以及用 TalkBack 操作一輪記帳流程，這兩項 agent 做不到。

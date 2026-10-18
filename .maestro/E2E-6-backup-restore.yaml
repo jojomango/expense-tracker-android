@@ -1,0 +1,150 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-6 備份與還原
+#
+# 匯出/匯入走的是 Android 系統的 Storage Access Framework 挑選器（DocumentsUI），
+# 不是我們的 App——下面點「SAVE」、點檔案名稱的那幾步是在操作系統畫面。
+# 按鈕用 id（android:id/button1）而不是文字「SAVE」，是為了不綁死 emulator 的語系。
+
+# Given 已有 2 個錢包與 15 筆交易
+# 不直接用 `launchApp: { clearState: true }`——見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+
+# 日常：10 筆 NT$100 → 本週餘額 NT$2,000.00
+# 金額用「1」「00」兩下輸入而不是「1」「0」「0」：15 筆交易每筆少一次點擊，整支 flow
+# 省下一分鐘左右（每次點擊 Maestro 要等 3 秒左右畫面穩定），順便也測到「00」鍵。
+- repeat:
+    times: 10
+    commands:
+      - tapOn: "記帳"
+      - tapOn: "1"
+      - tapOn: "00"
+      - tapOn: "交通"
+      - tapOn: "記一筆"
+- assertVisible: "NT$2,000.00"
+
+# 第二個錢包「日本旅遊」（步驟同 E2E-4）
+- tapOn: "日常"
+- tapOn: "管理錢包…"
+- tapOn: "新增"
+- tapOn: "錢包名稱"
+- inputText: "日本旅遊"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "JPY"
+- tapOn: "總預算"
+- tapOn: "預算金額"
+- inputText: "200000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "日本旅遊"
+- tapOn: "返回"
+- tapOn: "日常"
+- tapOn: "日本旅遊"
+- assertVisible: "¥200,000"
+
+# 日本旅遊：5 筆 ¥1,000 → 剩餘總預算 ¥195,000（合計 15 筆交易）
+- repeat:
+    times: 5
+    commands:
+      - tapOn: "記帳"
+      - tapOn: "1"
+      - tapOn: "0"
+      - tapOn: "00"
+      - tapOn: "交通"
+      - tapOn: "記一筆"
+- assertVisible: "¥195,000"
+
+# 把週起始日改成非預設值，才驗證得到「設定一併還原」（預設值還原跟沒還原看不出差別）
+- tapOn: "設定"
+- tapOn: "週日"
+- assertVisible:
+    checked: true
+    containsChild:
+      text: "週日"
+- tapOn: "返回"
+
+# 切回「日常」再匯出，這樣 defaultWalletId 也有一個非預設的值可以驗證
+- tapOn: "日本旅遊"
+- tapOn: "日常"
+- assertVisible: "NT$2,000.00"
+
+# When 在設定中點擊「匯出備份」
+- tapOn: "設定"
+- tapOn: "匯出備份"
+
+# Then 透過 Storage Access Framework 選擇存放位置後成功寫出一個 JSON 檔
+# 挑選器帶入的預設檔名要符合 SPEC.md §3.6 的 expense-backup-YYYYMMDD-HHmm.json
+- assertVisible:
+    id: "android:id/title"
+    text: "expense-backup-\\d{8}-\\d{4}\\.json"
+# 記下這次實際匯出的檔名，匯入時才能精準點到這一個——Downloads 裡可能還留著之前
+# 跑測試時匯出的舊備份檔，內容的日期不同，點錯的話餘額驗證會失敗。
+- copyTextFrom:
+    id: "android:id/title"
+- tapOn:
+    id: "android:id/button1"
+- assertVisible: "已匯出 expense-backup-.*"
+
+# Given 清除 app 資料（模擬換裝置）
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+
+# When 開啟 app 並匯入該備份檔（replace 模式）
+# 全新裝置還沒有錢包，從引導頁直接進入還原，不用先建一個用不到的錢包
+- tapOn: "從備份還原"
+- scrollUntilVisible:
+    element: "取代（清空現有資料）"
+- tapOn: "取代（清空現有資料）"
+- tapOn: "輸入「確認取代」以確認清空現有資料"
+- inputText: "確認取代"
+# 收鍵盤這一步不能送任何按鍵：
+# - hideKeyboard 送的是 BACK，鍵盤當下沒顯示時會直接把設定頁退回引導頁（Maestro 輸入
+#   中文時會切換成它自己的輸入法，不一定有可見的鍵盤）；
+# - pressKey Enter 也不行：實體按鍵會讓裝置離開觸控模式，欄位失去焦點後焦點會跳到
+#   第一個可聚焦的元素——標題列的「返回」——下一個 Enter 事件就把它點下去了
+#   （有用 adb 送 KEYCODE_ENTER 實際看到焦點框跳到「返回」上）。
+# 兩種都是單獨跑時碰巧會過、整套一起跑時才失敗。改用觸控：點一下「匯入備份」這個
+# 純文字標題，設定頁點空白處會收起鍵盤。
+- tapOn: "匯入備份"
+- scrollUntilVisible:
+    element: "選擇備份檔並匯入"
+- tapOn: "選擇備份檔並匯入"
+- tapOn: "${maestro.copiedText}"
+- assertVisible: "匯入完成"
+
+# Then 週起始日等設定一併還原
+- scrollUntilVisible:
+    element: "週起始日"
+    direction: UP
+- assertVisible:
+    checked: true
+    containsChild:
+      text: "週日"
+
+# And 2 個錢包與 15 筆交易完整還原
+# And 所有餘額計算結果與匯出前完全一致
+- tapOn: "返回"
+- assertVisible: "日常"
+- assertVisible: "NT$2,000.00"
+- tapOn: "日常"
+- tapOn: "日本旅遊"
+- assertVisible: "¥195,000"

@@ -21,10 +21,11 @@ object Routes {
     fun editCategory(categoryId: String) = "category/edit/$categoryId"
 }
 
-/** 底部導覽會隱藏的路由——記帳頁全螢幕，見 UI-SPEC.md §3.1；錢包管理/編輯也是
- * 全螢幕的表單流程，不是底部導覽的目的地。 */
+/** 底部導覽會隱藏的路由——記帳頁全螢幕，見 UI-SPEC.md §3.1；設定、錢包/分類管理也是
+ * 有自己「返回」鍵的全螢幕流程，不是底部導覽的目的地（§3.1：設定不進底部導覽）。 */
 fun isBottomNavHiddenRoute(route: String?): Boolean =
     route == Routes.ADD_TRANSACTION ||
+        route == Routes.SETTINGS ||
         route == Routes.WALLET_MANAGEMENT ||
         route == Routes.WALLET_NEW ||
         route == Routes.CATEGORY_MANAGEMENT ||

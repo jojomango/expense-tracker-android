@@ -1,0 +1,61 @@
+appId: com.jojomango.expensetracker
+# 不管 flow 成功或中途失敗都會跑：一定要把飛航模式關回來，不然 emulator 會一直停在
+# 飛航模式，後面的 flow 雖然不需要網路，但留著這種狀態會讓之後的除錯很難推理。
+onFlowComplete:
+  - setAirplaneMode: disabled
+---
+# TESTCASES.md E2E-7 離線可用
+#
+# 這個 app 本來就沒有 INTERNET 權限（SPEC.md P3，見 AndroidManifest.xml），所以
+# 「離線可用」在系統層級就成立；這支 flow 驗的是使用者實際會遇到的情境本身。
+
+# Given app 已安裝並開啟過一次，且已有資料
+# 不直接用 `launchApp: { clearState: true }`——見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "3000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "NT$3,000.00"
+- tapOn: "記帳"
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "0"
+- tapOn: "交通"
+- tapOn: "記一筆"
+- assertVisible: "NT$2,880.00"
+
+# When 裝置切換為飛航模式
+- setAirplaneMode: enabled
+
+# And 重新開啟 app（強制關閉後重開，模擬程序被系統殺掉後回復）
+# 強制關閉一樣會拆掉 App 的 task，跟 clearState 是同一個 destroy-timeout race，
+# 所以重開前一樣要先等 settle，不然剛重開的 process 會被 AMS 誤殺。
+- stopApp
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+
+# Then app 正常載入
+# And 所有既有資料可讀取
+- assertVisible: "日常"
+- assertVisible: "NT$2,880.00"
+- assertVisible: "-NT\\$120.00"
+
+# And 可正常新增交易
+- tapOn: "記帳"
+- tapOn: "5"
+- tapOn: "00"
+- tapOn: "交通"
+- tapOn: "記一筆"
+- assertVisible: "NT$2,380.00"

@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -90,6 +91,24 @@ class BackupPersistenceTest {
         val tooNew = samplePayload(schemaVersion = CURRENT_BACKUP_SCHEMA_VERSION + 1)
         assertThrows(BackupSchemaTooNewException::class.java) { validateBackup(tooNew) }
     }
+
+    @Test
+    fun t4_2_3_importItselfRejectsInvalidPayloadWithoutWriting() =
+        runTest {
+            backupRepo.import(samplePayload(), ImportMode.REPLACE)
+            val before = backupRepo.export()
+
+            // schema 太新、但內容本身完全合法——如果 import() 沒有自己驗證，這份檔案會被
+            // 當成正常資料寫進去，把現有的「日常」蓋成「旅遊」。
+            val tooNew =
+                samplePayload(schemaVersion = CURRENT_BACKUP_SCHEMA_VERSION + 1).let { payload ->
+                    payload.copy(wallets = payload.wallets.map { it.copy(name = "旅遊") })
+                }
+            val result = runCatching { backupRepo.import(tooNew, ImportMode.REPLACE) }
+
+            assertTrue(result.exceptionOrNull() is BackupSchemaTooNewException)
+            assertEquals(before.wallets, backupRepo.export().wallets)
+        }
 
     @Test
     fun t4_2_3_importingInvalidPayloadLeavesExistingDataUnchanged() =

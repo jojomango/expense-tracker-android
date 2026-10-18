@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.domain.WeeklyTrendPoint
+import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -50,6 +51,10 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
     val typography = LocalAppTypography.current
 
     Scaffold { padding ->
+        if (state.isLoading) {
+            LoadingState(modifier = Modifier.padding(padding))
+            return@Scaffold
+        }
         Column(
             modifier =
                 Modifier
@@ -91,8 +96,11 @@ private fun DonutCard(state: StatsUiState) {
 
     Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(22.dp)) {
-            Box(modifier = Modifier.fillMaxWidth().aspectRatio(1.4f), contentAlignment = Alignment.Center) {
-                Canvas(modifier = Modifier.fillMaxSize().aspectRatio(1f)) {
+            // 外框必須跟圓環一樣是正方形。之前外框是 1.4:1、Canvas 用 fillMaxSize().aspectRatio(1f)，
+            // aspectRatio 在尺寸已經被 fillMaxSize 鎖死時會忽略約束，畫出一個以寬度為直徑的圓，
+            // 結果圓環上緣被卡片裁掉、下緣蓋住第一列圖例文字（Phase 7 深色模式檢查時發現）。
+            Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
                     val strokeWidth = size.minDimension * 0.16f
                     val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
                     val topLeft = Offset(strokeWidth / 2, strokeWidth / 2)
@@ -124,7 +132,7 @@ private fun DonutCard(state: StatsUiState) {
                 }
                 // UI-SPEC.md §6：圓環中心疊獨立的 Box + Text，不畫在 Canvas 裡（排版麻煩）。
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(periodLabel, style = typography.caption, color = extraColors.fg3)
+                    Text(periodLabel, style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(state.periodTotal?.format() ?: "—", style = typography.donutTotal)
                 }
             }
@@ -134,7 +142,7 @@ private fun DonutCard(state: StatsUiState) {
                 CategoryLegendRow(slice)
             }
             if (state.categorySlices.isEmpty()) {
-                Text("這段期間還沒有支出", style = typography.caption, color = extraColors.fg3)
+                Text("這段期間還沒有支出", style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -159,7 +167,7 @@ private fun CategoryLegendRow(slice: CategorySlice) {
             Text(
                 "${slice.amount.format()}（${formatPercent(slice.percent)}%）",
                 style = typography.caption,
-                color = extraColors.fg3,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Spacer(Modifier.height(4.dp))
@@ -216,7 +224,7 @@ private fun TrendCard(points: List<WeeklyTrendPoint>) {
                         Text(
                             "${point.range.start.monthNumber}/${point.range.start.dayOfMonth}",
                             style = typography.tabLabel,
-                            color = if (index == points.lastIndex) primary else extraColors.fg3,
+                            color = if (index == points.lastIndex) primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

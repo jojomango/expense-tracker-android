@@ -99,7 +99,7 @@ class HomeViewModel
                 settingsRepository.observe(),
                 selectedWalletId,
             ) { wallets, categories, settings, selectedId ->
-                val resolvedId = selectedId ?: settings.defaultWalletId ?: wallets.firstOrNull { !it.archived }?.id
+                val resolvedId = resolveCurrentWalletId(wallets, selectedId, settings.defaultWalletId)
                 HomeContext(wallets, categories, settings, resolvedId)
             }.flatMapLatest { ctx ->
                 val wallet = ctx.wallets.firstOrNull { it.id == ctx.resolvedWalletId }
@@ -217,3 +217,16 @@ private fun formatWalletBalance(
         else -> Budget.calculateWeeklyExpenseTotal(wallet, transactions, weekStartDay, referenceDate).format()
     }
 }
+
+/**
+ * 首頁要顯示哪個錢包：手動選過的 > 設定的預設錢包 > 第一個未封存的錢包。
+ * 前兩者都要**確認那個錢包還存在**才採用——replace 匯入會把錢包整批換掉，原本選的
+ * 錢包可能已經不在了；照用那個 id 的話 currentWallet 會是 null，首頁一片空白。
+ */
+internal fun resolveCurrentWalletId(
+    wallets: List<Wallet>,
+    selectedId: String?,
+    defaultWalletId: String?,
+): String? =
+    listOfNotNull(selectedId, defaultWalletId).firstOrNull { id -> wallets.any { it.id == id } }
+        ?: wallets.firstOrNull { !it.archived }?.id

@@ -52,7 +52,7 @@ fun BudgetCard(
                     BudgetMode.TOTAL -> "總預算還剩"
                     BudgetMode.NONE -> "本週支出"
                 }
-            Text(label, style = typography.label, color = extraColors.fg3)
+            Text(label, style = typography.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
 
             BudgetAmountRow(state, isOverBudget, typography)

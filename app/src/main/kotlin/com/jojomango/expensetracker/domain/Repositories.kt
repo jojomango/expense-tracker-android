@@ -1,6 +1,7 @@
 package com.jojomango.expensetracker.domain
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 /**
  * Repository 介面放在 `domain`，實作放在 `data`（見 CLAUDE.md 目錄職責）。
@@ -65,4 +66,22 @@ interface BackupRepository {
         payload: BackupPayload,
         mode: ImportMode,
     )
+}
+
+/**
+ * 備份提醒需要的三個時間點（見 [BackupReminderState]）。跟其他 repository 不同，
+ * 這份狀態屬於「這台裝置」而不是使用者資料，所以實作不走 Room、也不會被匯出。
+ * 時間一律由呼叫端傳進來（CLAUDE.md 禁令 2），這裡不自己取現在時間。
+ */
+interface BackupReminderRepository {
+    fun observe(): Flow<BackupReminderState>
+
+    suspend fun get(): BackupReminderState
+
+    /** 只在還沒記錄過時寫入——之後每次開 app 呼叫都不會覆蓋掉最初的時間。 */
+    suspend fun recordFirstLaunchIfAbsent(now: Instant)
+
+    suspend fun recordBackup(now: Instant)
+
+    suspend fun recordReminder(now: Instant)
 }
