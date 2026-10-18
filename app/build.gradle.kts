@@ -29,8 +29,8 @@ android {
         applicationId = "com.jojomango.expensetracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,9 +44,14 @@ android {
     val hasReleaseSigning = releaseSigning.values.all { !it.isNullOrBlank() }
 
     // 用正式金鑰簽的版本是要上傳到 Play 的：少了 Firebase 設定檔的話，使用者打開「協助改善 App」
-    // 也什麼都收不到，而且不會有任何錯誤提示——寧可在組建時就擋下來。
+    // 也什麼都收不到，而且不會有任何錯誤提示——寧可在組建時就擋下來。只擋 release 的 task，
+    // debug 組建與測試照常可以跑。
     if (hasReleaseSigning && !hasFirebaseConfig) {
-        throw GradleException("已設定上傳金鑰，但找不到 app/google-services.json——上架版本必須包含 Firebase 設定檔")
+        tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+            doFirst {
+                throw GradleException("已設定上傳金鑰，但找不到 app/google-services.json——上架版本必須包含 Firebase 設定檔")
+            }
+        }
     }
 
     signingConfigs {

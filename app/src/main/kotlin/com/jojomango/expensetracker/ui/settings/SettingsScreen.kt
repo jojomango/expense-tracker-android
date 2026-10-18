@@ -61,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -192,7 +193,10 @@ private fun PrivacySection(viewModel: PrivacyAndSupportViewModel) {
             )
         },
         trailingContent = { Switch(checked = enabled, onCheckedChange = null) },
-        modifier = Modifier.toggleable(value = enabled, role = Role.Switch, onValueChange = viewModel::setAnalyticsEnabled),
+        modifier =
+            Modifier
+                .testTag("analytics-consent")
+                .toggleable(value = enabled, role = Role.Switch, onValueChange = viewModel::setAnalyticsEnabled),
     )
 }
 

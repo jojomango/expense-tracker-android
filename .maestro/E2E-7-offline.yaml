@@ -6,8 +6,8 @@ onFlowComplete:
 ---
 # TESTCASES.md E2E-7 離線可用
 #
-# 這個 app 本來就沒有 INTERNET 權限（SPEC.md P3，見 AndroidManifest.xml），所以
-# 「離線可用」在系統層級就成立；這支 flow 驗的是使用者實際會遇到的情境本身。
+# 從 1.1.0（Phase 9）起 App 有 INTERNET 權限，但只用於預設關閉的匿名分析與 Play 贊助
+# （SPEC.md P3 v2）；記帳功能本身完全不碰網路，這支 flow 驗的就是飛航模式下照常使用。
 
 # Given app 已安裝並開啟過一次，且已有資料
 # 不直接用 `launchApp: { clearState: true }`——見 scripts/settle-after-clear.js 檔頭。

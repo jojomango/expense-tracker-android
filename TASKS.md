@@ -25,7 +25,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 6 | 分類與統計 | ✅ DONE | [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11) |
 | 7 | 打磨 | ✅ DONE | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12)（實機驗收併入 Phase 8 的封閉測試） |
 | 8 | 上架準備 | 🚧 待人類上傳封閉測試 | [PR #15](https://github.com/jojomango/expense-tracker-android/pull/15) |
-| 9 | 匿名使用分析與贊助 | **NEXT**（可與 Phase 8 的 14 天封閉測試平行） | |
+| 9 | 匿名使用分析與贊助 | 🚧 WIP（draft PR，待人類驗收：Firebase DebugView、實機贊助） | {PR} |
 
 ---
 
@@ -41,6 +41,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | TD-2 | ~~Maestro 滑動刪除用寫死的螢幕座標百分比~~ **已解決（Phase 8）**：Phase 4～6 共踩了 5 次，Phase 8 在 API 36 的 CI emulator（1080×2400，跟本機 2280 不同）上 E2E-8/E2E-9 真的滑錯列。給交易列與分類列加上 `testTag`（`transaction-row`、`category-row-{名稱}`，MainActivity 開 `testTagsAsResourceId`），flow 改成 `swipe: { from: { id: ... }, direction: LEFT }`——從**整列的中心**往左滑；往下捲改用 `scrollUntilVisible`。之前「從文字往左滑」跨不過門檻，是因為文字靠左、往左能滑的距離太短 | ✅ 已解決 | 之後新增可滑動的列表項目，一律照這個模式給 tag，不要再寫座標 |
 | TD-3 | ~~`e2e.yml` CI 偶發失敗~~ **已解決**：`launchApp: { clearState: true }` 之後的第一個斷言會在 CI 上偶發失敗（約 18 秒逾時、截圖是空白視窗、view hierarchy 裡完全沒有 App 的視窗），每次中獎的 flow 都不一樣，本機 arm64 emulator 從來不會踩到。從 CI 上傳的 device logcat 找到真正原因是 **ActivityManager 的 destroy-timeout race**：`pm clear` 拆掉舊 task 後會排一個約 1.15 秒才觸發的 destroy timeout，而 Maestro 在 0.69 秒後就重新啟動 App，timeout 觸發時 AMS 把「這個 package 目前的 process」當成要清掉的對象，於是把剛啟動的新 process 殺掉（`Killing 2998 (adj -10000): remove task`）。解法：把 `launchApp: { clearState: true }` 拆成 `clearState` → 等 3 秒（`scripts/settle-after-clear.js`）→ `launchApp: { stopApp: false }`，讓 destroy timeout 在還沒有新 process 存在時就先觸發完畢 | ✅ 已解決（CI 8/8 全綠，見 [PR #11](https://github.com/jojomango/expense-tracker-android/pull/11)） | 教訓兩條，之後遇到 CI-only 的偶發失敗請直接照做：(1) **先去看 CI artifact 裡的 device logcat 跟 failure 截圖/hierarchy**（`e2e.yml` 每次都有上傳），不要憑程式碼猜——這次前後猜錯兩次（資源競爭、Gradle daemon），都是看了 logcat 才在幾分鐘內定案；(2) 「斷言逾時」不一定等於「等不夠久」，要先確認**元素所屬的 process 還活著**，這次就是 process 已經被殺掉，把 timeout 拉長再久都不會過 |
 | TD-4 | 色彩對比的三個已知不足，人類於 2026-10-18 決定**接受現狀**：(1) 深色模式記帳頁未輸入時的 `NT$0` 佔位字照 UI-SPEC §5 用 fg3，對背景只有 4.03:1；(2) 深色模式主按鈕文字維持 Phase 7 改的 `#111114`（5.35:1，取代白字的 3.52:1）；(3) 淺色模式有幾組文字不到 4.5:1（fg3 2.2～2.5、danger/income 3.6～4.3、accent 壓背景 4.18），UI-SPEC §9 只要求深色模式 | 已接受，不主動處理 | 之後若要讓淺色模式也達到 4.5:1，需要人類修改 UI-SPEC §2.1 色票本身 |
+| TD-6 | Kotlin 停在 2.0.21，所以 **Firebase BoM 釘在 34.10.0**（firebase-analytics 23.0.0、crashlytics 20.0.4）：34.11.0 起的 Firebase 用 Kotlin 2.2+ 的 metadata 編譯（35.x 是 2.4），Kotlin 2.0 編譯器直接報 `incompatible version of Kotlin`。Play Billing 9.1.0 沒有這個問題 | 擱置，沒有功能影響 | 要升 Firebase（例如修安全性問題、或 Play 開始要求新版 SDK）時，一起把 Kotlin 升到 2.3+——連帶要升 KSP、Hilt（新版才讀得懂新 metadata）、Room、Compose compiler plugin，建議獨立一個 PR 做，不要混在功能 phase 裡 |
 | TD-5 | Robolectric 4.14.1 最高只支援 SDK 35，App 從 Phase 8 起 target 36，所以 `app/src/test/resources/robolectric.properties` 固定 `sdk=35`。這批是 Room 持久層測試，跟平台 API 等級無關，目前沒有實際影響 | 擱置 | 之後如果要用 Robolectric 測跟 Android 16 行為有關的東西，或升級 Robolectric 時，順便拿掉這個固定值 |
 
 ---
@@ -1138,9 +1139,54 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
 
 **要做的事：** 見 `SPEC.md` §6 Phase 9。
 
-**開工前人類要準備的：** Firebase 專案與 `google-services.json`（不進 repo，CI 從 GitHub Secret
-還原）、Play Console 商家帳戶。三個贊助商品要等含 Billing 的版本上傳到測試軌道之後才能在
-Console 建立，所以會落在 Phase 9 中段。
+**開工前人類要準備的：** Firebase 專案與 `google-services.json`（不進 repo）、Play Console 商家帳戶。
+三個贊助商品要等含 Billing 的版本上傳到測試軌道之後才能在 Console 建立，所以會落在 Phase 9 中段。
+
+### 交接筆記（Phase 9）
+
+**做了什麼：**
+- `ui/analytics/`：`AnalyticsEvent`（sealed，九種事件＝SPEC §3.7 的表，參數值只能是 enum 轉出來的固定字串
+  或布林）、`AnalyticsTracker`（唯一入口，開關關閉時 no-op）、`PreferencesAnalyticsConsent`
+  （SharedPreferences `analytics_consent.xml`）、`FirebaseAnalyticsSink`、`analyticsScreenFor`（路由樣板 →
+  固定畫面名稱）。
+- `ui/donation/`：`DonationPurchaseHandler`（要不要 consume／要不要感謝的純邏輯，T9.2）、`donationOffers`、
+  `PlayDonationBilling`（Billing 9.1 的薄轉接層，`@Singleton`）。
+- 設定頁：「隱私」區塊與「支持開發者」收合區塊，邏輯放在新的 `PrivacyAndSupportViewModel`
+  （塞進 `SettingsViewModel` 會超過 detekt 的函式數門檻，而且兩件事本來就跟備份無關）。
+- 事件送出點：MainActivity（screen_view，跟著 back stack entry）、HomeViewModel／WalletEditViewModel
+  （wallet_created，只有新建）、AddEditTransactionViewModel（transaction_saved）、StatsViewModel
+  （stats_period_switched，只有真的切換）、SettingsViewModel（theme_changed、backup_exported、backup_imported）、
+  PrivacyAndSupportViewModel（donation_section_opened）、PlayDonationBilling（donation_completed）。
+- 版本 1.1.0（versionCode 2）——1.0.0 是 Phase 8 要上封閉測試的那一版。
+
+**設計決策（下一個人要知道的）：**
+- **分析、贊助的程式全部放在 `ui/` 底下，不放 `data/`**：`AnalyticsSink` 等介面不能放 `domain`（SPEC P3 第 4 點），
+  放 `ui` 又讓 `data` 實作它的話，就變成 `data → ui` 的反向依賴。比照 `ui/notification` 自己管 SharedPreferences 的做法。
+- **預設關閉靠 manifest，不靠 Kotlin**：`firebase_analytics_collection_enabled`／`firebase_crashlytics_collection_enabled`
+  等 meta-data 都是 false，SDK 在任何 Kotlin 程式碼執行前就讀。`AnalyticsManifestTest` 解析 manifest 防止被誤刪
+  （跟 `BackupRulesTest` 同一個理由：刪掉了 App 照跑、測試照綠，只是開始偷送資料）。
+- Firebase 自動帶進的 `AD_ID`、Privacy Sandbox（`ACCESS_ADSERVICES_*`）、install referrer 權限都用
+  `tools:node="remove"` 拿掉（SPEC P3 第 3 點禁止廣告 ID 與歸因）。合併後的 manifest 確認過只剩 INTERNET、
+  ACCESS_NETWORK_STATE、BILLING 這幾個新權限。
+- **同意狀態排除在 Auto Backup 之外**：還原到新手機時回到關閉，要使用者在新手機上重新同意。
+- 關閉開關時：`setAnalyticsCollectionEnabled(false)`、Crashlytics 關閉並 `deleteUnsentReports()`、
+  `resetAnalyticsData()`（清掉 app instance id，重新開啟後跟之前的紀錄接不起來）。
+- **沒有 `google-services.json` 時不套用 Firebase 的兩個 Gradle 外掛**，執行期 `FirebaseApp` 不會初始化，
+  `FirebaseAnalyticsSink` 偵測到就整個 no-op（不然 `FirebaseCrashlytics.getInstance()` 會丟例外）。CI 與剛 clone
+  的 repo 因此照常能組、能跑 E2E。**有設定上傳金鑰卻沒有這個檔時，release 組建會失敗**（只擋 `preReleaseBuild`，
+  debug 與測試不受影響）——避免上傳一個開關打開也收不到資料的版本。CI 不簽 release，所以**不需要** GitHub Secret。
+- Billing **只在使用者展開「支持開發者」時才連線**，同時補做上次沒 consume 完的購買（T9.2.5）——沒點開的使用者
+  不會因為贊助功能連網。代價是補 consume 要等使用者下次點開，而那正好是他想再買一次的時機，沒有實際影響。
+- 三個商品要全部查得到才顯示按鈕，少一個就顯示「目前無法連線到 Google Play」（只顯示兩個按鈕看起來像壞掉）。
+- Firebase 的布林參數會被丟掉，`is_edit` 轉成字串 `"true"`／`"false"`。
+
+**留下的坑：**
+- `DonationPurchaseHandler` 在送出 consume **之前**就記住 token；consume 失敗的話，同一個 process 內不會重試，
+  要等 App 重開後再點開「支持開發者」才會補做。很少見，沒處理。
+- emulator 上「支持開發者」永遠是「目前無法連線」（Play 上還沒有商品），E2E-12 用 `runFlow: when` 兩種都接受。
+  真正的三個按鈕、價格、付款、感謝訊息只能在實機＋授權測試帳號上驗。
+
+**驗證結果：** 見 PR。
 
 ---
 
@@ -1149,5 +1195,12 @@ Console 建立，所以會落在 Phase 9 中段。
 > Agent 發現規格矛盾或需要批准時，寫在這裡，並同時寫進 PR 描述。
 > 人類回覆後會把該項移除。
 
-_（目前無。2026-10-18 人類回覆：Phase 7 的三個配色問題接受現狀 → TD-4；封存/刪除錢包 UI
-排進 Phase 8；實機驗收併入 Phase 8 的封閉測試。）_
+1. **Firebase 自動收集的事件與 SPEC §3.7「只允許送出下表列出的事件」不一致**（Phase 9）。使用者打開開關後，
+   Firebase Analytics 一定會自動送 `first_open`、`session_start`、`user_engagement`、`app_update`、`os_update`、
+   `app_remove`、`app_clear_data`，Crashlytics 啟用時還有 `app_exception`，每個事件也自動帶 App 版本、裝置型號、
+   系統版本、語言、由 IP 推估的國家。這些沒辦法個別關掉（只能整個關收集），所以 Phase 9 驗收的「DebugView 開啟後
+   只出現表列事件」照字面做不到。建議：修改 SPEC §3.7，把這些自動事件與預設參數列為「Firebase 自動收集、允許」，
+   並寫明不得連結 Google Play／Google Ads、不開 Google Signals。另外 `in_app_purchase`（含贊助金額）也是自動收集
+   事件之一，**需要人類在 DebugView 做一次測試贊助確認會不會出現**；若會出現，需要決定是否接受（金額是贊助金額，
+   不是記帳資料）。
+2. **同意狀態不跟著 Auto Backup 還原**（Phase 9，agent 自行決定，請確認）：見 Phase 9 交接筆記。

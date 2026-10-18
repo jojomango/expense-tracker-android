@@ -1,0 +1,56 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-12 支持開發者（v2）
+#
+# 真的完成一筆付款需要授權測試帳號與測試軌道上的 App，emulator 做不到，列為人類實機驗收。
+
+# Given 已有錢包「日常」
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- hideKeyboard
+- tapOn: "建立錢包"
+
+# Then 首頁、記帳頁、統計頁都沒有任何贊助相關文字
+- assertVisible: "日常"
+- assertNotVisible: ".*(支持開發者|贊助|咖啡|便當|大力支持).*"
+- tapOn: "記帳"
+- assertVisible: "記一筆"
+- assertNotVisible: ".*(支持開發者|贊助|咖啡|便當|大力支持).*"
+- tapOn: "取消"
+- tapOn: "統計"
+- assertNotVisible: ".*(支持開發者|贊助|咖啡|便當|大力支持).*"
+- tapOn: "首頁"
+
+# When 進入設定頁 / Then「支持開發者」為收合，看不到贊助選項
+- tapOn: "設定"
+- scrollUntilVisible:
+    element: "支持開發者"
+- assertNotVisible: ".*一杯咖啡.*"
+
+# When 點開 / Then 三個選項，或在連不到 Play 的環境顯示無法連線，且不 crash
+- tapOn: "支持開發者"
+- scrollUntilVisible:
+    element: ".*(一杯咖啡|目前無法連線到 Google Play，請稍後再試).*"
+- runFlow:
+    when:
+      visible: ".*一杯咖啡.*"
+    commands:
+      - assertVisible: ".*一份便當.*"
+      - assertVisible: ".*大力支持.*"
+- assertVisible: "支持開發者"
+
+# When 離開設定頁再回來 / Then 又是收合的
+- tapOn: "返回"
+- tapOn: "設定"
+- scrollUntilVisible:
+    element: "支持開發者"
+- assertNotVisible: ".*一杯咖啡.*"
+- assertNotVisible: "目前無法連線到 Google Play，請稍後再試"
