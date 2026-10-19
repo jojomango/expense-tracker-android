@@ -1,0 +1,45 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-11 匿名使用分析開關（v2）
+#
+# 「關閉時真的零事件」Maestro 看不到，由 T9 單元測試與人類用 Firebase DebugView 驗收。
+
+# Given 使用者第一次安裝並開啟 app
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "日常"
+- tapOn: "幣別（ISO 4217，如 TWD）"
+- eraseText: 10
+- inputText: "TWD"
+- hideKeyboard
+- tapOn: "建立錢包"
+
+# When 進入設定頁 / Then「協助改善 App」開關為關閉
+- tapOn: "設定"
+- scrollUntilVisible:
+    element: "協助改善 App"
+- assertVisible:
+    id: "analytics-consent"
+    checked: false
+
+# When 打開「協助改善 App」/ Then 開關為開啟
+- tapOn: "協助改善 App"
+- assertVisible:
+    id: "analytics-consent"
+    checked: true
+
+# When 強制關閉 app 後重新開啟，再進入設定頁 / Then 仍為開啟
+- stopApp
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- tapOn: "設定"
+- scrollUntilVisible:
+    element: "協助改善 App"
+- assertVisible:
+    id: "analytics-consent"
+    checked: true

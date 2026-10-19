@@ -54,6 +54,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.jojomango.expensetracker.domain.BackupReminderRepository
 import com.jojomango.expensetracker.domain.SettingsRepository
+import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
+import com.jojomango.expensetracker.ui.analytics.AnalyticsScreen
+import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
+import com.jojomango.expensetracker.ui.analytics.analyticsScreenFor
 import com.jojomango.expensetracker.ui.category.CategoryEditScreen
 import com.jojomango.expensetracker.ui.category.CategoryManagementScreen
 import com.jojomango.expensetracker.ui.home.HomeScreen
@@ -85,6 +89,8 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var backupReminderRepository: BackupReminderRepository
 
+    @Inject lateinit var analyticsTracker: AnalyticsTracker
+
     // 備份提醒通知點下去時帶這個 extra 進來；app 已經開著的話走 onNewIntent。
     private var openSettingsRequested by mutableStateOf(false)
 
@@ -110,6 +116,7 @@ class MainActivity : ComponentActivity() {
                 ExpenseTrackerApp(
                     openSettingsRequested = openSettingsRequested,
                     onOpenSettingsHandled = { openSettingsRequested = false },
+                    onScreenView = { analyticsTracker.track(AnalyticsEvent.ScreenView(it)) },
                 )
             }
         }
@@ -148,10 +155,16 @@ private fun SystemBarsAppearance(darkTheme: Boolean) {
 private fun ExpenseTrackerApp(
     openSettingsRequested: Boolean,
     onOpenSettingsHandled: () -> Unit,
+    onScreenView: (AnalyticsScreen) -> Unit,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+
+    // destination.route 是路由樣板（不含交易 id），analyticsScreenFor 只回傳固定的畫面名稱。
+    LaunchedEffect(backStackEntry) {
+        analyticsScreenFor(currentRoute)?.let(onScreenView)
+    }
     var showWalletSwitcher by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()

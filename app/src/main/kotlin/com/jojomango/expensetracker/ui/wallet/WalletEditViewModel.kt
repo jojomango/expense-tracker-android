@@ -11,6 +11,8 @@ import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
 import com.jojomango.expensetracker.domain.minorUnitsToMajorDigits
+import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
+import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +60,7 @@ class WalletEditViewModel
         savedStateHandle: SavedStateHandle,
         private val walletRepository: WalletRepository,
         private val transactionRepository: TransactionRepository,
+        private val analyticsTracker: AnalyticsTracker,
     ) : ViewModel() {
         private val walletId: String? = savedStateHandle.get<String>("walletId")
 
@@ -127,6 +130,7 @@ class WalletEditViewModel
                         archived = state.archived,
                     )
                 walletRepository.upsert(wallet)
+                if (state.walletId == null) analyticsTracker.track(AnalyticsEvent.WalletCreated(wallet.budgetMode))
                 internalState.value = internalState.value.copy(result = WalletEditResult.Saved)
             }
         }

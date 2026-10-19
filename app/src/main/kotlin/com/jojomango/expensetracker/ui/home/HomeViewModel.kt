@@ -20,6 +20,8 @@ import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.Week
 import com.jojomango.expensetracker.domain.WeekGroup
+import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
+import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,6 +71,7 @@ class HomeViewModel
         private val transactionRepository: TransactionRepository,
         private val categoryRepository: CategoryRepository,
         private val settingsRepository: SettingsRepository,
+        private val analyticsTracker: AnalyticsTracker,
     ) : ViewModel() {
         /** 使用者手動選過的錢包；`null` 代表還沒選過，交給 [Settings.defaultWalletId] 或第一個錢包決定。 */
         private val selectedWalletId = MutableStateFlow<String?>(null)
@@ -181,6 +184,7 @@ class HomeViewModel
                         budgetAmount = budgetAmount,
                     )
                 walletRepository.upsert(wallet)
+                analyticsTracker.track(AnalyticsEvent.WalletCreated(budgetMode))
                 selectedWalletId.value = wallet.id
             }
         }

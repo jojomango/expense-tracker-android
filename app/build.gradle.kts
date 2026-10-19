@@ -12,6 +12,15 @@ plugins {
     id("jacoco")
 }
 
+// Firebase 設定檔（google-services.json）不進 repo：裡面的 API key 雖然不是祕密，但 repo 是公開的，
+// 被拿去灌假事件會汙染分析資料。CI 從 GitHub Secret 還原。沒有這個檔時不套用 Firebase 的兩個外掛，
+// App 照常組得起來，執行期 Firebase 不會初始化，分析一律走 no-op（見 `FirebaseAnalyticsSink`）。
+val hasFirebaseConfig = file("google-services.json").exists()
+if (hasFirebaseConfig) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+}
+
 android {
     namespace = "com.jojomango.expensetracker"
     compileSdk = 36
@@ -20,8 +29,8 @@ android {
         applicationId = "com.jojomango.expensetracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,6 +42,17 @@ android {
         listOf("EXPENSE_UPLOAD_STORE_FILE", "EXPENSE_UPLOAD_STORE_PASSWORD", "EXPENSE_UPLOAD_KEY_ALIAS", "EXPENSE_UPLOAD_KEY_PASSWORD")
             .associateWith { key -> providers.gradleProperty(key).orElse(providers.environmentVariable(key)).orNull }
     val hasReleaseSigning = releaseSigning.values.all { !it.isNullOrBlank() }
+
+    // 用正式金鑰簽的版本是要上傳到 Play 的：少了 Firebase 設定檔的話，使用者打開「協助改善 App」
+    // 也什麼都收不到，而且不會有任何錯誤提示——寧可在組建時就擋下來。只擋 release 的 task，
+    // debug 組建與測試照常可以跑。
+    if (hasReleaseSigning && !hasFirebaseConfig) {
+        tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+            doFirst {
+                throw GradleException("已設定上傳金鑰，但找不到 app/google-services.json——上架版本必須包含 Firebase 設定檔")
+            }
+        }
+    }
 
     signingConfigs {
         if (hasReleaseSigning) {
@@ -114,6 +134,12 @@ dependencies {
 
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization.json)
+
+    // SPEC.md §5 v2：只有這三個會連網的套件（Analytics、Crashlytics、Play Billing）。
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.play.billing)
 
     testImplementation(libs.junit5.jupiter.api)
     testImplementation(libs.junit5.jupiter.params)

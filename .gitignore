@@ -15,3 +15,6 @@ build/
 *.jks
 *.keystore
 keystore.properties
+
+# Firebase 設定檔：repo 是公開的，不進版控（CI 從 GitHub Secret 還原）
+google-services.json

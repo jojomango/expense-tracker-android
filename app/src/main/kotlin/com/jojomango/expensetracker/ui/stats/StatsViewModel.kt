@@ -19,6 +19,8 @@ import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.Week
 import com.jojomango.expensetracker.domain.WeeklyTrendPoint
 import com.jojomango.expensetracker.domain.colorOf
+import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
+import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -77,6 +79,7 @@ class StatsViewModel
         transactionRepository: TransactionRepository,
         categoryRepository: CategoryRepository,
         settingsRepository: SettingsRepository,
+        private val analyticsTracker: AnalyticsTracker,
     ) : ViewModel() {
         private val period = MutableStateFlow(StatsPeriod.WEEK)
 
@@ -107,7 +110,9 @@ class StatsViewModel
             )
 
         fun setPeriod(newPeriod: StatsPeriod) {
+            if (period.value == newPeriod) return
             period.value = newPeriod
+            analyticsTracker.track(AnalyticsEvent.StatsPeriodSwitched(newPeriod))
         }
 
         private fun buildUiState(
