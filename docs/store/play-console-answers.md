@@ -8,9 +8,9 @@
 ## 隱私權政策
 
 商店聯絡信箱：jojomango99@gmail.com（這個 App 的「商店設定 → 商店資訊聯絡詳細資料」，顯示在商店頁面上）。
-開發人員帳戶本身的聯絡信箱可以維持 q9898989@gmail.com，兩者是不同欄位。
+開發人員帳戶本身的聯絡信箱可以維持原本註冊用的個人信箱（不公開），兩者是不同欄位。
 
-網址：發布 `docs/store/privacy-policy.md` 之後的網址（建議放在網頁版 repo 的 GitHub Pages）。
+網址：`https://jojomango.github.io/expense-tracker-android/privacy-policy.html`（這個 repo 的 GitHub Pages，來源是 `docs/privacy-policy.html`）。
 
 ## 廣告
 

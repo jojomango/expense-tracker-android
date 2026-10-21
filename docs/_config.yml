@@ -1,0 +1,4 @@
+# GitHub Pages（Settings → Pages → main 分支的 /docs）只發布隱私權政策與首頁。
+# store/ 是給人類看的上架作業筆記，不放到公開網站上。
+exclude:
+  - store
