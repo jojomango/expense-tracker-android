@@ -1,12 +1,11 @@
 # 記帳本 隱私權政策
 
-> **草稿（Phase 9，對應版本 1.1.0）。** 要發布到網頁版 repo 的 GitHub Pages
-> （`https://jojomango.github.io/expense-tracker/`）底下，Play Console 填那個網址。
+> **對應版本 1.1.0 起。** 發布版是 `docs/privacy-policy.html`（GitHub Pages：
+> `https://jojomango.github.io/expense-tracker-android/privacy-policy.html`，Play Console 填這個網址）。
+> **改這份檔案時一定要同步改那個 HTML**，並更新兩邊的「最後更新」日期。
 > 聯絡信箱用 jojomango99@gmail.com（人類 2026-10-18 決定：跟 Play Console 的登入帳號分開）。
-> `{發布日期}` 在發布時填上。這一版取代 Phase 8 的 1.0.0 草稿（那一版寫「不連網、不收集任何資料」，
-> 從 1.1.0 起不再成立）。
 
-最後更新：{發布日期}
+最後更新：2026 年 10 月 21 日
 
 「記帳本」（以下稱「本 App」）由個人開發者 jojomango 開發。本政策說明本 App 如何處理你的資料。
 

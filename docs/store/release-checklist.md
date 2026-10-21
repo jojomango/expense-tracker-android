@@ -54,7 +54,7 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
 - [ ] 啟用 **Play App Signing**（建立時預設會啟用）
 - [ ] 這個 App 的**商店聯絡信箱**（「商店設定 → 商店資訊聯絡詳細資料」，顯示在商店頁面上）填
       jojomango99@gmail.com。建議在 99 設自動轉寄到你常用的信箱，使用者來信才不會漏看
-- [ ] 開發人員**帳戶**的聯絡信箱（帳戶詳細資料，Google 聯絡你、帳戶驗證用）可以維持 q9898989@gmail.com，
+- [ ] 開發人員**帳戶**的聯絡信箱（帳戶詳細資料，Google 聯絡你、帳戶驗證用）可以維持你原本註冊用的個人信箱，
       不用改；帳戶驗證進行中時先不要動帳戶資料
 - （欄位名稱以 Console 實際畫面為準）
 
@@ -81,10 +81,10 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
 
 ## 6. 隱私權政策網址
 
-- [ ] 把 `docs/store/privacy-policy.md` 的 `{發布日期}` 換掉（聯絡信箱已填 jojomango99@gmail.com）
-- [ ] 發布到網頁版 repo（`jojomango/expense-tracker`）的 GitHub Pages，例如
-      `https://jojomango.github.io/expense-tracker/android-privacy.html`
-      （要我幫忙發 PR 到那個 repo 的話跟我說，那是另一個 repo，我不會自己動）
+- [ ] GitHub 這個 repo 的 **Settings → Pages**：Source 選 `Deploy from a branch`，分支 `main`、資料夾 `/docs`，存檔
+- [ ] 一兩分鐘後確認 `https://jojomango.github.io/expense-tracker-android/privacy-policy.html` 打得開
+      （`docs/_config.yml` 排除了 `docs/store/`，這些作業筆記不會出現在網站上）
+- [ ] Play Console 的「隱私權政策」與「資料安全性」填這個網址
 
 ## 7. 商店資訊
 

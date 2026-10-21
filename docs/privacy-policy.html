@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>記帳本 隱私權政策</title>
+<!--
+  發布版的隱私權政策（GitHub Pages：https://jojomango.github.io/expense-tracker-android/privacy-policy.html）。
+  內容來源是 docs/store/privacy-policy.md，改一邊一定要同步改另一邊，並更新「最後更新」日期。
+-->
+<style>
+  :root {
+    --bg: #f2f1ef; --card: #ffffff; --fg: #1c1b1f; --fg2: #5f5c66; --line: #e3e1dd; --accent: #c1502e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0a0a0c; --card: #17171a; --fg: #ecebef; --fg2: #a6a3ad; --line: #2a2a2f; --accent: #e8825f; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.75 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; line-height: 1.3; margin: 0 0 4px; }
+  .updated { color: var(--fg2); font-size: 14px; margin: 0 0 24px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px 20px 12px; margin: 16px 0; }
+  h2 { font-size: 19px; margin: 18px 0 8px; }
+  ul { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  a { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-top: 1px solid var(--line); }
+  th { color: var(--fg2); font-weight: 600; border-top: none; white-space: nowrap; }
+  .contact { font-size: 17px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>記帳本 隱私權政策</h1>
+  <p class="updated">最後更新：2026 年 10 月 21 日（適用版本 1.1.0 起）</p>
+
+  <p>「記帳本」（以下稱「本 App」）由個人開發者 jojomango 開發。本政策說明本 App 如何處理你的資料。</p>
+
+  <section>
+    <h2>你的記帳資料只在你的手機上</h2>
+    <ul>
+      <li>你在本 App 輸入的所有資料——錢包名稱、交易、金額、分類、備註、幣別、預算、日期——<strong>只儲存在你的裝置上</strong>，不會傳送給開發者或任何第三方。</li>
+      <li>本 App <strong>沒有帳號、沒有廣告</strong>，也不使用廣告 ID。</li>
+    </ul>
+    <p>本 App 只在下面兩種情況會連上網路，而且兩者都不會傳送你的記帳資料。</p>
+  </section>
+
+  <section>
+    <h2>1. 「協助改善 App」（預設關閉）</h2>
+    <p>設定頁有一個「協助改善 App」開關，<strong>預設是關閉的</strong>。關閉時，本 App 不會傳送任何使用情形或當機資訊。</p>
+    <p>你主動打開之後，本 App 會透過 Google 的 <strong>Firebase Analytics</strong> 與 <strong>Firebase Crashlytics</strong> 傳送：</p>
+    <ul>
+      <li><strong>匿名的使用情形</strong>：例如開啟了哪個畫面（首頁、統計、設定…）、記了一筆支出還是收入、建立錢包時選了哪一種預算模式、切換了深色模式、使用了備份功能。<strong>不包含</strong>任何金額、分類、備註、錢包名稱或幣別。</li>
+      <li><strong>當機資訊</strong>：App 當機時的錯誤紀錄（程式在哪一行出錯），以及手機型號、Android 版本、App 版本。當機紀錄不包含你的記帳資料。</li>
+      <li><strong>Firebase 自動附帶的資訊</strong>：一個隨機產生、只用於分析的識別碼（不是你的姓名、電話或廣告 ID）、App 版本、手機型號與系統版本、語言，以及由網路位址推估的國家或地區（不是精確位置）。Firebase 也會自動記錄 App 的開啟次數、使用時間、更新等基本事件。</li>
+    </ul>
+    <p>這些資料由 Google 依 <a href="https://firebase.google.com/support/privacy">Firebase 的隱私權與安全性說明</a>處理，開發者只會看到彙總的統計與當機報告，用途只是了解 App 哪裡好用、哪裡卡住、哪裡會當機。本 App 不設定使用者 ID、不收集廣告 ID、不開啟廣告個人化。</p>
+    <p><strong>你隨時可以在設定頁關閉。</strong>關閉後立即停止收集，尚未送出的當機報告會被刪除，手機上的分析識別碼也會被清除——之後如果再打開，會是一個全新的識別碼，跟之前的紀錄無法連結。</p>
+  </section>
+
+  <section>
+    <h2>2. 支持開發者（贊助）</h2>
+    <p>設定頁最下方的「支持開發者」是自由的贊助，不會解鎖任何功能。你點開這個區塊時，本 App 才會連到 Google Play 查詢價格；付款完全由 <strong>Google Play</strong> 處理。開發者<strong>看不到</strong>你的信用卡或其他付款資訊，只會從 Google Play 收到一般的訂單紀錄（例如訂單編號、商品、金額）。Google Play 如何處理付款資料，請見 Google 的隱私權政策。</p>
+  </section>
+
+  <section>
+    <h2>備份</h2>
+    <ul>
+      <li><strong>你自己匯出的備份檔</strong>：使用「匯出備份」時，由你自己選擇檔案存放位置（例如手機的下載資料夾或雲端硬碟 App）。檔案內容是你的記帳資料，存放與分享方式完全由你決定，開發者無法取得。</li>
+      <li><strong>Android 系統備份</strong>：如果你在手機的系統設定開啟了 Google 帳號備份，Android 系統可能會把本 App 的資料備份到<strong>你自己的 Google 帳號</strong>，用於換手機時還原。這是由 Google 提供的系統功能，備份內容會以你的螢幕鎖定密碼加密，開發者無法讀取。你可以在手機的「設定 → 系統 → 備份」關閉。「協助改善 App」的開關狀態<strong>不會</strong>被備份：換到新手機時會回到關閉。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>本 App 使用的權限</h2>
+    <table>
+      <tr><th>權限</th><th>用途</th></tr>
+      <tr><td>網路、讀取網路狀態</td><td>只用於上面的「協助改善 App」（你打開時）與 Google Play 贊助</td></tr>
+      <tr><td>Google Play 帳單服務</td><td>贊助付款</td></tr>
+      <tr><td>通知</td><td>每 7 天提醒你匯出一次備份。提醒是在你的手機上排程的，不經過網路。你可以隨時在系統設定關閉。</td></tr>
+      <tr><td>開機後執行、保持喚醒、前景服務</td><td>Android 的排程元件（WorkManager）讓備份提醒能在背景準時執行所需要的</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>兒童</h2>
+    <p>本 App 並非以兒童為對象設計。</p>
+  </section>
+
+  <section>
+    <h2>刪除你的資料</h2>
+    <ul>
+      <li>記帳資料只在你的裝置上：你可以隨時在 App 內刪除交易與錢包，或直接解除安裝本 App 刪除全部資料。（如果你開啟了 Android 系統備份，備份內容由 Google 依其政策保存與刪除。）</li>
+      <li>匿名使用分析資料：關閉「協助改善 App」會清除手機上的分析識別碼。Firebase 上已經收到的資料會依 Firebase 的保存期限自動刪除；如果你想提前刪除，請寫信到下方信箱。</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>政策變更</h2>
+    <p>本政策如有變更，會更新本頁並修改上方的「最後更新」日期。</p>
+  </section>
+
+  <section>
+    <h2>聯絡方式</h2>
+    <p class="contact"><a href="mailto:jojomango99@gmail.com">jojomango99@gmail.com</a></p>
+  </section>
+</main>
+</body>
+</html>
