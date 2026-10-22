@@ -1,10 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  錢字號＋光環（人類 2026-10-22 選定的 C 方案）。108dp 畫布裡，主圖案都在中央半徑 33 的安全圓內，
+  任何形狀的裁切（圓形、圓角方形）都不會切到。光環是橢圓，向量圖沒有 ellipse，用兩段弧線畫。
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- 光環外圈的光暈 -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,24 L74,44 L74,84 L34,84 L34,44 Z" />
+        android:pathData="M40.5,28 a13.5,3.8 0 1,0 27,0 a13.5,3.8 0 1,0 -27,0"
+        android:strokeAlpha="0.28"
+        android:strokeColor="#F6C445"
+        android:strokeWidth="6.5" />
+    <path
+        android:pathData="M41.5,28 a12.5,3.2 0 1,0 25,0 a12.5,3.2 0 1,0 -25,0"
+        android:strokeColor="#F6C445"
+        android:strokeWidth="3" />
+    <path
+        android:pathData="M54,35.5 V78"
+        android:strokeColor="#F2F1EF"
+        android:strokeLineCap="round"
+        android:strokeWidth="5" />
+    <path
+        android:pathData="M65,47 C63,42 58,40 54,40 C48,40 44,43.5 44,48 C44,53 49,55 54,56.3 C59.5,57.6 65,59.5 65,65.5 C65,70 60.5,73.5 54,73.5 C49,73.5 44.5,71.5 43,66.5"
+        android:strokeColor="#F2F1EF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="7" />
 </vector>
