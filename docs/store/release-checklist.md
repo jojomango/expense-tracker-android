@@ -58,6 +58,19 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
       不用改；帳戶驗證進行中時先不要動帳戶資料
 - （欄位名稱以 Console 實際畫面為準）
 
+### 上傳時的「未上傳偵錯符號檔」警告：可以忽略
+
+上傳 AAB 時 Play 會警告「這個 App Bundle 含有原生程式碼，而您尚未上傳偵錯符號檔」。AAB 裡的原生函式庫只有兩個，
+都不是我們寫的，而且**從來源 AAR 就已經 strip 掉符號**：
+
+- `libandroidx.graphics.path.so` ← `androidx.graphics:graphics-path:1.0.1` ← Compose `ui-graphics`
+- `libdatastore_shared_counter.so` ← `androidx.datastore:datastore-core:1.1.7` ← `firebase-sessions` ← Crashlytics
+
+2026-10-22 實測過：release 加上 `ndk { debugSymbolLevel = "SYMBOL_TABLE" }` 後，AGP 的
+`extractReleaseNativeSymbolTables` 產出 0 個檔案、AAB 裡也沒有 `debugsymbols`，所以沒有加這個設定。
+`FULL` 需要原始偵錯資訊，更不可能產生。這則警告只是「警告」，不擋發布；Kotlin 的當機堆疊由 Crashlytics
+＋R8 mapping 處理，不受影響。之後若專案加入自己的 C/C++ 程式碼，再重新評估。
+
 ## 4. 先上「內部測試」確認上傳流程
 
 內部測試不需要審核、幾分鐘內就能裝，適合先確認 AAB 沒問題：
