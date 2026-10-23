@@ -1236,6 +1236,14 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
 
 ---
 
+## UI／UX 改版
+
+設計討論在 Claude chat 進行，決策存在 [`docs/design/`](docs/design/README.md)。**每次開工先看那份總表**：
+狀態是「已決定」的項目，照 `docs/design/README.md` 的流程處理（先開只改 `UI-SPEC.md` 的合約 PR，merge 後才實作）。
+總表與每份決策的狀態由實作這邊負責更新。
+
+---
+
 ## 待人類決策的問題
 
 > Agent 發現規格矛盾或需要批准時，寫在這裡，並同時寫進 PR 描述。
