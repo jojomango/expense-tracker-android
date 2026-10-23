@@ -43,11 +43,11 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackA}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - repeat:
     times: ${output.monthsForwardA}
     commands:
-      - tapOn: "Change to next month"
+      - tapOn: "改成下個月"
 - tapOn: "${output.dateALabel}"
 - tapOn: "確定"
 - tapOn: "居住"
@@ -62,11 +62,11 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackB}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - repeat:
     times: ${output.monthsForwardB}
     commands:
-      - tapOn: "Change to next month"
+      - tapOn: "改成下個月"
 - tapOn: "${output.dateBLabel}"
 - tapOn: "確定"
 - tapOn: "居住"

@@ -41,7 +41,7 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackToday}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - tapOn: "${output.todayLabel}"
 - tapOn: "確定"
 - swipe:
@@ -61,7 +61,7 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackToday}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - tapOn: "${output.todayLabel}"
 - tapOn: "確定"
 - tapOn: "交通"
@@ -77,7 +77,7 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackOther}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - tapOn: "${output.otherLabel}"
 - tapOn: "確定"
 - swipe:

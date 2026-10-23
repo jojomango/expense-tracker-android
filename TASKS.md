@@ -1221,6 +1221,9 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
 - 分類格的排序仍是資料庫 `ORDER BY isDefault DESC, name ASC`（後備名稱是繁中），所以英文介面的預設分類順序跟繁中一樣，不是英文字母序。沒有在這個 phase 處理
 - Room schema JSON 現在進版控（`app/schemas/`），debug 變體的 assets 掛上它給 `MigrationTestHelper` 用；之後每次改 schema 都會多一個 JSON
 - 英文 App 名稱暫定「Expense Tracker」（見 PR 的需要人類決策）
+- **鍵盤會跟著 App 語言切換**：App 是繁中時 Gboard 自動切到注音，英文字母會停在組字區、沒有送出。幣別代號欄位因此加了
+  `CurrencyCodeKeyboardOptions`（英文提示、自動大寫）、預算金額加了數字鍵盤（`ui/common/KeyboardOptions.kt`）。
+  第一次跑完整 E2E 時 13/14 失敗就是這個原因。之後新增「只會輸入英數」的欄位，記得也給對應的 KeyboardOptions
 
 **留下的坑：**
 - 英文字串都是 agent 翻的，沒有母語者校對過

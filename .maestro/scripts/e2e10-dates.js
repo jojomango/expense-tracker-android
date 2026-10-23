@@ -19,21 +19,17 @@ function pad(n) {
   return n < 10 ? "0" + n : "" + n;
 }
 
-var monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-var weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-// DatePicker 的今天格子無障礙文字是「Today, Saturday, September 5, 2026」這種
+// App 固定以繁中執行（Phase 10），DatePicker 的格子是「2026年10月18日 星期日」。
+// DatePicker 的今天格子無障礙文字是「今天, 2026年9月5日 星期六 5, 2026」這種
 // 多一個「Today, 」前綴的格式，跟其他日期的格式不一樣。
 function formatDayCell(d, referenceToday) {
-  var base = weekdayNames[d.getDay()] + ", " + monthNames[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
-  return isSameDay(d, referenceToday) ? "Today, " + base : base;
+  var base = d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日 星期" + "日一二三四五六".charAt(d.getDay());
+  return isSameDay(d, referenceToday) ? "今天, " + base : base;
 }
 
 function monthsBack(from, to) {

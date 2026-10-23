@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BudgetMode
+import com.jojomango.expensetracker.ui.common.AmountKeyboardOptions
+import com.jojomango.expensetracker.ui.common.CurrencyCodeKeyboardOptions
 import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -91,6 +93,7 @@ fun WalletEditScreen(
                 value = state.currency,
                 onValueChange = viewModel::onCurrencyChange,
                 label = { Text(stringResource(R.string.wallet_currency_label)) },
+                keyboardOptions = CurrencyCodeKeyboardOptions,
                 enabled = !state.isEditing,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -116,6 +119,7 @@ fun WalletEditScreen(
                     value = state.budgetAmountDigits,
                     onValueChange = viewModel::onBudgetAmountChange,
                     label = { Text(stringResource(R.string.wallet_budget_amount)) },
+                    keyboardOptions = AmountKeyboardOptions,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

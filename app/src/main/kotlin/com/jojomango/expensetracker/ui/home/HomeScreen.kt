@@ -68,6 +68,8 @@ import com.jojomango.expensetracker.domain.Week
 import com.jojomango.expensetracker.domain.categoryDisplayName
 import com.jojomango.expensetracker.domain.colorOf
 import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
+import com.jojomango.expensetracker.ui.common.AmountKeyboardOptions
+import com.jojomango.expensetracker.ui.common.CurrencyCodeKeyboardOptions
 import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
 import com.jojomango.expensetracker.ui.i18n.weekTitleLabels
@@ -376,6 +378,7 @@ private fun FirstWalletOnboarding(
             value = currency,
             onValueChange = { currency = it.uppercase() },
             label = { Text(stringResource(R.string.wallet_currency_label)) },
+            keyboardOptions = CurrencyCodeKeyboardOptions,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
@@ -400,6 +403,7 @@ private fun FirstWalletOnboarding(
                 value = amountText,
                 onValueChange = { input -> amountText = input.filter { it.isDigit() } },
                 label = { Text(stringResource(R.string.wallet_budget_amount)) },
+                keyboardOptions = AmountKeyboardOptions,
                 modifier = Modifier.fillMaxWidth(),
             )
         }

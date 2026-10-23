@@ -9,11 +9,6 @@
 // **今天是週日時，過去的日期不可能滿足 A**：週日起始的本週從今天才開始，而今天又是週一
 // 起始那週的最後一天，所以 A 只能用明天（週一，SPEC.md §3.2 允許未來日期），B 用今天。
 // （Phase 8 剛好在週日跑到才發現原本的寫法在週日一定失敗。）
-var weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-var monthNames = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 function addDays(d, n) {
   var r = new Date(d);
@@ -25,10 +20,11 @@ function isSameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-// DatePicker 的今天那一格無障礙文字多一個「Today, 」前綴（E2E-10 踩過）。
+// App 固定以繁中執行（Phase 10），DatePicker 的格子是「2026年10月18日 星期日」。
+// DatePicker 的今天那一格無障礙文字多一個「今天, 」前綴（E2E-10 踩過）。
 function formatDayCell(d, today) {
-  var base = weekdayNames[d.getDay()] + ", " + monthNames[d.getMonth()] + " " + d.getDate() + ", " + d.getFullYear();
-  return isSameDay(d, today) ? "Today, " + base : base;
+  var base = d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日 星期" + "日一二三四五六".charAt(d.getDay());
+  return isSameDay(d, today) ? "今天, " + base : base;
 }
 
 // 正數 = 要按幾次「上個月」，負數 = 要按幾次「下個月」。DatePicker 一打開停在今天的月份。
