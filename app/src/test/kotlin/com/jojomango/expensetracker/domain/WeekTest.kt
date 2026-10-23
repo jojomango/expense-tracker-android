@@ -274,29 +274,55 @@ class WeekTest {
     @Test
     @DisplayName("T7.2.1 — weekStart=2026-08-31, referenceDate=2026-09-03 -> 本週 · 8/31–9/6")
     fun `T7 2 1`() {
-        val title = Week.groupTitle(LocalDate(2026, 8, 31), DayOfWeek.MONDAY, LocalDate(2026, 9, 3))
+        val title = Week.groupTitle(LocalDate(2026, 8, 31), DayOfWeek.MONDAY, LocalDate(2026, 9, 3), ZhWeekTitleLabels)
         assertEquals("本週 · 8/31–9/6", title)
     }
 
     @Test
     @DisplayName("T7.2.2 — weekStart=2026-08-24, referenceDate=2026-09-03 -> 上週 · 8/24–8/30")
     fun `T7 2 2`() {
-        val title = Week.groupTitle(LocalDate(2026, 8, 24), DayOfWeek.MONDAY, LocalDate(2026, 9, 3))
+        val title = Week.groupTitle(LocalDate(2026, 8, 24), DayOfWeek.MONDAY, LocalDate(2026, 9, 3), ZhWeekTitleLabels)
         assertEquals("上週 · 8/24–8/30", title)
     }
 
     @Test
     @DisplayName("T7.2.3 — weekStart=2026-08-17, referenceDate=2026-09-03 -> 8/17–8/23（無前綴）")
     fun `T7 2 3`() {
-        val title = Week.groupTitle(LocalDate(2026, 8, 17), DayOfWeek.MONDAY, LocalDate(2026, 9, 3))
+        val title = Week.groupTitle(LocalDate(2026, 8, 17), DayOfWeek.MONDAY, LocalDate(2026, 9, 3), ZhWeekTitleLabels)
         assertEquals("8/17–8/23", title)
     }
 
     @Test
     @DisplayName("T7.2.4 — weekStart=2025-12-29, referenceDate=2026-01-02 -> 本週 · 12/29–1/4（跨年不出現年份）")
     fun `T7 2 4`() {
-        val title = Week.groupTitle(LocalDate(2025, 12, 29), DayOfWeek.MONDAY, LocalDate(2026, 1, 2))
+        val title = Week.groupTitle(LocalDate(2025, 12, 29), DayOfWeek.MONDAY, LocalDate(2026, 1, 2), ZhWeekTitleLabels)
         assertEquals("本週 · 12/29–1/4", title)
         assertFalse(title.contains(Regex("""\d{4}-\d{2}-\d{2}""")))
+    }
+
+    // ---- T10.4.1～T10.4.3 週分組標題（英文） ----
+
+    @Test
+    @DisplayName("T10.4.1 — 英文，本週 -> This week · 8/31–9/6")
+    fun `T10 4 1`() {
+        assertEquals(
+            "This week · 8/31–9/6",
+            Week.groupTitle(LocalDate(2026, 8, 31), DayOfWeek.MONDAY, LocalDate(2026, 9, 3), EnWeekTitleLabels),
+        )
+    }
+
+    @Test
+    @DisplayName("T10.4.2 — 英文，上週 -> Last week · 8/24–8/30")
+    fun `T10 4 2`() {
+        assertEquals(
+            "Last week · 8/24–8/30",
+            Week.groupTitle(LocalDate(2026, 8, 24), DayOfWeek.MONDAY, LocalDate(2026, 9, 3), EnWeekTitleLabels),
+        )
+    }
+
+    @Test
+    @DisplayName("T10.4.3 — 英文，更早的週 -> 8/17–8/23（與繁中相同）")
+    fun `T10 4 3`() {
+        assertEquals("8/17–8/23", Week.groupTitle(LocalDate(2026, 8, 17), DayOfWeek.MONDAY, LocalDate(2026, 9, 3), EnWeekTitleLabels))
     }
 }

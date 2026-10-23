@@ -11,6 +11,9 @@ appId: com.jojomango.expensetracker
 - runScript: scripts/settle-after-clear.js
 - launchApp:
     stopApp: false
+    # 固定以繁中執行，不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）
+    arguments:
+      language: zh-TW
 - assertVisible: "建立你的第一個錢包"
 
 # When 輸入名稱「日常」、幣別「TWD」、預算模式「每週」、金額「3000」

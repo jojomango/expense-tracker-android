@@ -10,6 +10,9 @@ appId: com.jojomango.expensetracker
 - runScript: scripts/settle-after-clear.js
 - launchApp:
     stopApp: false
+    # 固定以繁中執行，不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）
+    arguments:
+      language: zh-TW
 # launchApp 本身不保證第一幀畫完就回傳——E2E-1 因為緊接著有 assertVisible
 # （會重試等待），冷啟動的等待時間剛好夠；這支少了這一步，直接 tapOn 會在
 # 畫面還是全白的時候就撲空。補上同樣的 assertVisible 當作啟動完成的等待點。

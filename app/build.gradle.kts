@@ -99,6 +99,13 @@ android {
         }
     }
 
+    // Room 的 schema JSON 進版控：MigrationTestHelper 要靠舊版本的 schema 建出舊資料庫來測遷移（T10.3）。
+    // Robolectric 讀的是 debug 變體合併後的 assets（test 原始碼集的 assets 不會給它），所以掛在 debug；
+    // 只有 debug APK 多幾 KB 的 JSON，release 不受影響。
+    sourceSets {
+        getByName("debug").assets.srcDir("$projectDir/schemas")
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -158,6 +165,10 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+}
+
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 detekt {

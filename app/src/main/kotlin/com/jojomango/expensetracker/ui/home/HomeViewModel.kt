@@ -9,7 +9,6 @@ import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.domain.BudgetStatus
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryRepository
-import com.jojomango.expensetracker.domain.DefaultCategories
 import com.jojomango.expensetracker.domain.Money
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.SettingsRepository
@@ -196,11 +195,6 @@ class HomeViewModel
         /** Snackbar「還原」動作鍵——UI-SPEC.md §4.3。 */
         fun undoDeleteTransaction(transaction: Transaction) {
             viewModelScope.launch { transactionRepository.upsert(transaction) }
-        }
-
-        companion object {
-            /** 首次啟動的預設分類種子，暴露給 onboarding 畫面顯示（不需要先建錢包才看得到）。 */
-            val defaultCategoryPreview = DefaultCategories.seedDefaults()
         }
     }
 

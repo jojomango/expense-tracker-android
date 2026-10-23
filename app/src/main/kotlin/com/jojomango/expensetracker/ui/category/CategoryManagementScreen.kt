@@ -34,12 +34,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryType
+import com.jojomango.expensetracker.domain.displayName
+import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 
 /** UI-SPEC.md §6 沒有給分類管理頁完整規格（只提到分類色票），這裡沿用
@@ -55,18 +60,19 @@ fun CategoryManagementScreen(
 ) {
     val categories by viewModel.categories.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.errorMessages.collect { message -> snackbarHostState.showSnackbar(message) }
+        viewModel.errorMessages.collect { message -> snackbarHostState.showSnackbar(message.resolve(context)) }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("分類管理") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("返回") } },
-                actions = { TextButton(onClick = onAddCategory) { Text("新增") } },
+                title = { Text(stringResource(R.string.category_management_title)) },
+                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) } },
+                actions = { TextButton(onClick = onAddCategory) { Text(stringResource(R.string.common_add)) } },
             )
         },
     ) { padding ->
@@ -79,7 +85,7 @@ fun CategoryManagementScreen(
         val incomeCategories = categories.filter { it.type == CategoryType.INCOME }
         LazyColumn(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (expenseCategories.isNotEmpty()) {
-                item { Text("支出", modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) }
+                item { Text(stringResource(R.string.type_expense), modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) }
                 items(expenseCategories, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
@@ -90,7 +96,7 @@ fun CategoryManagementScreen(
                 }
             }
             if (incomeCategories.isNotEmpty()) {
-                item { Text("收入", modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) }
+                item { Text(stringResource(R.string.type_income), modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) }
                 items(incomeCategories, key = { it.id }) { category ->
                     CategoryRow(
                         category = category,
@@ -126,14 +132,14 @@ private fun CategoryRow(
         state = dismissState,
         // E2E 用穩定的 tag 定位這一列，不用螢幕座標百分比——座標會隨裝置解析度與版面高度
         // 改變（TD-2：API 36 的 1080×2400 emulator 上真的滑錯列）。
-        modifier = Modifier.testTag("category-row-${category.name}"),
+        modifier = Modifier.testTag("category-row-${category.displayName(rememberCategoryNames())}"),
         enableDismissFromStartToEnd = false,
         backgroundContent = {
             Box(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Text("刪除", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
             }
         },
     ) {
@@ -159,9 +165,9 @@ private fun CategoryRow(
             }
             Spacer(Modifier.size(12.dp))
             Column {
-                Text(category.name)
+                Text(category.displayName(rememberCategoryNames()))
                 if (category.isDefault) {
-                    Text("系統預設", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.category_default_badge), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

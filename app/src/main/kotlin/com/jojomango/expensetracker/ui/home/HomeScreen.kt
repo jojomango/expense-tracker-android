@@ -49,21 +49,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BudgetMode
+import com.jojomango.expensetracker.domain.CategoryNames
 import com.jojomango.expensetracker.domain.Currencies
 import com.jojomango.expensetracker.domain.Money
 import com.jojomango.expensetracker.domain.Transaction
 import com.jojomango.expensetracker.domain.TransactionType
 import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.Week
+import com.jojomango.expensetracker.domain.categoryDisplayName
 import com.jojomango.expensetracker.domain.colorOf
 import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
 import com.jojomango.expensetracker.ui.common.LoadingState
+import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
+import com.jojomango.expensetracker.ui.i18n.weekTitleLabels
 import com.jojomango.expensetracker.ui.notification.AutoRequestNotificationPermissionOnce
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
@@ -83,6 +90,8 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val categoryNames = rememberCategoryNames()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -111,8 +120,13 @@ fun HomeScreen(
                     scope.launch {
                         val result =
                             snackbarHostState.showSnackbar(
-                                message = "已刪除 ${categoryNameOf(state, transaction)} ${formatAmount(state, transaction)}",
-                                actionLabel = "還原",
+                                message =
+                                    context.getString(
+                                        R.string.home_deleted_transaction,
+                                        categoryNameOf(state, transaction, categoryNames),
+                                        formatAmount(state, transaction),
+                                    ),
+                                actionLabel = context.getString(R.string.common_undo),
                                 duration = SnackbarDuration.Short,
                             )
                         if (result == SnackbarResult.ActionPerformed) {
@@ -128,7 +142,8 @@ fun HomeScreen(
 private fun categoryNameOf(
     state: HomeUiState,
     transaction: Transaction,
-): String = state.categories.firstOrNull { it.id == transaction.categoryId }?.name ?: "未分類"
+    names: CategoryNames,
+): String = categoryDisplayName(transaction.categoryId, state.categories, names)
 
 private fun formatAmount(
     state: HomeUiState,
@@ -174,10 +189,10 @@ private fun HomeContent(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(wallet.name, style = typography.navTitle)
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = "切換錢包")
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.home_switch_wallet))
             }
             TextButton(onClick = onOpenSettings) {
-                Text("設定")
+                Text(stringResource(R.string.home_settings))
             }
         }
 
@@ -197,7 +212,7 @@ private fun HomeContent(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                         ) {
                             Text(
-                                Week.groupTitle(group.range.start, state.weekStartDay, today),
+                                Week.groupTitle(group.range.start, state.weekStartDay, today, weekTitleLabels(LocalContext.current)),
                                 style = typography.label,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -210,7 +225,7 @@ private fun HomeContent(
                                     TransactionRow(
                                         transaction = transaction,
                                         wallet = wallet,
-                                        categoryName = categoryNameOf(state, transaction),
+                                        categoryName = categoryNameOf(state, transaction, rememberCategoryNames()),
                                         categoryIcon = state.categories.firstOrNull { it.id == transaction.categoryId }?.icon ?: "📦",
                                         categoryColor = colorOf(transaction.categoryId, state.categories),
                                         onClick = { onEditTransaction(transaction.id) },
@@ -264,7 +279,11 @@ private fun TransactionRow(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Icon(Icons.Filled.Delete, contentDescription = "刪除", tint = MaterialTheme.colorScheme.error)
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.common_delete),
+                    tint = MaterialTheme.colorScheme.error,
+                )
             }
         },
     ) {
@@ -320,10 +339,10 @@ private fun EmptyTransactionsState(onAddTransaction: () -> Unit) {
     ) {
         Text("📝", style = MaterialTheme.typography.displayMedium)
         Spacer(Modifier.height(12.dp))
-        Text("這個錢包還沒有交易")
+        Text(stringResource(R.string.home_empty))
         Spacer(Modifier.height(16.dp))
         FilledTonalButton(onClick = onAddTransaction) {
-            Text("記第一筆")
+            Text(stringResource(R.string.home_add_first))
         }
     }
 }
@@ -343,26 +362,30 @@ private fun FirstWalletOnboarding(
         modifier = modifier.fillMaxSize().padding(20.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Text("建立你的第一個錢包", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.onboarding_title), style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(
             value = name,
             onValueChange = { name = it },
-            label = { Text("錢包名稱") },
+            label = { Text(stringResource(R.string.wallet_name_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
         OutlinedTextField(
             value = currency,
             onValueChange = { currency = it.uppercase() },
-            label = { Text("幣別（ISO 4217，如 TWD）") },
+            label = { Text(stringResource(R.string.wallet_currency_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
-        Text("預算模式", style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.wallet_budget_mode), style = MaterialTheme.typography.labelLarge)
         Row {
-            listOf(BudgetMode.WEEKLY to "每週", BudgetMode.TOTAL to "總預算", BudgetMode.NONE to "不設定").forEach { (mode, label) ->
+            listOf(
+                BudgetMode.WEEKLY to stringResource(R.string.budget_mode_weekly),
+                BudgetMode.TOTAL to stringResource(R.string.budget_mode_total),
+                BudgetMode.NONE to stringResource(R.string.budget_mode_none),
+            ).forEach { (mode, label) ->
                 FilterChip(
                     selected = budgetMode == mode,
                     onClick = { budgetMode = mode },
@@ -376,7 +399,7 @@ private fun FirstWalletOnboarding(
             OutlinedTextField(
                 value = amountText,
                 onValueChange = { input -> amountText = input.filter { it.isDigit() } },
-                label = { Text("預算金額") },
+                label = { Text(stringResource(R.string.wallet_budget_amount)) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -396,14 +419,14 @@ private fun FirstWalletOnboarding(
             enabled = name.isNotBlank() && Currencies.builtIn.containsKey(currency),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("建立錢包")
+            Text(stringResource(R.string.onboarding_create))
         }
 
         // 換新裝置的使用者第一步是還原備份，不該被迫先建一個用不到的錢包（SPEC.md §3.6）。
         // 網頁版引導頁也保留了「設定」入口，理由相同。
         Spacer(Modifier.height(8.dp))
         TextButton(onClick = onRestoreFromBackup, modifier = Modifier.fillMaxWidth()) {
-            Text("從備份還原")
+            Text(stringResource(R.string.onboarding_restore))
         }
     }
 }

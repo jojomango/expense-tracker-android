@@ -17,8 +17,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -39,7 +41,7 @@ fun WalletSwitcherSheet(
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
             Text(
-                "切換錢包",
+                stringResource(R.string.wallet_switcher_title),
                 style = typography.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
@@ -64,7 +66,11 @@ fun WalletSwitcherSheet(
                         )
                     }
                     if (wallet.id == currentWalletId) {
-                        Icon(Icons.Filled.Check, contentDescription = "目前錢包", tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = stringResource(R.string.wallet_switcher_current),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
             }
@@ -77,7 +83,7 @@ fun WalletSwitcherSheet(
                         .padding(horizontal = 20.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.Center,
             ) {
-                Text("管理錢包…", color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.wallet_switcher_manage), color = MaterialTheme.colorScheme.primary)
             }
         }
     }

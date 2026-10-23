@@ -21,9 +21,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.domain.BudgetStatus
 import com.jojomango.expensetracker.domain.Money
@@ -48,9 +51,9 @@ fun BudgetCard(
         Column(modifier = Modifier.padding(22.dp)) {
             val label =
                 when (wallet.budgetMode) {
-                    BudgetMode.WEEKLY -> "本週還可以花"
-                    BudgetMode.TOTAL -> "總預算還剩"
-                    BudgetMode.NONE -> "本週支出"
+                    BudgetMode.WEEKLY -> stringResource(R.string.budget_left_this_week)
+                    BudgetMode.TOTAL -> stringResource(R.string.budget_total_left)
+                    BudgetMode.NONE -> stringResource(R.string.budget_spent_this_week)
                 }
             Text(label, style = typography.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
@@ -79,7 +82,7 @@ fun BudgetCard(
             if (state.totalBalance != null) {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "已用 ${Math.round(state.totalBalance.usedPercent)}%",
+                    stringResource(R.string.budget_used_percent, Math.round(state.totalBalance.usedPercent).toInt()),
                     style = typography.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -114,12 +117,12 @@ private fun BudgetAmountRow(
             // 又滿足 TESTCASES 說的「+ 圖示」。
             Icon(
                 Icons.Filled.Warning,
-                contentDescription = "已超支",
+                contentDescription = stringResource(R.string.budget_overspent),
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(4.dp))
-            Text("已超支", style = typography.label, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(R.string.budget_overspent), style = typography.label, color = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -138,12 +141,16 @@ private fun WeeklyBudgetDetailRows(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            "已用 $usedText / $budgetText",
+            stringResource(R.string.budget_used_of, usedText, budgetText),
             style = typography.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            "還有 ${state.daysLeftInWeek} 天",
+            run {
+                // 呼叫端（WEEKLY 且 daysLeftInWeek != null 才顯示這一列）已經保證有值
+                val days = state.daysLeftInWeek ?: 0
+                pluralStringResource(R.plurals.budget_days_left, days, days)
+            },
             style = typography.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -156,7 +163,11 @@ private fun WeeklyBudgetDetailRows(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("日均可用", style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(R.string.budget_daily_available),
+                style = typography.caption,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(
                 state.dailyAllowance.format(),
                 fontSize = 15.sp,

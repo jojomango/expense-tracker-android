@@ -9,6 +9,7 @@ import com.jojomango.expensetracker.domain.LastWalletException
 import com.jojomango.expensetracker.domain.Transaction
 import com.jojomango.expensetracker.domain.TransactionType
 import com.jojomango.expensetracker.domain.Wallet
+import com.jojomango.expensetracker.domain.ZhTestCategoryNames
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -215,7 +216,7 @@ class PersistenceTest {
     @Test
     fun t4_1_7_deletingDefaultCategoryIsRejected() =
         runTest {
-            val defaultCategory = DefaultCategories.seedDefaults().first()
+            val defaultCategory = DefaultCategories.seedDefaults(ZhTestCategoryNames).first()
             categoryRepo.upsert(defaultCategory)
             walletRepo.upsert(wallet())
             transactionRepo.upsert(transaction(categoryId = defaultCategory.id))

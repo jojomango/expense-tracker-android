@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  不翻譯的字串：UI-SPEC.md §12 的語言名稱永遠用各自的語言寫，看不懂目前介面的人也找得到自己的語言。
+  只放在 values/，不放進 values-zh-rTW/（T10.4.4 的 key 比對不含 translatable="false"）。
+-->
+<resources>
+    <string name="language_name_zh_tw" translatable="false">繁體中文</string>
+    <string name="language_name_en" translatable="false">English</string>
+</resources>

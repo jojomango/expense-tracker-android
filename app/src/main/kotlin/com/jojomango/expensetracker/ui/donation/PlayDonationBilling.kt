@@ -43,8 +43,8 @@ class PlayDonationBilling
         private val offersState = MutableStateFlow<DonationOffers>(DonationOffers.Loading)
         val offers: StateFlow<DonationOffers> = offersState.asStateFlow()
 
-        private val messageFlow = MutableSharedFlow<String>(extraBufferCapacity = 4)
-        val messages: SharedFlow<String> = messageFlow
+        private val messageFlow = MutableSharedFlow<DonationMessage>(extraBufferCapacity = 4)
+        val messages: SharedFlow<DonationMessage> = messageFlow
 
         private val client: BillingClient =
             BillingClient
@@ -91,7 +91,7 @@ class PlayDonationBilling
         ) {
             val details = synchronized(productDetails) { productDetails[tier] }
             if (details == null) {
-                messageFlow.tryEmit(UNAVAILABLE_MESSAGE)
+                messageFlow.tryEmit(DonationMessage.UNAVAILABLE)
                 return
             }
             val params =
@@ -161,7 +161,7 @@ class PlayDonationBilling
                         // 補做 consume 的那筆，付款當下多半已經記過了；只在這次付款流程裡記一次。
                         if (fromPurchaseFlow) analyticsTracker.track(AnalyticsEvent.DonationCompleted(action.tier))
                     }
-                    is DonationAction.ShowMessage -> messageFlow.tryEmit(action.text)
+                    is DonationAction.ShowMessage -> messageFlow.tryEmit(action.message)
                 }
             }
         }

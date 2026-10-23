@@ -38,6 +38,8 @@ data class BackupCategory(
     val icon: String,
     val color: String,
     val isDefault: Boolean,
+    /** v2.3 新增的選填欄位（[DefaultCategoryKey.id]）。舊備份沒有它，不提高 schema 版本（SPEC.md §3.9）。 */
+    val defaultKey: String? = null,
 )
 
 @Serializable

@@ -6,8 +6,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import com.jojomango.expensetracker.R
 
 /**
  * Room 查詢還沒回來之前的畫面。本地資料庫通常一瞬間就好，但沒有這個的話畫面會是
@@ -16,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 @Composable
 fun LoadingState(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = "載入中" })
+        val loading = stringResource(R.string.common_loading)
+        CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = loading })
     }
 }

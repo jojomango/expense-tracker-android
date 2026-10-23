@@ -26,7 +26,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 7 | 打磨 | ✅ DONE | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12)（實機驗收併入 Phase 8 的封閉測試） |
 | 8 | 上架準備 | 🚧 待人類上傳封閉測試 | [PR #15](https://github.com/jojomango/expense-tracker-android/pull/15) |
 | 9 | 匿名使用分析與贊助 | 🚧 WIP（draft PR，待人類驗收：Firebase DebugView、實機贊助） | [PR #16](https://github.com/jojomango/expense-tracker-android/pull/16) |
-| 10 | 多語系（繁中＋英文） | ⬜ TODO（合約 PR 待人類簽署，merge 後改為 **NEXT**） | |
+| 10 | 多語系（繁中＋英文） | 🚧 WIP（draft PR；待人類實機驗收：英文系統開一次、切換語言） | {PR} |
 
 ---
 
@@ -1186,6 +1186,45 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
   要等 App 重開後再點開「支持開發者」才會補做。很少見，沒處理。
 - emulator 上「支持開發者」永遠是「目前無法連線」（Play 上還沒有商品），E2E-12 用 `runFlow: when` 兩種都接受。
   真正的三個按鈕、價格、付款、感謝訊息只能在實機＋授權測試帳號上驗。
+
+**驗證結果：** 見 PR。
+
+---
+
+## Phase 10 — 多語系（繁中＋英文）
+
+**必讀：** `SPEC.md` §3.3、§3.5、§3.9、Phase 10、D12～D14；`UI-SPEC.md` §12；`TESTCASES.md` T10、E2E-14
+
+### 交接筆記（Phase 10）
+
+**做了什麼：**
+- `domain/Language.kt`：`LanguagePreference`、`AppLanguage`、`resolveAppLanguage`（只看系統語言清單的第一個；任何 `zh` 都是繁中，T10.1）
+- `domain/Category.kt`：`DefaultCategoryKey`（11 個代號，兩個「其他」分開）、`CategoryNames` 介面、`displayName`／`categoryDisplayName`／`renamed`。
+  `DefaultCategories.seedDefaults(names)`、`Budget.summarizeByCategory(..., names)`、`Week.groupTitle(..., labels)` 都改成由外面傳文字進來——**domain 裡已經沒有任何中文介面文字**（T10.4.5 會掃）
+- `data`：Room schema v1 → v2（`categories.defaultKey`，`Migrations.MIGRATION_1_2`）；`LegacyDefaultCategoryNames` 是資料相容用的繁中名稱表（遷移、匯入舊備份、新建預設分類的後備名稱）；
+  備份 `BackupCategory.defaultKey` 選填，schema 版本仍為 1
+- `ui/i18n/AppLocale`：語言的保存與套用。Android 13+ 用 `LocaleManager`（跟系統設定同步）、8–12 用 SharedPreferences `app_language.xml`（排除在 Auto Backup 外）。
+  `MainActivity.attachBaseContext` 一律包成 `resolveAppLanguage` 的結果——**不能**讓 Android 自己挑資源，簡體／港澳系統語言要顯示繁中（D13）
+- 字串：`values/strings.xml` 是英文（預設）、`values-zh-rTW/strings.xml` 是繁中，154 個字串＋2 個 plurals；`values/untranslatable.xml` 放語言名稱（永遠用自己的語言）。
+  ViewModel 不再存文字：訊息改成 `UiMessage(@StringRes, args)`／`DonationMessage`，分類名稱在 Composable 用 `rememberCategoryNames()` 決定
+- 設定頁「語言」區塊（UI-SPEC §12），chip 有 `language-system`／`language-zh-TW`／`language-en` 的 testTag（繁中介面裡「外觀」也有一個「跟隨系統」）
+- `res/xml/locales_config.xml`＋manifest `localeConfig`：Android 13+ 系統設定的「應用程式語言」列出繁中與英文
+- E2E：所有 flow 的 `launchApp` 帶 `arguments: { language: zh-TW }`；新增 `E2E-14-language.yaml`
+- 文件：`docs/store/listing-en.md`（英文商店資訊草稿）、`docs/privacy-policy-en.html`（英文隱私權政策，與繁中互相連結）
+
+**設計決策（下一個人要知道的）：**
+- **改名＝拿掉代號**：預設分類被改名後 `defaultKey` 變成 `null`、`isDefault` 不變（仍不可刪）。編輯頁名稱欄位預填的是顯示名稱，
+  只改圖示或顏色時欄位不變，`renamed()` 判斷成沒改名、代號保留
+- 有代號的分類，資料庫裡的 `name` 只是後備值（繁中），畫面永遠用目前語言；舊版 App 匯入新備份時看得到合理的名稱
+- **啟動參數 `language`**（`system`／`zh-TW`／`en`）：給 Maestro 用，效果跟在設定頁選一樣。**只在全新啟動時套用**——換語言會重建 Activity，
+  intent 還帶著同一個參數，重建時再套用會把使用者剛選的語言蓋回去（E2E-14 第一次就抓到這個 bug）
+- 分類格的排序仍是資料庫 `ORDER BY isDefault DESC, name ASC`（後備名稱是繁中），所以英文介面的預設分類順序跟繁中一樣，不是英文字母序。沒有在這個 phase 處理
+- Room schema JSON 現在進版控（`app/schemas/`），debug 變體的 assets 掛上它給 `MigrationTestHelper` 用；之後每次改 schema 都會多一個 JSON
+- 英文 App 名稱暫定「Expense Tracker」（見 PR 的需要人類決策）
+
+**留下的坑：**
+- 英文字串都是 agent 翻的，沒有母語者校對過
+- 測試順序：T10.4.4／T10.4.5（字串資源與原始碼掃描）是在抽完字串之後才寫的，所以另外做了 mutation 檢查（故意加一個寫死的中文、刪一個繁中 key，兩個測試都會失敗）
 
 **驗證結果：** 見 PR。
 

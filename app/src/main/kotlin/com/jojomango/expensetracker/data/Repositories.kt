@@ -11,6 +11,7 @@ import com.jojomango.expensetracker.domain.CURRENT_BACKUP_SCHEMA_VERSION
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.DefaultCategories
+import com.jojomango.expensetracker.domain.DefaultCategoryKey
 import com.jojomango.expensetracker.domain.ImportMode
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.SettingsRepository
@@ -97,7 +98,7 @@ class RoomCategoryRepository
 
         override suspend fun seedDefaultsIfEmpty() {
             if (dao.count() == 0) {
-                dao.upsertAll(DefaultCategories.seedDefaults().map { CategoryEntity.fromDomain(it) })
+                dao.upsertAll(DefaultCategories.seedDefaults(LegacyDefaultCategoryNames).map { CategoryEntity.fromDomain(it) })
             }
         }
     }
@@ -180,9 +181,19 @@ private fun WalletEntity.toBackup() = BackupWallet(id, name, currency, budgetMod
 
 private fun BackupWallet.toEntity() = WalletEntity(id, name, currency, budgetMode, budgetAmount, archived)
 
-private fun CategoryEntity.toBackup() = BackupCategory(id, name, type, icon, color, isDefault)
+private fun CategoryEntity.toBackup() = BackupCategory(id, name, type, icon, color, isDefault, defaultKey)
 
-private fun BackupCategory.toEntity() = CategoryEntity(id, name, type, icon, color, isDefault)
+/** 舊備份沒有代號時，跟遷移用同一條規則補上（T10.3.4）。 */
+private fun BackupCategory.toEntity() =
+    CategoryEntity(
+        id,
+        name,
+        type,
+        icon,
+        color,
+        isDefault,
+        DefaultCategoryKey.fromId(defaultKey)?.id ?: LegacyDefaultCategoryNames.keyFor(name, type, isDefault)?.id,
+    )
 
 private fun TransactionEntity.toBackup() =
     BackupTransaction(

@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BackupIntegrityException
 import com.jojomango.expensetracker.domain.BackupParseException
 import com.jojomango.expensetracker.domain.BackupReminderRepository
@@ -20,6 +21,7 @@ import com.jojomango.expensetracker.domain.encodeBackup
 import com.jojomango.expensetracker.domain.isBackupDue
 import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
 import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
+import com.jojomango.expensetracker.ui.i18n.UiMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -41,11 +43,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import java.io.IOException
 import javax.inject.Inject
-
-/** 跟網頁版 `Settings.tsx` 的 `REPLACE_CONFIRM_PHRASE` 同一個字，兩邊行為一致。 */
-const val REPLACE_CONFIRM_PHRASE = "確認取代"
-
-private const val IMPORT_DONE_MESSAGE = "匯入完成"
 
 data class BackupUiState(
     /** 預設合併，跟網頁版一樣——取代會清空資料，不該是不小心就選到的預設值。 */
@@ -82,8 +79,8 @@ class SettingsViewModel
         private val backupState = MutableStateFlow(BackupUiState())
         val backup: StateFlow<BackupUiState> = backupState.asStateFlow()
 
-        private val messageFlow = MutableSharedFlow<String>(extraBufferCapacity = 1)
-        val messages: SharedFlow<String> = messageFlow
+        private val messageFlow = MutableSharedFlow<UiMessage>(extraBufferCapacity = 1)
+        val messages: SharedFlow<UiMessage> = messageFlow
 
         /** SPEC.md §3.5：變更後所有錢包的週分組即時重算，不改變任何交易資料——這件事
          * 天生成立，因為 Week/Budget 的計算永遠即時、不快取任何跟 weekStartDay 有關的值。 */
@@ -115,11 +112,14 @@ class SettingsViewModel
         /**
          * 打開檔案挑選器之前先檢查。取代模式要先輸入確認字——在選檔**之前**擋下來，
          * 不然使用者選完檔案才被告知要回頭輸入，還得重選一次。
+         *
+         * [confirmPhrase] 依目前語言（繁中「確認取代」跟網頁版 `Settings.tsx` 同一個字；英文 `REPLACE`），
+         * 由畫面從 string resources 傳進來。
          */
-        fun canStartImport(): Boolean {
+        fun canStartImport(confirmPhrase: String): Boolean {
             val state = backupState.value
-            if (state.importMode == ImportMode.REPLACE && state.confirmText.trim() != REPLACE_CONFIRM_PHRASE) {
-                messageFlow.tryEmit("請輸入「$REPLACE_CONFIRM_PHRASE」以確認清空現有資料")
+            if (state.importMode == ImportMode.REPLACE && state.confirmText.trim() != confirmPhrase) {
+                messageFlow.tryEmit(UiMessage(R.string.settings_import_confirm_required, listOf(confirmPhrase)))
                 return false
             }
             return true
@@ -131,7 +131,7 @@ class SettingsViewModel
                     runCatching {
                         val json = encodeBackup(backupRepository.export())
                         withContext(Dispatchers.IO) {
-                            val stream = context.contentResolver.openOutputStream(uri, "wt") ?: throw IOException("無法開啟檔案")
+                            val stream = context.contentResolver.openOutputStream(uri, "wt") ?: throw IOException("Cannot open file")
                             stream.use { it.write(json.toByteArray(Charsets.UTF_8)) }
                         }
                     }
@@ -139,15 +139,15 @@ class SettingsViewModel
                     // 只有真的寫成功才算備份過——寫到一半失敗不能重設提醒的計時。
                     backupReminderRepository.recordBackup(Clock.System.now())
                     analyticsTracker.track(AnalyticsEvent.BackupExported)
-                    messageFlow.emit("已匯出 ${displayNameOf(uri) ?: suggestedBackupFileName()}")
+                    messageFlow.emit(UiMessage(R.string.settings_export_done, listOf(displayNameOf(uri) ?: suggestedBackupFileName())))
                 } else {
-                    messageFlow.emit("匯出失敗：無法寫入這個位置，請換一個位置再試")
+                    messageFlow.emit(UiMessage(R.string.settings_export_failed))
                 }
             }
         }
 
         // 例外本身的 message 是 domain 層給開發者看的英文，不是給使用者看的；這裡刻意
-        // 丟掉它，換成對應的繁體中文訊息（CLAUDE.md「面向使用者的文字一律繁體中文」）。
+        // 丟掉它，換成 string resources 裡對應的訊息（CLAUDE.md：介面文字一律放在 string resources）。
         @Suppress("SwallowedException")
         fun importFrom(uri: Uri) {
             val mode = backupState.value.importMode
@@ -156,26 +156,26 @@ class SettingsViewModel
                     try {
                         val json =
                             withContext(Dispatchers.IO) {
-                                val stream = context.contentResolver.openInputStream(uri) ?: throw IOException("無法開啟檔案")
+                                val stream = context.contentResolver.openInputStream(uri) ?: throw IOException("Cannot open file")
                                 stream.use { it.readBytes().toString(Charsets.UTF_8) }
                             }
                         // TESTCASES.md T4.2.7：一萬筆也要 3 秒內完成、UI 不凍結，解析跟寫入都不在主執行緒。
                         withContext(Dispatchers.Default) { backupRepository.import(decodeBackup(json), mode) }
                         backupState.update { it.copy(confirmText = "") }
-                        IMPORT_DONE_MESSAGE
+                        UiMessage(R.string.settings_import_done)
                     } catch (e: IOException) {
-                        "匯入失敗：無法讀取這個檔案"
+                        UiMessage(R.string.settings_import_failed_read)
                     } catch (e: SecurityException) {
                         // 使用者在檔案管理員撤銷了這個檔案的存取權限
-                        "匯入失敗：無法讀取這個檔案"
+                        UiMessage(R.string.settings_import_failed_read)
                     } catch (e: BackupSchemaTooNewException) {
-                        "這個備份檔來自較新版本的 App，請先更新 App 再匯入"
+                        UiMessage(R.string.settings_import_schema_too_new)
                     } catch (e: BackupIntegrityException) {
-                        "匯入失敗：備份檔內容不完整或已損毀"
+                        UiMessage(R.string.settings_import_failed_integrity)
                     } catch (e: BackupParseException) {
-                        "匯入失敗：這不是有效的備份檔"
+                        UiMessage(R.string.settings_import_failed_parse)
                     }
-                analyticsTracker.track(AnalyticsEvent.BackupImported(mode, success = message == IMPORT_DONE_MESSAGE))
+                analyticsTracker.track(AnalyticsEvent.BackupImported(mode, success = message.id == R.string.settings_import_done))
                 messageFlow.emit(message)
             }
         }

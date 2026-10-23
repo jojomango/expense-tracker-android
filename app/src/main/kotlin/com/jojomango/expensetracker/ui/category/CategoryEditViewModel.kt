@@ -4,8 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jojomango.expensetracker.domain.Category
+import com.jojomango.expensetracker.domain.CategoryNames
 import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.CategoryType
+import com.jojomango.expensetracker.domain.displayName
+import com.jojomango.expensetracker.domain.renamed
 import com.jojomango.expensetracker.ui.theme.CategoryColors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,14 +25,17 @@ data class CategoryEditUiState(
      * 計算都假設一個分類的 type 不會變動。 */
     val categoryId: String? = null,
     val isDefault: Boolean = false,
-    val name: String = "",
+    /** 編輯前的分類；預設分類的名稱要靠它在畫面上依目前語言顯示（SPEC.md §3.9）。 */
+    val existing: Category? = null,
+    /** 使用者在名稱欄位打的字；`null` = 還沒動過，欄位顯示 [existing] 的顯示名稱。 */
+    val name: String? = null,
     val type: CategoryType = CategoryType.EXPENSE,
     val icon: String = "🏷️",
     val color: String = CategoryColors.palette.first(),
     val saved: Boolean = false,
 ) {
     val isEditing: Boolean get() = categoryId != null
-    val canSubmit: Boolean get() = name.isNotBlank() && icon.isNotBlank()
+    val canSubmit: Boolean get() = (name ?: existing?.name).orEmpty().isNotBlank() && icon.isNotBlank()
 }
 
 @HiltViewModel
@@ -52,7 +58,7 @@ class CategoryEditViewModel
                         internalState.value.copy(
                             isLoading = false,
                             isDefault = existing.isDefault,
-                            name = existing.name,
+                            existing = existing,
                             type = existing.type,
                             icon = existing.icon,
                             color = existing.color,
@@ -79,19 +85,21 @@ class CategoryEditViewModel
             internalState.value = internalState.value.copy(color = color)
         }
 
-        fun submit() {
+        /**
+         * [names] 是目前語言的分類名稱：預設分類只改圖示或顏色時名稱欄位不變，不算改名，
+         * 繼續跟著語言顯示（[renamed]、T10.2.3）。
+         */
+        fun submit(names: CategoryNames) {
             val state = internalState.value
             if (!state.canSubmit) return
+            val existing = state.existing
+            val newName = state.name ?: existing?.displayName(names) ?: return
             viewModelScope.launch {
                 val category =
-                    Category(
-                        id = state.categoryId ?: UUID.randomUUID().toString(),
-                        name = state.name,
-                        type = state.type,
-                        icon = state.icon,
-                        color = state.color,
-                        isDefault = state.isDefault,
-                    )
+                    (
+                        existing?.renamed(newName, names)
+                            ?: Category(UUID.randomUUID().toString(), newName, state.type, state.icon, state.color)
+                    ).copy(type = state.type, icon = state.icon, color = state.color)
                 categoryRepository.upsert(category)
                 internalState.value = internalState.value.copy(saved = true)
             }

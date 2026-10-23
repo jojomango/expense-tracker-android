@@ -21,7 +21,7 @@ class DonationPurchaseHandlerTest {
         val handler = DonationPurchaseHandler()
         val actions = handler.onPurchasesUpdated(DonationBillingResult.Ok, listOf(purchased("tok-1")))
         assertEquals(
-            listOf(DonationAction.Consume("tok-1", DonationTier.SMALL), DonationAction.ShowMessage(THANK_YOU_MESSAGE)),
+            listOf(DonationAction.Consume("tok-1", DonationTier.SMALL), DonationAction.ShowMessage(DonationMessage.THANKS)),
             actions,
         )
     }
@@ -37,7 +37,7 @@ class DonationPurchaseHandlerTest {
     @DisplayName("T9.2.3 — Play 無法連線：顯示「目前無法連線到 Google Play，請稍後再試」")
     fun `T9 2 3`() {
         val actions = DonationPurchaseHandler().onPurchasesUpdated(DonationBillingResult.Unavailable, emptyList())
-        assertEquals(listOf(DonationAction.ShowMessage(UNAVAILABLE_MESSAGE)), actions)
+        assertEquals(listOf(DonationAction.ShowMessage(DonationMessage.UNAVAILABLE)), actions)
     }
 
     @Test
