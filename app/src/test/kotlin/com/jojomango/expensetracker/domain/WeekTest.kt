@@ -209,7 +209,7 @@ class WeekTest {
     )
 
     @Test
-    @DisplayName("T2.5.1 — 8 筆分屬 3 週的交易，分為 3 組，組內依日期排序，組間依週首倒序")
+    @DisplayName("T2.5.1 — 8 筆分屬 3 週的交易，分為 3 組，組內依日期由新到舊，組間依週首倒序")
     fun `T2 5 1`() {
         val txs =
             listOf(
@@ -228,10 +228,30 @@ class WeekTest {
         assertEquals(LocalDate(2026, 8, 17), groups[0].range.start)
         assertEquals(LocalDate(2026, 8, 10), groups[1].range.start)
         assertEquals(LocalDate(2026, 8, 3), groups[2].range.start)
-        // 組內依日期排序
-        assertEquals(listOf("f", "g", "h"), groups[0].items.map { it.label })
-        assertEquals(listOf("b", "c", "a"), groups[1].items.map { it.label })
-        assertEquals(listOf("d", "e"), groups[2].items.map { it.label })
+        // 組內依日期由新到舊（v2.4：人類 2026-10-23 決定）
+        assertEquals(listOf("h", "g", "f"), groups[0].items.map { it.label })
+        assertEquals(listOf("a", "c", "b"), groups[1].items.map { it.label })
+        assertEquals(listOf("e", "d"), groups[2].items.map { it.label })
+    }
+
+    @Test
+    @DisplayName("T2.5.5 — 同一天的兩筆，先記 A、後記 B：B 排在 A 上面（同一天依建立時間由新到舊）")
+    fun `T2 5 5`() {
+        data class Timed(
+            val date: LocalDate,
+            val createdAt: Long,
+            val label: String,
+        )
+        val day = LocalDate(2026, 8, 11)
+        val txs =
+            listOf(
+                Timed(day, createdAt = 100, label = "A"),
+                Timed(day, createdAt = 200, label = "B"),
+                // 補記的舊日期：雖然最後才記，日期比較舊所以排在最下面
+                Timed(LocalDate(2026, 8, 10), createdAt = 300, label = "older"),
+            )
+        val groups = Week.groupByWeek(txs, DayOfWeek.MONDAY, compareByDescending { it.createdAt }) { it.date }
+        assertEquals(listOf("B", "A", "older"), groups.single().items.map { it.label })
     }
 
     @Test

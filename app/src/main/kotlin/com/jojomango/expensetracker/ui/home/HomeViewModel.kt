@@ -132,7 +132,8 @@ class HomeViewModel
             val totalBalance = Budget.calculateTotalBalance(wallet, transactions)
             val weeklyExpenseTotal =
                 Budget.calculateWeeklyExpenseTotal(wallet, transactions, ctx.settings.weekStartDay, referenceDate)
-            val groups = Week.groupByWeek(transactions, ctx.settings.weekStartDay) { it.date }
+            // 同一天的交易，後記的在上面（TESTCASES.md T2.5.5）
+            val groups = Week.groupByWeek(transactions, ctx.settings.weekStartDay, compareByDescending { it.createdAt }) { it.date }
             // 「還有 N 天」/「日均可用」是週預算特有的概念（總預算沒有週期，
             // 不會重置），UI-SPEC.md §4.2 只有明講「budgetMode == NONE 時不顯示
             // 進度條」，沒有明講這兩行在 TOTAL 模式下要不要出現——這裡選擇只在
