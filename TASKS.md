@@ -1229,7 +1229,10 @@ UI-SPEC 沒規定 onPrimary，白字壓 dark accent 只有 3.52:1，**我改成 
 - 英文字串都是 agent 翻的，沒有母語者校對過
 - 測試順序：T10.4.4／T10.4.5（字串資源與原始碼掃描）是在抽完字串之後才寫的，所以另外做了 mutation 檢查（故意加一個寫死的中文、刪一個繁中 key，兩個測試都會失敗）
 
-**驗證結果：** 見 PR。
+**驗證結果：** `./gradlew verify` 通過（252 個單元測試，domain 覆蓋率 94.6% instruction／97.8% line）；本機 arm64 API 34 Maestro **連續兩輪 14/14**。
+過程中 emulator 出過兩次問題（QEMU 當掉、GPU 卡住造成 ANR），都是重新冷開機後重跑，不是 App 的問題——
+但 ANR 的堆疊顯示**設定頁一打開就在主執行緒建立 Play Billing 的 `BillingClient`**（Phase 9 的寫法），在很慢的 emulator 上第一次載入 Billing 類別要很久。
+應該改成展開「支持開發者」時才建立（另開小 PR 處理，不混在 Phase 10）。
 
 ---
 
