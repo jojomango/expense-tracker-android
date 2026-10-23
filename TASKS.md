@@ -26,7 +26,7 @@ Phase 8 才回頭做介面改版」的兩階段做法，Android 版從 Phase 0 �
 | 7 | 打磨 | ✅ DONE | [PR #12](https://github.com/jojomango/expense-tracker-android/pull/12)（實機驗收併入 Phase 8 的封閉測試） |
 | 8 | 上架準備 | 🚧 待人類上傳封閉測試 | [PR #15](https://github.com/jojomango/expense-tracker-android/pull/15) |
 | 9 | 匿名使用分析與贊助 | 🚧 WIP（draft PR，待人類驗收：Firebase DebugView、實機贊助） | [PR #16](https://github.com/jojomango/expense-tracker-android/pull/16) |
-| 10 | 多語系（繁中＋英文） | 🚧 WIP（draft PR；待人類實機驗收：英文系統開一次、切換語言） | {PR} |
+| 10 | 多語系（繁中＋英文） | 🚧 WIP（draft PR；待人類實機驗收：英文系統開一次、切換語言） | [PR #23](https://github.com/jojomango/expense-tracker-android/pull/23) |
 
 ---
 
