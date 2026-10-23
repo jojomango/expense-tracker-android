@@ -178,7 +178,8 @@ maestro test .maestro/
   需要表示「多選一」的狀態（例如 `BudgetMode`、`TransactionType`）用 `sealed class`
   或 `enum class`，不要用字串常數
 - 註解寫「為什麼」，不寫「做什麼」。程式碼應自我說明「做什麼」
-- 面向使用者的文字一律繁體中文
+- 面向使用者的文字一律放在 Android string resources，**不得寫死在 Kotlin 程式碼裡**；繁體中文是主要語言，
+  英文版必須同步補上（v2.3，`SPEC.md` §3.9）。`domain` 不放任何介面文字
 
 ## 目錄職責
 
