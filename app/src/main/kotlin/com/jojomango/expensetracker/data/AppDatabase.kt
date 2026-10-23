@@ -10,10 +10,10 @@ import androidx.room.TypeConverters
  */
 @Database(
     entities = [WalletEntity::class, TransactionEntity::class, CategoryEntity::class, SettingsEntity::class],
-    version = 1,
-    // 目前沒有第二個 schema 版本需要比對，先關閉 schema export 避免產生
-    // 沒人用的 JSON 檔——真的要寫 v1→v2 migration 時再打開（見 Migrations.kt）。
-    exportSchema = false,
+    // v2（Phase 10）：categories 新增 defaultKey，見 Migrations.MIGRATION_1_2
+    version = 2,
+    // schema JSON 輸出到 app/schemas（進版控），遷移測試用它建出舊版本的資料庫。
+    exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expense Tracker Privacy Policy</title>
+<!--
+  English privacy policy (GitHub Pages: https://jojomango.github.io/expense-tracker-android/privacy-policy-en.html).
+  Translation of docs/privacy-policy.html (Traditional Chinese is the source). Keep both in sync and update "Last updated".
+-->
+<style>
+  :root {
+    --bg: #f2f1ef; --card: #ffffff; --fg: #1c1b1f; --fg2: #5f5c66; --line: #e3e1dd; --accent: #c1502e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0a0a0c; --card: #17171a; --fg: #ecebef; --fg2: #a6a3ad; --line: #2a2a2f; --accent: #e8825f; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.75 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 28px; line-height: 1.3; margin: 0 0 4px; }
+  .updated { color: var(--fg2); font-size: 14px; margin: 0 0 24px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px 20px 12px; margin: 16px 0; }
+  h2 { font-size: 19px; margin: 18px 0 8px; }
+  ul { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  a { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-top: 1px solid var(--line); }
+  th { color: var(--fg2); font-weight: 600; border-top: none; white-space: nowrap; }
+  .contact { font-size: 17px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Expense Tracker Privacy Policy</h1>
+  <p class="updated">Last updated: October 23, 2026 (applies to version 1.1.0 and later) · <a href="privacy-policy.html">繁體中文</a></p>
+
+  <p>Expense Tracker ("the app", called 記帳本 in Traditional Chinese) is developed by an individual developer, jojomango. This policy explains how the app handles your data.</p>
+
+  <section>
+    <h2>Your entries stay on your phone</h2>
+    <ul>
+      <li>Everything you enter in the app — wallet names, transactions, amounts, categories, notes, currencies, budgets and dates — is <strong>stored only on your device</strong> and is never sent to the developer or any third party.</li>
+      <li>The app has <strong>no account and no ads</strong>, and does not use the advertising ID.</li>
+    </ul>
+    <p>The app connects to the internet in only the two cases below, and neither of them sends your entries.</p>
+  </section>
+
+  <section>
+    <h2>1. "Help improve the app" (off by default)</h2>
+    <p>Settings has a "Help improve the app" switch, which is <strong>off by default</strong>. While it is off, the app sends no usage or crash information.</p>
+    <p>If you turn it on, the app sends the following through Google's <strong>Firebase Analytics</strong> and <strong>Firebase Crashlytics</strong>:</p>
+    <ul>
+      <li><strong>Anonymous usage</strong>: for example which screen you opened (home, stats, settings…), whether you added an expense or income, which budget mode you chose for a new wallet, switching dark mode, and using backups. It <strong>never includes</strong> amounts, categories, notes, wallet names or currencies.</li>
+      <li><strong>Crash information</strong>: the error log when the app crashes (which line of code failed), plus your phone model, Android version and app version. Crash logs do not include your entries.</li>
+      <li><strong>Information Firebase adds automatically</strong>: a randomly generated identifier used only for analytics (not your name, phone number or advertising ID), app version, phone model and OS version, language, and the country or region estimated from your network address (not your precise location). Firebase also records basic events such as app opens, time spent and updates.</li>
+    </ul>
+    <p>This data is processed by Google under <a href="https://firebase.google.com/support/privacy">Firebase's privacy and security terms</a>. The developer only sees aggregated statistics and crash reports, used solely to understand what works, where people get stuck and where the app crashes. The app does not set a user ID, does not collect the advertising ID and does not enable ad personalization.</p>
+    <p><strong>You can turn it off at any time in Settings.</strong> Collection stops immediately, unsent crash reports are deleted, and the analytics identifier on your phone is cleared — if you turn it on again later, you get a brand-new identifier that cannot be linked to earlier data.</p>
+  </section>
+
+  <section>
+    <h2>2. Support the developer (donations)</h2>
+    <p>"Support the developer" at the bottom of Settings is an optional donation and does not unlock any features. The app only connects to Google Play to look up prices when you open that section; payment is handled entirely by <strong>Google Play</strong>. The developer <strong>cannot see</strong> your card or other payment details and only receives a standard order record from Google Play (such as the order number, item and amount). See Google's privacy policy for how Google Play handles payment data.</p>
+  </section>
+
+  <section>
+    <h2>Backups</h2>
+    <ul>
+      <li><strong>Backup files you export</strong>: when you use "Export backup", you choose where the file is saved (for example your Downloads folder or a cloud drive app). The file contains your entries; how you store and share it is entirely up to you, and the developer cannot access it.</li>
+      <li><strong>Android system backup</strong>: if you have turned on Google account backup in your phone's settings, Android may back up the app's data to <strong>your own Google account</strong> so it can be restored on a new phone. This is a system feature provided by Google; the backup is encrypted with your screen lock and the developer cannot read it. You can turn it off under Settings → System → Backup. The "Help improve the app" switch and your language choice are <strong>not</strong> backed up — on a new phone they start from the defaults.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Permissions the app uses</h2>
+    <table>
+      <tr><th>Permission</th><th>Purpose</th></tr>
+      <tr><td>Internet, network state</td><td>Only for "Help improve the app" (when you turn it on) and Google Play donations</td></tr>
+      <tr><td>Google Play billing</td><td>Donation payments</td></tr>
+      <tr><td>Notifications</td><td>A reminder to export a backup every 7 days. It is scheduled on your phone and does not use the network. You can turn it off in system settings at any time.</td></tr>
+      <tr><td>Run at startup, keep awake, foreground service</td><td>Needed by Android's scheduler (WorkManager) so the backup reminder runs on time in the background</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Children</h2>
+    <p>The app is not designed for children.</p>
+  </section>
+
+  <section>
+    <h2>Deleting your data</h2>
+    <ul>
+      <li>Your entries are only on your device: you can delete transactions and wallets in the app at any time, or uninstall the app to delete everything. (If Android system backup is on, Google keeps and deletes that backup under its own policy.)</li>
+      <li>Anonymous analytics data: turning off "Help improve the app" clears the analytics identifier on your phone. Data Firebase has already received is deleted automatically after Firebase's retention period; to request earlier deletion, email the address below.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Changes to this policy</h2>
+    <p>If this policy changes, this page will be updated along with the "Last updated" date above.</p>
+  </section>
+
+  <section>
+    <h2>Contact</h2>
+    <p class="contact"><a href="mailto:jojomango99@gmail.com">jojomango99@gmail.com</a></p>
+  </section>
+</main>
+</body>
+</html>

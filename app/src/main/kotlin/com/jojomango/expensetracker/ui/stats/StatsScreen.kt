@@ -36,10 +36,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.WeeklyTrendPoint
+import com.jojomango.expensetracker.domain.displayName
 import com.jojomango.expensetracker.ui.common.LoadingState
+import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -63,19 +67,19 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
                     .padding(horizontal = 20.dp)
                     .verticalScroll(rememberScrollState()),
         ) {
-            Text("統計", style = typography.titleLarge, modifier = Modifier.padding(vertical = 16.dp))
+            Text(stringResource(R.string.stats_title), style = typography.titleLarge, modifier = Modifier.padding(vertical = 16.dp))
 
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 SegmentedButton(
                     selected = state.period == StatsPeriod.WEEK,
                     onClick = { viewModel.setPeriod(StatsPeriod.WEEK) },
                     shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                ) { Text("本週") }
+                ) { Text(stringResource(R.string.stats_this_week)) }
                 SegmentedButton(
                     selected = state.period == StatsPeriod.MONTH,
                     onClick = { viewModel.setPeriod(StatsPeriod.MONTH) },
                     shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                ) { Text("本月") }
+                ) { Text(stringResource(R.string.stats_this_month)) }
             }
 
             Spacer(Modifier.height(16.dp))
@@ -92,7 +96,16 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
 private fun DonutCard(state: StatsUiState) {
     val typography = LocalAppTypography.current
     val extraColors = LocalAppExtraColors.current
-    val periodLabel = if (state.period == StatsPeriod.WEEK) "本週支出" else "本月支出"
+    val periodLabel =
+        stringResource(
+            if (state.period ==
+                StatsPeriod.WEEK
+            ) {
+                R.string.stats_spent_this_week
+            } else {
+                R.string.stats_spent_this_month
+            },
+        )
 
     Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(22.dp)) {
@@ -142,7 +155,7 @@ private fun DonutCard(state: StatsUiState) {
                 CategoryLegendRow(slice)
             }
             if (state.categorySlices.isEmpty()) {
-                Text("這段期間還沒有支出", style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.stats_empty), style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -150,6 +163,7 @@ private fun DonutCard(state: StatsUiState) {
 
 @Composable
 private fun CategoryLegendRow(slice: CategorySlice) {
+    val categoryNames = rememberCategoryNames()
     val typography = LocalAppTypography.current
     val extraColors = LocalAppExtraColors.current
     val color = parseHexColor(slice.color)
@@ -162,7 +176,10 @@ private fun CategoryLegendRow(slice: CategorySlice) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.size(10.dp).background(color, RoundedCornerShape(2.dp)))
                 Spacer(Modifier.size(8.dp))
-                Text("${slice.icon} ${slice.name}", style = typography.bodyMedium)
+                Text(
+                    "${slice.icon} ${slice.category?.displayName(categoryNames) ?: categoryNames.uncategorized}",
+                    style = typography.bodyMedium,
+                )
             }
             Text(
                 "${slice.amount.format()}（${formatPercent(slice.percent)}%）",
@@ -188,7 +205,7 @@ private fun TrendCard(points: List<WeeklyTrendPoint>) {
 
     Card(shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(22.dp)) {
-            Text("近 8 週支出趨勢", style = typography.cardTitle)
+            Text(stringResource(R.string.stats_trend_title), style = typography.cardTitle)
             Spacer(Modifier.height(16.dp))
 
             val maxAmount = points.maxOfOrNull { it.total.amount } ?: 0L

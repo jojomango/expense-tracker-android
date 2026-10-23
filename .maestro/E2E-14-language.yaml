@@ -1,0 +1,73 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-14 多語系（v2.3）
+#
+# emulator 的系統語言是英文（CI 與本機預設都是 en-US）。這支 flow 一開始用 `language: system`
+# 把 App 語言設回「跟隨系統」——pm clear 不一定會清掉 Android 13+ 系統保存的 App 語言，
+# 前面的 flow 剛把它設成繁中。
+
+# Given 手機系統語言為英文，第一次安裝並開啟 app
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+    arguments:
+      language: system
+# Then 引導頁以英文顯示，沒有任何中文介面文字
+- assertVisible: "Create your first wallet"
+- assertNotVisible: ".*[一-龥].*"
+
+# When 建立錢包「Daily」並記一筆 Food 支出
+- tapOn: "Wallet name"
+- inputText: "Daily"
+- tapOn: "Currency (ISO 4217, e.g. TWD)"
+- eraseText: 10
+- inputText: "TWD"
+- hideKeyboard
+- tapOn: "Create wallet"
+- tapOn: "Add"
+- tapOn: "1"
+- tapOn: "00"
+# 分類格一次只顯示一列，Food 在第二列：在分類區裡往上滑
+- swipe:
+    start: 50%, 35%
+    end: 50%, 22%
+    duration: 400
+- tapOn: "Food"
+- tapOn: "Add"
+# Then 介面文字與預設分類名稱都是英文
+- assertVisible: "Food"
+- assertVisible: "Daily"
+- assertNotVisible: ".*[一-龥].*"
+
+# When 進入設定，語言選「繁體中文」
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element:
+      id: "language-zh-TW"
+- tapOn:
+    id: "language-zh-TW"
+# Then 不需要重新啟動，立即變成繁中
+- assertVisible: "設定"
+- tapOn: "返回"
+- assertVisible: "飲食"
+# 錢包名稱是使用者資料，不翻譯
+- assertVisible: "Daily"
+
+# When 強制關閉 app 後重新開啟（不帶語言參數） / Then 仍為繁中
+- stopApp
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+- assertVisible: "飲食"
+
+# When 語言選「跟隨系統」 / Then 回到英文
+- tapOn: "設定"
+- scrollUntilVisible:
+    element:
+      id: "language-system"
+- tapOn:
+    id: "language-system"
+- assertVisible: "Settings"
+- tapOn: "Back"
+- assertVisible: "Food"

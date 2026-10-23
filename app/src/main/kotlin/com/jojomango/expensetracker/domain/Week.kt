@@ -50,7 +50,7 @@ object Week {
     }
 
     /**
-     * 交易列表的週分組標題——UI-SPEC.md §4.3「本週 · 8/31–9/6」風格，
+     * 交易列表的週分組標題——UI-SPEC.md §4.3「本週 · 8/31–9/6」風格（英文 `This week · 8/31–9/6`，T10.4），
      * 絕對不輸出 `YYYY-MM-DD`（TESTCASES.md T7.2）。[weekStart] 是該組的週首
      * （[WeekGroup.range] 的 `start`），[referenceDate] 是「今天」。
      */
@@ -58,6 +58,7 @@ object Week {
         weekStart: LocalDate,
         weekStartDay: DayOfWeek,
         referenceDate: LocalDate,
+        labels: WeekTitleLabels,
     ): String {
         val currentWeekStart = rangeOf(referenceDate, weekStartDay).start
         val previousWeekStart = currentWeekStart.minus(7, DateTimeUnit.DAY)
@@ -65,10 +66,16 @@ object Week {
         val range = "${weekStart.monthNumber}/${weekStart.dayOfMonth}–${weekEnd.monthNumber}/${weekEnd.dayOfMonth}"
         val prefix =
             when (weekStart) {
-                currentWeekStart -> "本週 · "
-                previousWeekStart -> "上週 · "
+                currentWeekStart -> "${labels.thisWeek} · "
+                previousWeekStart -> "${labels.lastWeek} · "
                 else -> ""
             }
         return prefix + range
     }
 }
+
+/** 週分組標題前綴的文字，由 `ui` 從 string resources 傳進來（domain 不放介面文字）。 */
+data class WeekTitleLabels(
+    val thisWeek: String,
+    val lastWeek: String,
+)

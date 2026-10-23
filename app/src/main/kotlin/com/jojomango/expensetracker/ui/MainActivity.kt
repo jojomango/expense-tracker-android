@@ -1,5 +1,6 @@
 package com.jojomango.expensetracker.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -38,7 +39,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
@@ -52,7 +55,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BackupReminderRepository
+import com.jojomango.expensetracker.domain.LanguagePreference
 import com.jojomango.expensetracker.domain.SettingsRepository
 import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
 import com.jojomango.expensetracker.ui.analytics.AnalyticsScreen
@@ -62,6 +67,7 @@ import com.jojomango.expensetracker.ui.category.CategoryEditScreen
 import com.jojomango.expensetracker.ui.category.CategoryManagementScreen
 import com.jojomango.expensetracker.ui.home.HomeScreen
 import com.jojomango.expensetracker.ui.home.HomeViewModel
+import com.jojomango.expensetracker.ui.i18n.AppLocale
 import com.jojomango.expensetracker.ui.navigation.Routes
 import com.jojomango.expensetracker.ui.navigation.isBottomNavHiddenRoute
 import com.jojomango.expensetracker.ui.notification.BackupReminderScheduler
@@ -83,6 +89,9 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import javax.inject.Inject
 
+/** 見 [MainActivity.applyLanguageLaunchArgument]。 */
+private const val EXTRA_LANGUAGE = "language"
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject lateinit var settingsRepository: SettingsRepository
@@ -94,8 +103,16 @@ class MainActivity : ComponentActivity() {
     // 備份提醒通知點下去時帶這個 extra 進來；app 已經開著的話走 onNewIntent。
     private var openSettingsRequested by mutableStateOf(false)
 
+    // SPEC.md §3.9：整個畫面用 App 決定的語言（跟隨系統時，中文系統一律繁中、其他英文）。
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 只在全新啟動時套用：換語言會重建 Activity，重建時 intent 還帶著同一個參數，
+        // 再套用一次就會把使用者剛選的語言蓋回去。
+        if (savedInstanceState == null) applyLanguageLaunchArgument()
         openSettingsRequested = intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false)
 
         // 排程放這裡而不是 Application.onCreate：Robolectric 的持久層測試也會建立
@@ -120,6 +137,16 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    /**
+     * 啟動參數 `language`（`system`／`zh-TW`／`en`）：Maestro 用 `launchApp: arguments` 把 App 固定在某個語言，
+     * 不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）。效果跟使用者在設定頁選語言完全一樣，
+     * 沒有任何其他權限；跟目前的選擇相同時什麼都不做，所以重建後不會無限循環。
+     */
+    private fun applyLanguageLaunchArgument() {
+        val requested = intent.getStringExtra(EXTRA_LANGUAGE) ?: return
+        AppLocale.setPreference(this, LanguagePreference.fromStorage(requested))
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -168,6 +195,7 @@ private fun ExpenseTrackerApp(
     var showWalletSwitcher by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // 首頁的 ViewModel 在這一層取得，讓底部導覽的 FAB／錢包切換 sheet
     // 能拿到目前的錢包清單，跟 HomeScreen 共用同一個 HiltViewModel 實例。
@@ -208,7 +236,7 @@ private fun ExpenseTrackerApp(
                             selected = currentRoute == Routes.HOME,
                             onClick = { navController.navigateSingleTopTo(Routes.HOME) },
                             icon = { Icon(Icons.Filled.Home, contentDescription = null) },
-                            label = { Text("首頁") },
+                            label = { Text(stringResource(R.string.nav_home)) },
                             colors = itemColors,
                         )
                         // 中間留空給疊在上面的中央 FAB（UI-SPEC.md §3.1）。
@@ -223,7 +251,7 @@ private fun ExpenseTrackerApp(
                             selected = currentRoute == Routes.STATS,
                             onClick = { navController.navigateSingleTopTo(Routes.STATS) },
                             icon = { Icon(Icons.Filled.BarChart, contentDescription = null) },
-                            label = { Text("統計") },
+                            label = { Text(stringResource(R.string.nav_stats)) },
                             colors = itemColors,
                         )
                     }
@@ -239,7 +267,7 @@ private fun ExpenseTrackerApp(
                                 .offset(y = (-24).dp)
                                 .size(58.dp),
                     ) {
-                        Icon(Icons.Filled.Add, contentDescription = "記帳")
+                        Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.nav_add))
                     }
                 }
             }
@@ -303,7 +331,7 @@ private fun ExpenseTrackerApp(
             }
             composable(Routes.WALLET_NEW) {
                 WalletEditScreen(
-                    onDone = { result -> navController.finishWalletEdit(result) },
+                    onDone = { result -> navController.finishWalletEdit(result, context) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -312,7 +340,7 @@ private fun ExpenseTrackerApp(
                 arguments = listOf(navArgument("walletId") { type = NavType.StringType }),
             ) {
                 WalletEditScreen(
-                    onDone = { result -> navController.finishWalletEdit(result) },
+                    onDone = { result -> navController.finishWalletEdit(result, context) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -352,7 +380,7 @@ private fun ExpenseTrackerApp(
                 // UI-SPEC.md §7：切換後用 Snackbar 顯示「已切換到 {名稱}」。
                 val walletName = homeState.wallets.firstOrNull { it.id == walletId }?.name
                 if (walletName != null) {
-                    scope.launch { snackbarHostState.showSnackbar("已切換到 $walletName") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.wallet_switched, walletName)) }
                 }
             },
             onManageWallets = {
@@ -373,12 +401,15 @@ private fun androidx.navigation.NavController.navigateSingleTopTo(route: String)
 }
 
 /** 回到錢包管理頁，並把要顯示的 Snackbar 訊息放進它的 SavedStateHandle（UI-SPEC.md §11）。 */
-private fun androidx.navigation.NavController.finishWalletEdit(result: WalletEditResult) {
+private fun androidx.navigation.NavController.finishWalletEdit(
+    result: WalletEditResult,
+    context: android.content.Context,
+) {
     val message =
         when (result) {
             WalletEditResult.Saved -> null
-            is WalletEditResult.Archived -> "已封存 ${result.name}"
-            is WalletEditResult.Deleted -> "已刪除 ${result.name}"
+            is WalletEditResult.Archived -> context.getString(R.string.wallet_archived_message, result.name)
+            is WalletEditResult.Deleted -> context.getString(R.string.wallet_deleted_message, result.name)
         }
     previousBackStackEntry?.savedStateHandle?.set(WALLET_MESSAGE_KEY, message)
     popBackStack()

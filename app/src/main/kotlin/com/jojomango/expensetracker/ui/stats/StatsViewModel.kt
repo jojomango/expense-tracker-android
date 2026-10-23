@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jojomango.expensetracker.domain.Budget
 import com.jojomango.expensetracker.domain.Category
+import com.jojomango.expensetracker.domain.CategoryNames
 import com.jojomango.expensetracker.domain.CategoryRepository
+import com.jojomango.expensetracker.domain.DefaultCategoryKey
 import com.jojomango.expensetracker.domain.Money
 import com.jojomango.expensetracker.domain.Month
 import com.jojomango.expensetracker.domain.Settings
@@ -41,7 +43,8 @@ enum class StatsPeriod { WEEK, MONTH }
 /** 圓環圖的一段弧——[percent] 已經是 0~100 的百分比（`Budget.summarizeByCategory` 算好的）。 */
 data class CategorySlice(
     val categoryId: String?,
-    val name: String,
+    /** `null` = 未分類。名稱在畫面上依目前語言才決定（SPEC.md §3.9），ViewModel 不存文字。 */
+    val category: Category?,
     val icon: String,
     val color: String,
     val amount: Money,
@@ -127,12 +130,19 @@ class StatsViewModel
                     StatsPeriod.MONTH -> Month.rangeOf(referenceDate)
                 }
             val periodTransactions = transactions.filter { it.date in range }
-            val summary = Budget.summarizeByCategory(periodTransactions, ctx.categories, TransactionType.EXPENSE, wallet.currency)
+            val summary =
+                Budget.summarizeByCategory(
+                    periodTransactions,
+                    ctx.categories,
+                    TransactionType.EXPENSE,
+                    wallet.currency,
+                    NamesResolvedOnScreen,
+                )
             val slices =
                 summary.map { item ->
                     CategorySlice(
                         categoryId = item.categoryId,
-                        name = item.name,
+                        category = ctx.categories.firstOrNull { it.id == item.categoryId },
                         icon = ctx.categories.firstOrNull { it.id == item.categoryId }?.icon ?: "📦",
                         color = colorOf(item.categoryId, ctx.categories),
                         amount = item.total,
@@ -151,3 +161,13 @@ class StatsViewModel
             )
         }
     }
+
+/**
+ * 彙總結果的 `name` 在這裡用不到：[CategorySlice] 存的是分類本身，名稱到畫面上才依目前語言決定。
+ * 這裡給一個不含任何文字的實作，避免 ViewModel 留住舊語言的字串。
+ */
+private object NamesResolvedOnScreen : CategoryNames {
+    override fun nameOf(key: DefaultCategoryKey): String = key.id
+
+    override val uncategorized: String = ""
+}

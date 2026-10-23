@@ -43,13 +43,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.TransactionType
+import com.jojomango.expensetracker.domain.displayName
 import com.jojomango.expensetracker.ui.common.LoadingState
+import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 import kotlinx.datetime.Clock
@@ -89,18 +93,18 @@ fun AddEditTransactionScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                TextButton(onClick = onCancel) { Text("取消") }
+                TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
                 SingleChoiceSegmentedButtonRow {
                     SegmentedButton(
                         selected = state.type == TransactionType.EXPENSE,
                         onClick = { viewModel.onSelectType(TransactionType.EXPENSE) },
                         shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    ) { Text("支出") }
+                    ) { Text(stringResource(R.string.type_expense)) }
                     SegmentedButton(
                         selected = state.type == TransactionType.INCOME,
                         onClick = { viewModel.onSelectType(TransactionType.INCOME) },
                         shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    ) { Text("收入") }
+                    ) { Text(stringResource(R.string.type_income)) }
                 }
                 Spacer(Modifier.size(48.dp))
             }
@@ -152,7 +156,7 @@ fun AddEditTransactionScreen(
                 enabled = state.canSubmit,
                 modifier = Modifier.fillMaxWidth().padding(20.dp),
             ) {
-                Text(if (state.isEditing) "儲存" else "記一筆")
+                Text(stringResource(if (state.isEditing) R.string.common_save else R.string.transaction_submit))
             }
         }
     }
@@ -195,7 +199,7 @@ private fun CategoryGrid(
                 ) {
                     Text(category.icon, fontSize = 22.sp)
                 }
-                Text(category.name, fontSize = 11.sp)
+                Text(category.displayName(rememberCategoryNames()), fontSize = 11.sp)
             }
         }
     }
@@ -214,20 +218,27 @@ private fun DateAndNoteRow(
     val yesterday = today.minus(1, DateTimeUnit.DAY)
 
     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        DatePill(label = "今天", selected = date == today) { onSelectDate(today) }
-        DatePill(label = "昨天", selected = date == yesterday) { onSelectDate(yesterday) }
+        DatePill(label = stringResource(R.string.date_today), selected = date == today) { onSelectDate(today) }
+        DatePill(label = stringResource(R.string.date_yesterday), selected = date == yesterday) { onSelectDate(yesterday) }
         DatePill(
-            label = if (date != today && date != yesterday) "${date.monthNumber}/${date.dayOfMonth}" else "選日期",
+            label =
+                if (date != today &&
+                    date != yesterday
+                ) {
+                    "${date.monthNumber}/${date.dayOfMonth}"
+                } else {
+                    stringResource(R.string.date_pick)
+                },
             selected = date != today && date != yesterday,
         ) { showDatePicker = true }
         Spacer(Modifier.weight(1f))
-        DatePill(label = "+備註", selected = showNoteField) { showNoteField = !showNoteField }
+        DatePill(label = stringResource(R.string.transaction_add_note), selected = showNoteField) { showNoteField = !showNoteField }
     }
     if (showNoteField) {
         OutlinedTextField(
             value = note,
             onValueChange = onNoteChange,
-            placeholder = { Text("備註") },
+            placeholder = { Text(stringResource(R.string.transaction_note)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         )
@@ -243,9 +254,9 @@ private fun DateAndNoteRow(
                         onSelectDate(Instant.fromEpochMilliseconds(millis).toLocalDateTime(TimeZone.UTC).date)
                     }
                     showDatePicker = false
-                }) { Text("確定") }
+                }) { Text(stringResource(R.string.common_ok)) }
             },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.common_cancel)) } },
         ) {
             DatePicker(state = pickerState)
         }

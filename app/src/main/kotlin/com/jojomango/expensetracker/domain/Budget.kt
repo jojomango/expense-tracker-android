@@ -92,12 +92,17 @@ object Budget {
     /**
      * 依分類彙總（支出／收入分開彙總，不混算——TESTCASES.md T3.5.2）。已刪除或
      * 找不到的 categoryId 會併入「未分類」，交易不遺失（T3.5.3）。依金額倒序。
+     *
+     * 參數有 6 個：[names] 是 Phase 10 加的（domain 不放介面文字，分類名稱只能由外面傳進來），
+     * `registry` 跟其他 Budget 函式一致保留（自訂幣別用）。合成一個參數物件反而更難讀。
      */
+    @Suppress("LongParameterList")
     fun summarizeByCategory(
         transactions: List<Transaction>,
         categories: List<Category>,
         type: TransactionType,
         currencyCode: String,
+        names: CategoryNames,
         registry: CurrencyRegistry = CurrencyRegistry(),
     ): List<CategorySummary> {
         val filtered = transactions.filter { it.type == type }
@@ -115,7 +120,7 @@ object Budget {
                 val total = Money.sum(txs.map { Money.of(it.amount, currencyCode, registry) }, currencyCode, registry)
                 CategorySummary(
                     categoryId = categoryId,
-                    name = categoryId?.let { categoryById.getValue(it).name } ?: "未分類",
+                    name = categoryId?.let { categoryById.getValue(it).displayName(names) } ?: names.uncategorized,
                     total = total,
                     percent = total.percentOf(grandTotal),
                 )

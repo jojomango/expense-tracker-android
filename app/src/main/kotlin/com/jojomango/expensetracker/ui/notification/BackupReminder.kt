@@ -20,6 +20,7 @@ import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BackupReminderRepository
 import com.jojomango.expensetracker.domain.shouldSendBackupReminder
 import com.jojomango.expensetracker.ui.MainActivity
+import com.jojomango.expensetracker.ui.i18n.AppLocale
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -49,8 +50,10 @@ object BackupReminderScheduler {
     }
 
     fun ensureChannel(context: Context) {
-        val channel = NotificationChannel(CHANNEL_ID, "備份提醒", NotificationManager.IMPORTANCE_DEFAULT)
-        channel.description = "每 7 天提醒你匯出一次備份"
+        val localized = AppLocale.wrap(context)
+        val channel =
+            NotificationChannel(CHANNEL_ID, localized.getString(R.string.notification_channel_name), NotificationManager.IMPORTANCE_DEFAULT)
+        channel.description = localized.getString(R.string.notification_channel_description)
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 }
@@ -100,13 +103,15 @@ private fun showNotification(context: Context): Boolean {
             openSettings,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+    // 通知不在 Activity 裡，Context 沒有套用 App 語言，要自己包一次（SPEC.md §3.9）。
+    val localized = AppLocale.wrap(context)
     val notification =
         NotificationCompat
             .Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_backup)
-            .setContentTitle("該備份資料了")
-            .setContentText("距離上次備份已經超過 7 天，建議匯出備份以免資料遺失。")
-            .setStyle(NotificationCompat.BigTextStyle().bigText("距離上次備份已經超過 7 天，建議匯出備份以免資料遺失。"))
+            .setContentTitle(localized.getString(R.string.notification_backup_title))
+            .setContentText(localized.getString(R.string.notification_backup_text))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(localized.getString(R.string.notification_backup_text)))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()

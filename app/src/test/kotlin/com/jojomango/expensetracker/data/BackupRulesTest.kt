@@ -26,6 +26,8 @@ class BackupRulesTest {
             Rule("sharedpref", "notification_permission.xml"),
             // 「協助改善 App」的同意要在每台裝置上重新取得：還原到新裝置時不該默默繼承成開啟。
             Rule("sharedpref", "analytics_consent.xml"),
+            // 語言是裝置層級的偏好（SPEC.md §3.9）：換手機時應該跟著新手機的系統語言，不繼承舊手機的選擇。
+            Rule("sharedpref", "app_language.xml"),
             Rule("database", "androidx.work.workdb"),
         )
 

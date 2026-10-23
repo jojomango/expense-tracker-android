@@ -16,6 +16,9 @@ appId: com.jojomango.expensetracker
 - runScript: scripts/settle-after-clear.js
 - launchApp:
     stopApp: false
+    # 固定以繁中執行，不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）
+    arguments:
+      language: zh-TW
 - assertVisible: "建立你的第一個錢包"
 - tapOn: "錢包名稱"
 - inputText: "日常"
@@ -40,11 +43,11 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackA}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - repeat:
     times: ${output.monthsForwardA}
     commands:
-      - tapOn: "Change to next month"
+      - tapOn: "改成下個月"
 - tapOn: "${output.dateALabel}"
 - tapOn: "確定"
 - tapOn: "居住"
@@ -59,11 +62,11 @@ appId: com.jojomango.expensetracker
 - repeat:
     times: ${output.monthsBackB}
     commands:
-      - tapOn: "Change to previous month"
+      - tapOn: "改成上個月"
 - repeat:
     times: ${output.monthsForwardB}
     commands:
-      - tapOn: "Change to next month"
+      - tapOn: "改成下個月"
 - tapOn: "${output.dateBLabel}"
 - tapOn: "確定"
 - tapOn: "居住"

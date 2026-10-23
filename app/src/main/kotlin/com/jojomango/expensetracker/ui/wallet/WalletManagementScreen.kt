@@ -23,10 +23,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -60,9 +62,9 @@ fun WalletManagementScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("管理錢包") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("返回") } },
-                actions = { TextButton(onClick = onAddWallet) { Text("新增") } },
+                title = { Text(stringResource(R.string.wallet_management_title)) },
+                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) } },
+                actions = { TextButton(onClick = onAddWallet) { Text(stringResource(R.string.common_add)) } },
             )
         },
     ) { padding ->
@@ -79,7 +81,7 @@ fun WalletManagementScreen(
             }
             if (archivedWallets.isNotEmpty()) {
                 Text(
-                    "已封存",
+                    stringResource(R.string.wallet_archived_section),
                     style = LocalAppTypography.current.cardTitle,
                     modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp).semantics { heading() },
                 )
@@ -87,7 +89,7 @@ fun WalletManagementScreen(
                     ListItem(
                         headlineContent = { Text(wallet.name, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         trailingContent = {
-                            TextButton(onClick = { viewModel.unarchive(wallet.id) }) { Text("取消封存") }
+                            TextButton(onClick = { viewModel.unarchive(wallet.id) }) { Text(stringResource(R.string.wallet_unarchive)) }
                         },
                     )
                 }
@@ -96,9 +98,12 @@ fun WalletManagementScreen(
     }
 }
 
+@Composable
 private fun budgetModeLabel(mode: BudgetMode): String =
-    when (mode) {
-        BudgetMode.WEEKLY -> "每週預算"
-        BudgetMode.TOTAL -> "總預算"
-        BudgetMode.NONE -> "不設定"
-    }
+    stringResource(
+        when (mode) {
+            BudgetMode.WEEKLY -> R.string.budget_mode_weekly_label
+            BudgetMode.TOTAL -> R.string.budget_mode_total
+            BudgetMode.NONE -> R.string.budget_mode_none
+        },
+    )

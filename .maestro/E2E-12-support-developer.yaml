@@ -9,6 +9,9 @@ appId: com.jojomango.expensetracker
 - runScript: scripts/settle-after-clear.js
 - launchApp:
     stopApp: false
+    # 固定以繁中執行，不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）
+    arguments:
+      language: zh-TW
 - assertVisible: "建立你的第一個錢包"
 - tapOn: "錢包名稱"
 - inputText: "日常"
@@ -39,6 +42,11 @@ appId: com.jojomango.expensetracker
 - tapOn: "支持開發者"
 - scrollUntilVisible:
     element: ".*(一杯咖啡|目前無法連線到 Google Play，請稍後再試).*"
+# 剛展開時三個按鈕先以「載入中」出現（價格是「—」），之後才變成有價格、或整個換成無法連線的說明。
+# 不等載入結束就判斷的話，會看到載入中的按鈕、下一步卻發現按鈕已經消失（Phase 10 跑到過一次）。
+- extendedWaitUntil:
+    notVisible: "—"
+    timeout: 20000
 - runFlow:
     when:
       visible: ".*一杯咖啡.*"

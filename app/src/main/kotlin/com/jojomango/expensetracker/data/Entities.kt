@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryType
+import com.jojomango.expensetracker.domain.DefaultCategoryKey
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.Theme
 import com.jojomango.expensetracker.domain.Transaction
@@ -59,6 +60,8 @@ data class CategoryEntity(
     val icon: String,
     val color: String,
     val isDefault: Boolean,
+    /** [DefaultCategoryKey.id]；schema v2 新增（SPEC.md §3.9）。 */
+    val defaultKey: String? = null,
 ) {
     fun toDomain(): Category =
         Category(
@@ -68,6 +71,7 @@ data class CategoryEntity(
             icon = icon,
             color = color,
             isDefault = isDefault,
+            defaultKey = DefaultCategoryKey.fromId(defaultKey),
         )
 
     companion object {
@@ -79,6 +83,7 @@ data class CategoryEntity(
                 icon = category.icon,
                 color = category.color,
                 isDefault = category.isDefault,
+                defaultKey = category.defaultKey?.id,
             )
     }
 }

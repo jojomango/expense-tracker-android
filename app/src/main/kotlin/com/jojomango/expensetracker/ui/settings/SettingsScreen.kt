@@ -62,6 +62,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -69,11 +70,14 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.ImportMode
+import com.jojomango.expensetracker.domain.LanguagePreference
 import com.jojomango.expensetracker.domain.Theme
 import com.jojomango.expensetracker.ui.donation.DonationOffers
 import com.jojomango.expensetracker.ui.donation.DonationTier
-import com.jojomango.expensetracker.ui.donation.UNAVAILABLE_MESSAGE
+import com.jojomango.expensetracker.ui.donation.stringRes
+import com.jojomango.expensetracker.ui.i18n.AppLocale
 import com.jojomango.expensetracker.ui.notification.rememberEnableNotifications
 import com.jojomango.expensetracker.ui.notification.rememberNotificationsEnabled
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
@@ -100,20 +104,21 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.messages.collect { snackbarHostState.showSnackbar(it) }
+        viewModel.messages.collect { snackbarHostState.showSnackbar(it.resolve(context)) }
     }
     LaunchedEffect(Unit) {
-        supportViewModel.donationMessages.collect { snackbarHostState.showSnackbar(it) }
+        supportViewModel.donationMessages.collect { snackbarHostState.showSnackbar(context.getString(it.stringRes)) }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("設定") },
-                navigationIcon = { TextButton(onClick = onBack) { Text("返回") } },
+                title = { Text(stringResource(R.string.settings_title)) },
+                navigationIcon = { TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) } },
             )
         },
     ) { padding ->
@@ -129,35 +134,37 @@ fun SettingsScreen(
                     .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
             ListItem(
-                headlineContent = { Text("管理錢包") },
+                headlineContent = { Text(stringResource(R.string.settings_manage_wallets)) },
                 modifier = Modifier.clickable(role = Role.Button, onClick = onManageWallets),
             )
             ListItem(
-                headlineContent = { Text("分類管理") },
+                headlineContent = { Text(stringResource(R.string.settings_manage_categories)) },
                 modifier = Modifier.clickable(role = Role.Button, onClick = onManageCategories),
             )
 
-            SectionTitle("週起始日")
+            SectionTitle(stringResource(R.string.settings_week_start))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 weekStartDayOptions.forEach { (day, label) ->
                     FilterChip(
                         selected = settings.weekStartDay == day,
                         onClick = { viewModel.setWeekStartDay(day) },
-                        label = { Text(label) },
+                        label = { Text(stringResource(label)) },
                     )
                 }
             }
 
-            SectionTitle("外觀")
+            SectionTitle(stringResource(R.string.settings_appearance))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 themeOptions.forEach { (theme, label) ->
                     FilterChip(
                         selected = settings.theme == theme,
                         onClick = { viewModel.setTheme(theme) },
-                        label = { Text(label) },
+                        label = { Text(stringResource(label)) },
                     )
                 }
             }
+
+            LanguageSection()
 
             PrivacySection(supportViewModel)
 
@@ -177,17 +184,44 @@ private fun SectionTitle(text: String) {
     )
 }
 
+/**
+ * UI-SPEC.md §12。「繁體中文」「English」永遠用各自的語言寫（不翻譯）：看不懂目前介面的人也找得到自己的語言。
+ * 點選後由 [AppLocale] 存起來並重建 Activity，整頁以新語言重新繪製。
+ */
+@Composable
+private fun LanguageSection() {
+    val context = LocalContext.current
+    val activity = context.findActivity()
+    val current = remember(context) { AppLocale.preference(context) }
+    SectionTitle(stringResource(R.string.settings_language))
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(
+            LanguagePreference.SYSTEM to stringResource(R.string.settings_language_system),
+            LanguagePreference.ZH_TW to stringResource(R.string.language_name_zh_tw),
+            LanguagePreference.EN to stringResource(R.string.language_name_en),
+        ).forEach { (preference, label) ->
+            FilterChip(
+                selected = current == preference,
+                onClick = { activity?.let { AppLocale.setPreference(it, preference) } },
+                label = { Text(label) },
+                // 繁中介面裡「外觀」也有一個「跟隨系統」，E2E-14 用 tag 分辨
+                modifier = Modifier.testTag("language-${preference.storageValue}"),
+            )
+        }
+    }
+}
+
 /** UI-SPEC.md §10.1。整列是一個開關，TalkBack 唸成「協助改善 App，開關，已關閉」。 */
 @Composable
 private fun PrivacySection(viewModel: PrivacyAndSupportViewModel) {
     val enabled by viewModel.analyticsEnabled.collectAsState()
     val typography = LocalAppTypography.current
-    SectionTitle("隱私")
+    SectionTitle(stringResource(R.string.settings_privacy))
     ListItem(
-        headlineContent = { Text("協助改善 App", style = typography.rowTitle) },
+        headlineContent = { Text(stringResource(R.string.settings_analytics_title), style = typography.rowTitle) },
         supportingContent = {
             Text(
-                "傳送匿名的使用情形與當機資訊，不會傳送任何記帳內容。",
+                stringResource(R.string.settings_analytics_subtitle),
                 style = typography.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -206,6 +240,7 @@ private fun BackupSection(viewModel: SettingsViewModel) {
     val isBackupDue by viewModel.isBackupDue.collectAsState()
     val lastBackupAt by viewModel.lastBackupAt.collectAsState()
     val typography = LocalAppTypography.current
+    val confirmPhrase = stringResource(R.string.settings_replace_confirm_phrase)
 
     // SPEC.md §3.6：用 Storage Access Framework 讓使用者自己選存放位置（例如 Google Drive
     // 同步的資料夾）。使用者在挑選器按取消時 uri 是 null，什麼都不做——那是使用者的決定，
@@ -219,7 +254,7 @@ private fun BackupSection(viewModel: SettingsViewModel) {
             if (uri != null) viewModel.importFrom(uri)
         }
 
-    SectionTitle("備份與還原")
+    SectionTitle(stringResource(R.string.settings_backup_section))
 
     if (isBackupDue) {
         Card(
@@ -227,7 +262,7 @@ private fun BackupSection(viewModel: SettingsViewModel) {
             modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         ) {
             Text(
-                "你已經一段時間沒有備份資料了，建議匯出備份以免資料遺失。",
+                stringResource(R.string.settings_backup_due),
                 style = typography.bodyMedium,
                 modifier = Modifier.padding(16.dp),
             )
@@ -244,11 +279,15 @@ private fun BackupSection(viewModel: SettingsViewModel) {
         onClick = { exportLauncher.launch(viewModel.suggestedBackupFileName()) },
         enabled = !backup.isWorking,
         modifier = Modifier.fillMaxWidth(),
-    ) { Text("匯出備份") }
+    ) { Text(stringResource(R.string.settings_export)) }
 
     Spacer(Modifier.height(20.dp))
     HorizontalDivider()
-    Text("匯入備份", style = typography.bodyMedium, modifier = Modifier.padding(top = 16.dp, bottom = 4.dp))
+    Text(
+        stringResource(R.string.settings_import_section),
+        style = typography.bodyMedium,
+        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+    )
 
     Column(modifier = Modifier.selectableGroup()) {
         importModeOptions.forEach { (mode, label) ->
@@ -266,7 +305,7 @@ private fun BackupSection(viewModel: SettingsViewModel) {
             ) {
                 // 整列可點、RadioButton 本身不另外接 onClick，TalkBack 才會把這一列唸成一個選項。
                 RadioButton(selected = backup.importMode == mode, onClick = null)
-                Text(label, modifier = Modifier.padding(start = 12.dp))
+                Text(stringResource(label), modifier = Modifier.padding(start = 12.dp))
             }
         }
     }
@@ -276,7 +315,7 @@ private fun BackupSection(viewModel: SettingsViewModel) {
         OutlinedTextField(
             value = backup.confirmText,
             onValueChange = viewModel::setConfirmText,
-            label = { Text("輸入「$REPLACE_CONFIRM_PHRASE」以確認清空現有資料") },
+            label = { Text(stringResource(R.string.settings_import_confirm_label, confirmPhrase)) },
             singleLine = true,
             // 輸入完按鍵盤的「完成」就收起鍵盤，不然鍵盤會蓋住下面的「選擇備份檔並匯入」。
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -291,11 +330,16 @@ private fun BackupSection(viewModel: SettingsViewModel) {
             // 備份檔一定是 JSON，但不同的檔案管理員/雲端硬碟 app 給的 MIME type 不一定是
             // application/json（有的是 text/plain 或 application/octet-stream），只允許
             // application/json 的話使用者可能根本選不到自己匯出的檔案，所以放寬。
-            if (viewModel.canStartImport()) importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+            if (viewModel.canStartImport(
+                    confirmPhrase,
+                )
+            ) {
+                importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+            }
         },
         enabled = !backup.isWorking,
         modifier = Modifier.fillMaxWidth(),
-    ) { Text("選擇備份檔並匯入") }
+    ) { Text(stringResource(R.string.settings_import_choose_file)) }
 
     if (backup.isWorking) {
         LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
@@ -312,13 +356,15 @@ private fun BackupSection(viewModel: SettingsViewModel) {
 @Composable
 private fun DonationSection(viewModel: PrivacyAndSupportViewModel) {
     var expanded by remember { mutableStateOf(false) }
+    val expandedLabel = stringResource(R.string.settings_support_expanded)
+    val collapsedLabel = stringResource(R.string.settings_support_collapsed)
     val offers by viewModel.donationOffers.collectAsState()
     val typography = LocalAppTypography.current
     val activity = LocalContext.current.findActivity()
 
     HorizontalDivider()
     ListItem(
-        headlineContent = { Text("支持開發者", style = typography.rowTitle) },
+        headlineContent = { Text(stringResource(R.string.settings_support_title), style = typography.rowTitle) },
         trailingContent = {
             Icon(
                 if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
@@ -329,7 +375,7 @@ private fun DonationSection(viewModel: PrivacyAndSupportViewModel) {
         modifier =
             Modifier
                 .heightIn(min = 48.dp)
-                .semantics { stateDescription = if (expanded) "已展開" else "已收合" }
+                .semantics { stateDescription = if (expanded) expandedLabel else collapsedLabel }
                 .clickable(role = Role.Button) {
                     expanded = !expanded
                     if (expanded) viewModel.onDonationSectionOpened()
@@ -338,14 +384,18 @@ private fun DonationSection(viewModel: PrivacyAndSupportViewModel) {
     AnimatedVisibility(visible = expanded) {
         Column(modifier = Modifier.padding(bottom = 24.dp)) {
             Text(
-                "這個 App 沒有廣告，也不收集你的記帳資料。如果它對你有幫助，歡迎請開發者喝杯咖啡。",
+                stringResource(R.string.settings_support_body),
                 style = typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp),
             )
             when (val current = offers) {
                 DonationOffers.Unavailable ->
-                    Text(UNAVAILABLE_MESSAGE, style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.donation_unavailable),
+                        style = typography.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 else ->
                     donationTierLabels.forEach { (tier, label) ->
                         val price = (current as? DonationOffers.Available)?.prices?.get(tier)
@@ -354,7 +404,7 @@ private fun DonationSection(viewModel: PrivacyAndSupportViewModel) {
                             enabled = price != null && activity != null,
                             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         ) {
-                            Text(label, modifier = Modifier.weight(1f))
+                            Text(stringResource(label), modifier = Modifier.weight(1f))
                             Text(price ?: "—")
                         }
                     }
@@ -372,9 +422,9 @@ private tailrec fun Context.findActivity(): Activity? =
 
 private val donationTierLabels =
     listOf(
-        DonationTier.SMALL to "☕ 一杯咖啡",
-        DonationTier.MEDIUM to "🍱 一份便當",
-        DonationTier.LARGE to "🎉 大力支持",
+        DonationTier.SMALL to R.string.donation_small,
+        DonationTier.MEDIUM to R.string.donation_medium,
+        DonationTier.LARGE to R.string.donation_large,
     )
 
 @Composable
@@ -389,43 +439,44 @@ private fun NotificationRow() {
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
     ) {
         Text(
-            "備份提醒通知目前是關閉的，開啟後每 7 天會提醒你備份一次。",
+            stringResource(R.string.settings_notifications_off),
             style = LocalAppTypography.current.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
-        TextButton(onClick = enableNotifications) { Text("開啟通知") }
+        TextButton(onClick = enableNotifications) { Text(stringResource(R.string.settings_notifications_enable)) }
     }
 }
 
+@Composable
 private fun lastBackupText(lastBackupAt: Instant?): String {
-    if (lastBackupAt == null) return "尚未備份過"
+    if (lastBackupAt == null) return stringResource(R.string.settings_never_backed_up)
     val t = lastBackupAt.toLocalDateTime(TimeZone.currentSystemDefault())
     val minute = t.minute.toString().padStart(2, '0')
-    return "上次備份：${t.year}/${t.monthNumber}/${t.dayOfMonth} ${t.hour}:$minute"
+    return stringResource(R.string.settings_last_backup, "${t.year}/${t.monthNumber}/${t.dayOfMonth} ${t.hour}:$minute")
 }
 
 private val weekStartDayOptions =
     listOf(
-        DayOfWeek.SUNDAY to "週日",
-        DayOfWeek.MONDAY to "週一",
-        DayOfWeek.TUESDAY to "週二",
-        DayOfWeek.WEDNESDAY to "週三",
-        DayOfWeek.THURSDAY to "週四",
-        DayOfWeek.FRIDAY to "週五",
-        DayOfWeek.SATURDAY to "週六",
+        DayOfWeek.SUNDAY to R.string.weekday_sun,
+        DayOfWeek.MONDAY to R.string.weekday_mon,
+        DayOfWeek.TUESDAY to R.string.weekday_tue,
+        DayOfWeek.WEDNESDAY to R.string.weekday_wed,
+        DayOfWeek.THURSDAY to R.string.weekday_thu,
+        DayOfWeek.FRIDAY to R.string.weekday_fri,
+        DayOfWeek.SATURDAY to R.string.weekday_sat,
     )
 
 private val themeOptions =
     listOf(
-        Theme.SYSTEM to "跟隨系統",
-        Theme.LIGHT to "淺色",
-        Theme.DARK to "深色",
+        Theme.SYSTEM to R.string.theme_system,
+        Theme.LIGHT to R.string.theme_light,
+        Theme.DARK to R.string.theme_dark,
     )
 
 /** 標籤文字跟網頁版 `Settings.tsx` 相同。 */
 private val importModeOptions =
     listOf(
-        ImportMode.MERGE to "合併（保留現有資料）",
-        ImportMode.REPLACE to "取代（清空現有資料）",
+        ImportMode.MERGE to R.string.import_mode_merge,
+        ImportMode.REPLACE to R.string.import_mode_replace,
     )

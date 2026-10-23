@@ -60,7 +60,7 @@ class CategoryTest {
     @Test
     @DisplayName("T6.2.5 — 預設分類種子：11 個分類都有 color，且與 UI-SPEC.md §2.2 表格完全一致")
     fun `T6 2 5`() {
-        val seeds = DefaultCategories.seedDefaults()
+        val seeds = DefaultCategories.seedDefaults(ZhTestCategoryNames)
         assertEquals(11, seeds.size)
 
         val expected =

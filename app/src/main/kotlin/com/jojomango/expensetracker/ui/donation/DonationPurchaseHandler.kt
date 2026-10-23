@@ -1,8 +1,15 @@
 package com.jojomango.expensetracker.ui.donation
 
-/** UI-SPEC.md §10.2 的文案。 */
-const val THANK_YOU_MESSAGE = "謝謝你的支持！"
-const val UNAVAILABLE_MESSAGE = "目前無法連線到 Google Play，請稍後再試"
+/** UI-SPEC.md §10.2 的兩則訊息；文字在 string resources（`donation_thanks`、`donation_unavailable`）。 */
+enum class DonationMessage { THANKS, UNAVAILABLE }
+
+@get:androidx.annotation.StringRes
+val DonationMessage.stringRes: Int
+    get() =
+        when (this) {
+            DonationMessage.THANKS -> com.jojomango.expensetracker.R.string.donation_thanks
+            DonationMessage.UNAVAILABLE -> com.jojomango.expensetracker.R.string.donation_unavailable
+        }
 
 /** SPEC.md §3.8 的三個消耗型商品。實際金額在 Play Console 設定，App 只認 id。 */
 enum class DonationTier(
@@ -38,7 +45,7 @@ sealed interface DonationBillingResult {
     /** 使用者在 Play 付款畫面按取消：不是錯誤，什麼都不顯示（T9.2.2）。 */
     data object UserCanceled : DonationBillingResult
 
-    /** Play 連不上、帳號不能付款、查不到商品——一律顯示 [UNAVAILABLE_MESSAGE]（T9.2.3）。 */
+    /** Play 連不上、帳號不能付款、查不到商品——一律顯示 [DonationMessage.UNAVAILABLE]（T9.2.3）。 */
     data object Unavailable : DonationBillingResult
 }
 
@@ -73,7 +80,7 @@ sealed interface DonationAction {
     ) : DonationAction
 
     data class ShowMessage(
-        val text: String,
+        val message: DonationMessage,
     ) : DonationAction
 }
 
@@ -93,10 +100,10 @@ class DonationPurchaseHandler {
     ): List<DonationAction> =
         when (result) {
             DonationBillingResult.UserCanceled -> emptyList()
-            DonationBillingResult.Unavailable -> listOf(DonationAction.ShowMessage(UNAVAILABLE_MESSAGE))
+            DonationBillingResult.Unavailable -> listOf(DonationAction.ShowMessage(DonationMessage.UNAVAILABLE))
             DonationBillingResult.Ok ->
                 claimNewPurchases(purchases).flatMap { (token, tier) ->
-                    listOf(DonationAction.Consume(token, tier), DonationAction.ShowMessage(THANK_YOU_MESSAGE))
+                    listOf(DonationAction.Consume(token, tier), DonationAction.ShowMessage(DonationMessage.THANKS))
                 }
         }
 

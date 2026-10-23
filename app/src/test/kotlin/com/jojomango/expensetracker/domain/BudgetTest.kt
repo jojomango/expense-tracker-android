@@ -270,7 +270,7 @@ class BudgetTest {
                 tx("daily", TransactionType.EXPENSE, 15000, LocalDate(2026, 8, 12), shopping.id),
                 tx("daily", TransactionType.EXPENSE, 5000, LocalDate(2026, 8, 12), shopping.id),
             )
-        val result = Budget.summarizeByCategory(txs, categories, TransactionType.EXPENSE, "TWD")
+        val result = Budget.summarizeByCategory(txs, categories, TransactionType.EXPENSE, "TWD", ZhTestCategoryNames)
         assertEquals(3, result.size)
         // 依金額倒序：飲食 50000 > 交通 30000 > 購物 20000
         assertEquals(listOf(food.id, transport.id, shopping.id), result.map { it.categoryId })
@@ -290,8 +290,8 @@ class BudgetTest {
                 tx("daily", TransactionType.EXPENSE, 10000, LocalDate(2026, 8, 12), food.id),
                 tx("daily", TransactionType.INCOME, 500000, LocalDate(2026, 8, 12), salary.id),
             )
-        val expenseSummary = Budget.summarizeByCategory(txs, listOf(food, salary), TransactionType.EXPENSE, "TWD")
-        val incomeSummary = Budget.summarizeByCategory(txs, listOf(food, salary), TransactionType.INCOME, "TWD")
+        val expenseSummary = Budget.summarizeByCategory(txs, listOf(food, salary), TransactionType.EXPENSE, "TWD", ZhTestCategoryNames)
+        val incomeSummary = Budget.summarizeByCategory(txs, listOf(food, salary), TransactionType.INCOME, "TWD", ZhTestCategoryNames)
         assertEquals(1, expenseSummary.size)
         assertEquals(100.0, expenseSummary[0].percent)
         assertEquals(1, incomeSummary.size)
@@ -302,7 +302,7 @@ class BudgetTest {
     @DisplayName("T3.5.3 — 有交易的分類被刪除（categories 清單裡找不到），該筆歸入未分類，交易不遺失")
     fun `T3 5 3`() {
         val txs = listOf(tx("daily", TransactionType.EXPENSE, 10000, LocalDate(2026, 8, 12), "deleted-category-id"))
-        val result = Budget.summarizeByCategory(txs, emptyList(), TransactionType.EXPENSE, "TWD")
+        val result = Budget.summarizeByCategory(txs, emptyList(), TransactionType.EXPENSE, "TWD", ZhTestCategoryNames)
         assertEquals(1, result.size)
         assertNull(result[0].categoryId)
         assertEquals("未分類", result[0].name)
@@ -312,7 +312,7 @@ class BudgetTest {
     @Test
     @DisplayName("T3.5.4 — 空清單，空 list，佔比計算不 crash")
     fun `T3 5 4`() {
-        val result = Budget.summarizeByCategory(emptyList(), emptyList(), TransactionType.EXPENSE, "TWD")
+        val result = Budget.summarizeByCategory(emptyList(), emptyList(), TransactionType.EXPENSE, "TWD", ZhTestCategoryNames)
         assertEquals(emptyList<CategorySummary>(), result)
     }
 

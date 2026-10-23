@@ -51,7 +51,8 @@ class BackupPersistenceTest {
 
     private fun samplePayload(schemaVersion: Int = CURRENT_BACKUP_SCHEMA_VERSION): BackupPayload {
         val wallet = BackupWallet("w1", "日常", "TWD", BudgetMode.NONE.name, null, false)
-        val category = BackupCategory("c1", "飲食", CategoryType.EXPENSE.name, "🍜", "#C1502E", isDefault = true)
+        // 跟目前版本匯出的樣子一樣：未改名的預設分類帶代號（SPEC.md §3.9）。沒有代號的舊備份見 CategoryKeyBackupTest。
+        val category = BackupCategory("c1", "飲食", CategoryType.EXPENSE.name, "🍜", "#C1502E", isDefault = true, defaultKey = "food")
         val transaction =
             BackupTransaction(
                 id = "t1",

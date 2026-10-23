@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13+ 系統設定「應用程式語言」列出的選項（SPEC.md §3.9）。跟 values/、values-zh-rTW/ 對應。 -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="zh-TW" />
+    <locale android:name="en" />
+</locale-config>

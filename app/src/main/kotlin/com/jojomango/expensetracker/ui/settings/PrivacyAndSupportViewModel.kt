@@ -4,6 +4,7 @@ import android.app.Activity
 import androidx.lifecycle.ViewModel
 import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
 import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
+import com.jojomango.expensetracker.ui.donation.DonationMessage
 import com.jojomango.expensetracker.ui.donation.DonationOffers
 import com.jojomango.expensetracker.ui.donation.DonationTier
 import com.jojomango.expensetracker.ui.donation.PlayDonationBilling
@@ -28,7 +29,7 @@ class PrivacyAndSupportViewModel
         val donationOffers: StateFlow<DonationOffers> = donationBilling.offers
 
         /** 付款結果的訊息（謝謝／無法連線），跟備份訊息共用設定頁的 Snackbar。 */
-        val donationMessages: SharedFlow<String> = donationBilling.messages
+        val donationMessages: SharedFlow<DonationMessage> = donationBilling.messages
 
         fun setAnalyticsEnabled(enabled: Boolean) {
             analyticsTracker.setEnabled(enabled)

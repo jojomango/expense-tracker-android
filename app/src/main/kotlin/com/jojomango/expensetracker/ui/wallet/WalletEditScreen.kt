@@ -27,9 +27,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BudgetMode
+import com.jojomango.expensetracker.ui.common.AmountKeyboardOptions
+import com.jojomango.expensetracker.ui.common.CurrencyCodeKeyboardOptions
 import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -60,8 +65,8 @@ fun WalletEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isEditing) "編輯錢包" else "新增錢包") },
-                navigationIcon = { TextButton(onClick = onCancel) { Text("取消") } },
+                title = { Text(stringResource(if (state.isEditing) R.string.wallet_edit_title else R.string.wallet_new_title)) },
+                navigationIcon = { TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) } },
             )
         },
     ) { padding ->
@@ -80,21 +85,26 @@ fun WalletEditScreen(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::onNameChange,
-                label = { Text("錢包名稱") },
+                label = { Text(stringResource(R.string.wallet_name_label)) },
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = state.currency,
                 onValueChange = viewModel::onCurrencyChange,
-                label = { Text("幣別（ISO 4217，如 TWD）") },
+                label = { Text(stringResource(R.string.wallet_currency_label)) },
+                keyboardOptions = CurrencyCodeKeyboardOptions,
                 enabled = !state.isEditing,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            Text("預算模式")
+            Text(stringResource(R.string.wallet_budget_mode))
             Row {
-                listOf(BudgetMode.WEEKLY to "每週", BudgetMode.TOTAL to "總預算", BudgetMode.NONE to "不設定").forEach { (mode, label) ->
+                listOf(
+                    BudgetMode.WEEKLY to stringResource(R.string.budget_mode_weekly),
+                    BudgetMode.TOTAL to stringResource(R.string.budget_mode_total),
+                    BudgetMode.NONE to stringResource(R.string.budget_mode_none),
+                ).forEach { (mode, label) ->
                     FilterChip(
                         selected = state.budgetMode == mode,
                         onClick = { viewModel.onBudgetModeChange(mode) },
@@ -108,7 +118,8 @@ fun WalletEditScreen(
                 OutlinedTextField(
                     value = state.budgetAmountDigits,
                     onValueChange = viewModel::onBudgetAmountChange,
-                    label = { Text("預算金額") },
+                    label = { Text(stringResource(R.string.wallet_budget_amount)) },
+                    keyboardOptions = AmountKeyboardOptions,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -118,7 +129,7 @@ fun WalletEditScreen(
                 enabled = state.canSubmit,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (state.isEditing) "儲存" else "建立錢包")
+                Text(stringResource(if (state.isEditing) R.string.common_save else R.string.wallet_create))
             }
 
             if (state.isEditing && !state.archived) {
@@ -142,15 +153,15 @@ private fun ArchiveAndDeleteSection(
     Spacer(Modifier.height(24.dp))
     HorizontalDivider()
     Spacer(Modifier.height(8.dp))
-    TextButton(onClick = onArchive, enabled = !isLastActive) { Text("封存錢包") }
+    TextButton(onClick = onArchive, enabled = !isLastActive) { Text(stringResource(R.string.wallet_archive)) }
     TextButton(
         onClick = onDelete,
         enabled = !isLastActive,
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-    ) { Text("刪除錢包") }
+    ) { Text(stringResource(R.string.wallet_delete)) }
     if (isLastActive) {
         Text(
-            "至少要保留一個錢包",
+            stringResource(R.string.wallet_keep_one),
             style = LocalAppTypography.current.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 12.dp),
@@ -167,13 +178,13 @@ private fun DeleteWalletDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("刪除「$walletName」？") },
+        title = { Text(stringResource(R.string.wallet_delete_title, walletName)) },
         text = {
             Text(
                 if (transactionCount == 0) {
-                    "這個錢包沒有任何交易。"
+                    stringResource(R.string.wallet_delete_no_transactions)
                 } else {
-                    "這個錢包的 $transactionCount 筆交易會一併刪除，無法復原。"
+                    pluralStringResource(R.plurals.wallet_delete_with_transactions, transactionCount, transactionCount)
                 },
             )
         },
@@ -181,8 +192,8 @@ private fun DeleteWalletDialog(
             TextButton(
                 onClick = onConfirm,
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            ) { Text("刪除") }
+            ) { Text(stringResource(R.string.common_delete)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }
