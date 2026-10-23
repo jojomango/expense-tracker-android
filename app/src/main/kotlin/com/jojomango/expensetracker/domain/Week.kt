@@ -34,19 +34,22 @@ object Week {
 
     /**
      * 把 [items] 依各自的日期（由 [dateOf] 取得）分到所屬的週。
-     * 組間依週首**倒序**（最新的週在前），組內依日期**正序**排序。
+     * 組間依週首**倒序**（最新的週在前），組內依日期**由新到舊**（TESTCASES.md T2.5.1，v2.4）。
+     * 同一天的先後由 [sameDayOrder] 決定——首頁傳「建立時間由新到舊」（T2.5.5）；不傳就保留原本的相對順序。
      */
     fun <T> groupByWeek(
         items: List<T>,
         weekStartDay: DayOfWeek,
+        sameDayOrder: Comparator<in T> = Comparator { _, _ -> 0 },
         dateOf: (T) -> LocalDate,
     ): List<WeekGroup<T>> {
         if (items.isEmpty()) return emptyList()
+        val withinWeek = compareByDescending<T> { dateOf(it) }.then(sameDayOrder)
         return items
             .groupBy { rangeOf(dateOf(it), weekStartDay) }
             .entries
             .sortedByDescending { (range, _) -> range.start }
-            .map { (range, groupItems) -> WeekGroup(range, groupItems.sortedBy(dateOf)) }
+            .map { (range, groupItems) -> WeekGroup(range, groupItems.sortedWith(withinWeek)) }
     }
 
     /**
