@@ -71,6 +71,24 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
 `FULL` 需要原始偵錯資訊，更不可能產生。這則警告只是「警告」，不擋發布；Kotlin 的當機堆疊由 Crashlytics
 ＋R8 mapping 處理，不受影響。之後若專案加入自己的 C/C++ 程式碼，再重新評估。
 
+## 之後每次出內部測試版：一行指令
+
+```bash
+bash scripts/release-internal.sh
+```
+
+在自己的終端機執行就好，不需要透過 agent。它會：確認在乾淨的 `main` 並 `git pull` → 檢查金鑰與 `google-services.json` →
+跑 `./gradlew verify` → 用組建當下的時間當 versionCode（`yyMMddHH`，例如 `26102415`）組出簽章 AAB →
+確認簽章與版本 → 複製到 `~/Desktop/expense-tracker-<版本>-<versionCode>.aab` → 打本機 tag `internal-<versionCode>`。
+然後在 Play Console 的內部測試建立新版本、上傳那個檔案。
+
+- `--skip-verify`：跳過測試（只在確定 main 已經驗證過時用）；`--no-tag`：不打 tag；`--help`：說明
+- **versionCode 從 26102415 這種時間戳記開始之後，就不能再上傳比它小的版本**——不要再用舊的方式手動組 `versionCode = 3/4…` 的版本；
+  一律用這個 script（`app/build.gradle.kts` 裡的 3 只是平常開發用的預設值）
+- versionName（例如 1.1.1）仍然寫在 `app/build.gradle.kts`，正式改版時手動改
+- 自動上傳到 Play（不用手動拖檔）需要 Google Play Developer API 的服務帳戶，加上上傳工具（Gradle Play Publisher 屬於新套件，
+  依 CLAUDE.md 禁令 3 要先經人類批准；或另外裝 fastlane）。目前上傳頻率低，先不做
+
 ## 4. 先上「內部測試」確認上傳流程
 
 內部測試不需要審核、幾分鐘內就能裝，適合先確認 AAB 沒問題：

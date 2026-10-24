@@ -29,7 +29,9 @@ android {
         applicationId = "com.jojomango.expensetracker"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
+        // 內部測試版由 scripts/release-internal.sh 傳入 -PexpenseVersionCode=<yyMMddHH>，每次上傳都比上一次大，
+        // 不用為了出測試版改這個檔案。平常開發與 CI 沒有傳，就用下面這個數字。
+        versionCode = providers.gradleProperty("expenseVersionCode").orNull?.toIntOrNull() ?: 3
         versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
