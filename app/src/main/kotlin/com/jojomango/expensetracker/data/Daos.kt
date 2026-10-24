@@ -44,10 +44,10 @@ interface WalletDao {
 
 @Dao
 interface CategoryDao {
-    @Query("SELECT * FROM categories ORDER BY isDefault DESC, name ASC")
+    @Query("SELECT * FROM categories ORDER BY sortOrder ASC, name ASC")
     fun observeAll(): Flow<List<CategoryEntity>>
 
-    @Query("SELECT * FROM categories")
+    @Query("SELECT * FROM categories ORDER BY sortOrder ASC, name ASC")
     suspend fun getAllOnce(): List<CategoryEntity>
 
     @Query("SELECT * FROM categories WHERE id = :id")

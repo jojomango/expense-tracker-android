@@ -1,5 +1,6 @@
 package com.jojomango.expensetracker.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -62,6 +63,9 @@ data class CategoryEntity(
     val isDefault: Boolean,
     /** [DefaultCategoryKey.id]；schema v2 新增（SPEC.md §3.9）。 */
     val defaultKey: String? = null,
+    /** SPEC.md §3.3 v2.5；schema v3 新增。defaultValue 要跟 MIGRATION_2_3 的 DEFAULT 一致，Room 才驗證得過。 */
+    @ColumnInfo(defaultValue = "0")
+    val sortOrder: Int = 0,
 ) {
     fun toDomain(): Category =
         Category(
@@ -72,6 +76,7 @@ data class CategoryEntity(
             color = color,
             isDefault = isDefault,
             defaultKey = DefaultCategoryKey.fromId(defaultKey),
+            sortOrder = sortOrder,
         )
 
     companion object {
@@ -84,6 +89,7 @@ data class CategoryEntity(
                 color = category.color,
                 isDefault = category.isDefault,
                 defaultKey = category.defaultKey?.id,
+                sortOrder = category.sortOrder,
             )
     }
 }

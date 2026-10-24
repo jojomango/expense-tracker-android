@@ -40,6 +40,8 @@ data class BackupCategory(
     val isDefault: Boolean,
     /** v2.3 新增的選填欄位（[DefaultCategoryKey.id]）。舊備份沒有它，不提高 schema 版本（SPEC.md §3.9）。 */
     val defaultKey: String? = null,
+    /** v2.5 新增的選填欄位；舊備份沒有它時依 `legacySortOrders` 補值，不提高 schema 版本（SPEC.md §3.3）。 */
+    val sortOrder: Int? = null,
 )
 
 @Serializable

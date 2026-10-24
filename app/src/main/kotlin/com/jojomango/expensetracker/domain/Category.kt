@@ -28,6 +28,8 @@ data class Category(
      * （例如舊版 App 匯入新備份時會看到它）。
      */
     val defaultKey: DefaultCategoryKey? = null,
+    /** 顯示順序（SPEC.md §3.3 v2.5），同一種 [type] 內由小到大；不因改名或切換語言而改變。 */
+    val sortOrder: Int = 0,
 ) {
     init {
         require(name.isNotBlank()) { "Category name must not be blank" }
@@ -66,18 +68,20 @@ enum class DefaultCategoryKey(
     val type: CategoryType,
     val icon: String,
     val color: String,
+    /** SPEC.md §3.3 v2.5 的固定順序；兩個「其他」是 [OTHER_CATEGORY_SORT_ORDER]，永遠最後。 */
+    val sortOrder: Int,
 ) {
-    FOOD("food", CategoryType.EXPENSE, "🍜", "#C1502E"),
-    TRANSPORT("transport", CategoryType.EXPENSE, "🚗", "#3F8F6A"),
-    HOUSING("housing", CategoryType.EXPENSE, "🏠", "#A8792F"),
-    SHOPPING("shopping", CategoryType.EXPENSE, "🛒", "#2F6F9F"),
-    ENTERTAINMENT("entertainment", CategoryType.EXPENSE, "🎬", "#8A5FBF"),
-    MEDICAL("medical", CategoryType.EXPENSE, "💊", "#C04A6E"),
-    OTHER_EXPENSE("other_expense", CategoryType.EXPENSE, "📦", "#7A7A80"),
-    SALARY("salary", CategoryType.INCOME, "💰", "#2F8F63"),
-    BONUS("bonus", CategoryType.INCOME, "🎁", "#C98B2E"),
-    INVESTMENT("investment", CategoryType.INCOME, "📈", "#4A6FA8"),
-    OTHER_INCOME("other_income", CategoryType.INCOME, "📦", "#7A7A80"),
+    FOOD("food", CategoryType.EXPENSE, "🍜", "#C1502E", 0),
+    TRANSPORT("transport", CategoryType.EXPENSE, "🚗", "#3F8F6A", 1),
+    HOUSING("housing", CategoryType.EXPENSE, "🏠", "#A8792F", 2),
+    SHOPPING("shopping", CategoryType.EXPENSE, "🛒", "#2F6F9F", 3),
+    ENTERTAINMENT("entertainment", CategoryType.EXPENSE, "🎬", "#8A5FBF", 4),
+    MEDICAL("medical", CategoryType.EXPENSE, "💊", "#C04A6E", 5),
+    OTHER_EXPENSE("other_expense", CategoryType.EXPENSE, "📦", "#7A7A80", OTHER_CATEGORY_SORT_ORDER),
+    SALARY("salary", CategoryType.INCOME, "💰", "#2F8F63", 0),
+    BONUS("bonus", CategoryType.INCOME, "🎁", "#C98B2E", 1),
+    INVESTMENT("investment", CategoryType.INCOME, "📈", "#4A6FA8", 2),
+    OTHER_INCOME("other_income", CategoryType.INCOME, "📦", "#7A7A80", OTHER_CATEGORY_SORT_ORDER),
     ;
 
     companion object {
@@ -128,6 +132,59 @@ object DefaultCategories {
         },
     ): List<Category> =
         DefaultCategoryKey.entries.map { key ->
-            Category(idGenerator(), names.nameOf(key), key.type, key.icon, key.color, isDefault = true, defaultKey = key)
+            Category(
+                idGenerator(),
+                names.nameOf(key),
+                key.type,
+                key.icon,
+                key.color,
+                isDefault = true,
+                defaultKey = key,
+                sortOrder = key.sortOrder,
+            )
         }
+}
+
+/**
+ * 兩個「其他」的固定順序（SPEC.md §3.3 v2.5、D15）。用固定值而不是代號判斷「永遠最後」：
+ * 「其他」被改名後代號會清掉，但順序值還在，所以仍排在最後（T6.4.5）。
+ */
+const val OTHER_CATEGORY_SORT_ORDER = 1_000_000
+
+/** 記帳頁網格與分類管理頁共用的順序：`sortOrder` 由小到大，相同時依名稱（只在升級前的資料可能發生）。 */
+fun sortedForDisplay(categories: List<Category>): List<Category> = categories.sortedWith(compareBy({ it.sortOrder }, { it.name }))
+
+/** 新分類排在同類型既有分類之後、「其他」之前（T6.4.3、T6.4.4）。 */
+fun nextCategorySortOrder(
+    existing: List<Category>,
+    type: CategoryType,
+): Int = (existing.filter { it.type == type && it.sortOrder < OTHER_CATEGORY_SORT_ORDER }.maxOfOrNull { it.sortOrder } ?: -1) + 1
+
+/** [legacySortOrders] 的輸入：升級前的資料或舊備份裡的一個分類。 */
+data class LegacyCategoryOrderInput(
+    val id: String,
+    val name: String,
+    val type: CategoryType,
+    val defaultKey: DefaultCategoryKey?,
+)
+
+/**
+ * 沒有順序的舊資料怎麼補值（SPEC.md §3.3 v2.5，T6.4.7／T6.4.8）：有代號的預設分類照代號的固定值；
+ * 其餘（自訂分類、升級前就改過名而認不出來的預設分類）依名稱排序，接在該類型預設分類的最大值之後。
+ * 資料庫升級與匯入舊備份都用這一個函式，兩邊結果才會一樣。
+ */
+fun legacySortOrders(entries: List<LegacyCategoryOrderInput>): Map<String, Int> {
+    val result = mutableMapOf<String, Int>()
+    entries.forEach { entry -> entry.defaultKey?.let { result[entry.id] = it.sortOrder } }
+    entries
+        .filter { it.defaultKey == null }
+        .groupBy { it.type }
+        .forEach { (type, others) ->
+            val start =
+                DefaultCategoryKey.entries
+                    .filter { it.type == type && it.sortOrder < OTHER_CATEGORY_SORT_ORDER }
+                    .maxOf { it.sortOrder } + 1
+            others.sortedBy { it.name }.forEachIndexed { index, entry -> result[entry.id] = start + index }
+        }
+    return result
 }

@@ -28,11 +28,6 @@ appId: com.jojomango.expensetracker
 - tapOn: "Add"
 - tapOn: "1"
 - tapOn: "00"
-# 分類格一次只顯示一列，Food 在第二列：在分類區裡往上滑
-- swipe:
-    start: 50%, 35%
-    end: 50%, 22%
-    duration: 400
 - tapOn: "Food"
 - tapOn: "Add"
 # Then 介面文字與預設分類名稱都是英文

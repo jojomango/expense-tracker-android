@@ -8,6 +8,7 @@ import com.jojomango.expensetracker.domain.CategoryNames
 import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.CategoryType
 import com.jojomango.expensetracker.domain.displayName
+import com.jojomango.expensetracker.domain.nextCategorySortOrder
 import com.jojomango.expensetracker.domain.renamed
 import com.jojomango.expensetracker.ui.theme.CategoryColors
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -95,10 +96,19 @@ class CategoryEditViewModel
             val existing = state.existing
             val newName = state.name ?: existing?.displayName(names) ?: return
             viewModelScope.launch {
+                // 新分類排在同類型既有分類之後、「其他」之前（SPEC.md §3.3 v2.5）；編輯既有分類時順序不變。
+                val newSortOrder = nextCategorySortOrder(categoryRepository.getAllOnce(), state.type)
                 val category =
                     (
                         existing?.renamed(newName, names)
-                            ?: Category(UUID.randomUUID().toString(), newName, state.type, state.icon, state.color)
+                            ?: Category(
+                                UUID.randomUUID().toString(),
+                                newName,
+                                state.type,
+                                state.icon,
+                                state.color,
+                                sortOrder = newSortOrder,
+                            )
                     ).copy(type = state.type, icon = state.icon, color = state.color)
                 categoryRepository.upsert(category)
                 internalState.value = internalState.value.copy(saved = true)

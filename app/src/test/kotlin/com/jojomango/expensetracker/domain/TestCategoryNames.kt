@@ -27,7 +27,7 @@ object EnTestCategoryNames : CategoryNames {
             DefaultCategoryKey.TRANSPORT -> "Transport"
             DefaultCategoryKey.HOUSING -> "Housing"
             DefaultCategoryKey.SHOPPING -> "Shopping"
-            DefaultCategoryKey.ENTERTAINMENT -> "Entertainment"
+            DefaultCategoryKey.ENTERTAINMENT -> "Leisure"
             DefaultCategoryKey.MEDICAL -> "Medical"
             DefaultCategoryKey.OTHER_EXPENSE -> "Other"
             DefaultCategoryKey.SALARY -> "Salary"
