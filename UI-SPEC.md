@@ -121,7 +121,8 @@ dark 的 accent 比 light 亮一階，因為 `#C1502E` 在純黑上對比不足�
 - 頁面左右內距 **20dp**；卡片內距 **22dp**；列表列內距 **11dp / 14dp**（垂直 / 水平）
 - 卡片圓角 **20dp**；列表群組圓角 **16dp**（第一列上圓角、最後一列下圓角，Compose
   用 `RoundedCornerShape` 分別指定 `topStart`/`topEnd`/`bottomStart`/`bottomEnd`）；
-  分類色塊 **12dp**；數字鍵 **12dp**；pill **999dp**（等同 `CircleShape` 或超大圓角值）；
+  分類色塊 **12dp**；數字鍵 **12dp**（v2.5：鍵高固定 **56dp**，不用 `aspectRatio`；空間不足時可縮到 48dp）；
+  pill **999dp**（記帳頁日期／備註 pill 最小高 **48dp**，v2.5）（等同 `CircleShape` 或超大圓角值）；
   toast/Snackbar **14dp**
 - 卡片陰影：Compose 用 `tonalElevation` + `shadowElevation`（Material 3 的陰影系統
   跟 CSS `box-shadow` 概念不同，不用硬換算成同樣的 `rgba` 數值，用 `elevation = 2.dp`
@@ -230,15 +231,25 @@ Android 版建議在 Phase 2（Budget domain）就一併做掉，不用像網頁
 
 1. 標題列：左「取消」文字鍵、中支出/收入 `SegmentedButton`（Material 3 內建元件）、
    右留白對稱
-2. 金額區（置中）：上方「{錢包名} · {幣別}」小字；下方大字金額，未輸入時顯示
+2. 金額區（置中，上下內距 **8dp**，v2.5）：上方「{錢包名} · {幣別}」小字；下方大字金額，未輸入時顯示
    `NT$0` 且色為 fg3，有輸入時主色（收入用 income 色），即時千分位格式化
 3. 分類網格：4 欄 `LazyVerticalGrid`，每格 50×50dp 圓角 16dp 的 tint 色塊 + emoji +
-   11sp 名稱，選取態用 `Modifier.border` 加 2.5dp 的分類色邊框。**不要用
+   11sp 單行名稱，選取態用 `Modifier.border` 加 2.5dp 的分類色邊框，**且名稱改為 W700**（v2.5：外框是分類色，
+   色盲使用者不能只靠顏色分辨選中項）。每格 `Role.Button` 並帶 selected 狀態。
+   **一次完整露出 2 列（8 格）**（360×760dp 為基準），超過 8 個分類時在網格內垂直捲動，第三列露出約半列當作捲動提示。
+   順序依 `SPEC.md` §3.3 的 `sortOrder`。英文名稱不得截斷；11sp 單行放不下時改用較短的英文名稱（由人類決定用字），
+   不換行、不縮字級（UX-001）。**不要用
    `DropdownMenu` 或任何下拉選單**——這是網頁版特別強調要拿掉原生 `<select>`
    的地方，Android 版對應的坑是不要圖方便用 `ExposedDropdownMenuBox`
 4. 日期 pill 列：今天／昨天／選日期（`DatePickerDialog`）三個選項；右側「+備註」
-   pill，點擊展開單行 `TextField`
-5. 數字鍵台（貼底）：3×4 `LazyVerticalGrid`，鍵序 `1-9 / 00 0 ⌫`。**這是自製鍵台，
+   pill，點擊展開單行 `TextField`（高 56dp、圓角 12dp，聚焦時 2dp `primary` 外框；鍵盤動作鍵「完成」）。
+   **備註欄取得焦點時，數字鍵台收起**（`AnimatedVisibility`），分類網格、日期列、備註欄與主鍵都留在系統鍵盤上方、
+   不被擠壓，主鍵緊接在備註欄下方；金額字級縮為 40sp，整個金額區可點（`Role.Button`，描述「回到數字鍵輸入金額」／
+   "Back to number pad to edit amount"），點了清除焦點、收起鍵盤、數字鍵台回來。按「完成」、返回鍵收鍵盤、點別處
+   效果相同；「完成」**只收鍵盤、不送出**；備註失焦時即使是空的也不自動收合。根容器用 `Modifier.imePadding()`
+   （v2.5，UX-002）
+5. 數字鍵台（貼底；編輯備註時收起，見第 4 點）：3×4 `LazyVerticalGrid`，鍵序 `1-9 / 00 0 ⌫`，鍵高 56dp（§2.4）。
+   螢幕高度不足時依序壓縮：金額區內距 → 鍵高（不低於 48dp）→ 最後才讓分類網格退回較少列並可捲動。**這是自製鍵台，
    不是系統輸入法**——記帳頁全程 `TextField` 不應該取得真正的系統焦點去呼叫
    Android 內建鍵盤（可以用一個唯讀的 `Text` 顯示金額，不要用會呼叫系統鍵盤的
    `TextField`）
@@ -248,6 +259,8 @@ Android 版建議在 Phase 2（Budget domain）就一併做掉，不用像網頁
 `TESTCASES.md` T7.3 完全相同，直接照搬成 Kotlin）。
 
 成功後導回首頁並顯示 Snackbar「已記錄 {分類} {金額}」。
+
+分類管理頁（§7 入口）的分類列表也依 `sortOrder` 排序，跟記帳頁一致（v2.5，UX-003）。
 
 ### §6 統計頁
 
