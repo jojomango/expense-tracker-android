@@ -10,9 +10,11 @@ import com.jojomango.expensetracker.domain.BackupWallet
 import com.jojomango.expensetracker.domain.CURRENT_BACKUP_SCHEMA_VERSION
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryRepository
+import com.jojomango.expensetracker.domain.CategoryType
 import com.jojomango.expensetracker.domain.DefaultCategories
 import com.jojomango.expensetracker.domain.DefaultCategoryKey
 import com.jojomango.expensetracker.domain.ImportMode
+import com.jojomango.expensetracker.domain.LegacyCategoryOrderInput
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.SettingsRepository
 import com.jojomango.expensetracker.domain.Transaction
@@ -22,6 +24,7 @@ import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.assertCanDeleteCategory
 import com.jojomango.expensetracker.domain.assertCanDeleteWallet
 import com.jojomango.expensetracker.domain.assertCanRemoveActiveWallet
+import com.jojomango.expensetracker.domain.legacySortOrders
 import com.jojomango.expensetracker.domain.mergeTransactionsById
 import com.jojomango.expensetracker.domain.validateBackup
 import kotlinx.coroutines.flow.Flow
@@ -157,14 +160,14 @@ class RoomBackupRepository
                         db.walletDao().deleteAll()
 
                         db.walletDao().upsertAll(payload.wallets.map { it.toEntity() })
-                        db.categoryDao().upsertAll(payload.categories.map { it.toEntity() })
+                        db.categoryDao().upsertAll(payload.categories.toEntities())
                         db.transactionDao().upsertAll(payload.transactions.map { it.toEntity() })
                         db.settingsDao().upsert(payload.settings.toEntity())
                     }
                     ImportMode.MERGE -> {
                         // 錢包／分類沒有 updatedAt 可比較，merge 時匯入端直接覆蓋同 id 的既有資料。
                         db.walletDao().upsertAll(payload.wallets.map { it.toEntity() })
-                        db.categoryDao().upsertAll(payload.categories.map { it.toEntity() })
+                        db.categoryDao().upsertAll(payload.categories.toEntities())
 
                         val existingTransactions = db.transactionDao().getAllOnce().map { it.toBackup() }
                         val merged = mergeTransactionsById(existingTransactions, payload.transactions)
@@ -181,19 +184,35 @@ private fun WalletEntity.toBackup() = BackupWallet(id, name, currency, budgetMod
 
 private fun BackupWallet.toEntity() = WalletEntity(id, name, currency, budgetMode, budgetAmount, archived)
 
-private fun CategoryEntity.toBackup() = BackupCategory(id, name, type, icon, color, isDefault, defaultKey)
+private fun CategoryEntity.toBackup() = BackupCategory(id, name, type, icon, color, isDefault, defaultKey, sortOrder)
 
-/** 舊備份沒有代號時，跟遷移用同一條規則補上（T10.3.4）。 */
-private fun BackupCategory.toEntity() =
-    CategoryEntity(
-        id,
-        name,
-        type,
-        icon,
-        color,
-        isDefault,
-        DefaultCategoryKey.fromId(defaultKey)?.id ?: LegacyDefaultCategoryNames.keyFor(name, type, isDefault)?.id,
-    )
+/**
+ * 舊備份沒有代號時，跟遷移用同一條規則補上（T10.3.4）；沒有 `sortOrder` 時，用 [legacySortOrders]
+ * 補上（T6.4.8）。補順序要看整批分類（自訂分類依名稱接在預設分類之後），所以是對整個清單做。
+ */
+private fun List<BackupCategory>.toEntities(): List<CategoryEntity> {
+    val keys =
+        associate {
+            it.id to
+                (DefaultCategoryKey.fromId(it.defaultKey) ?: LegacyDefaultCategoryNames.keyFor(it.name, it.type, it.isDefault))
+        }
+    val legacyOrders =
+        legacySortOrders(
+            filter { it.sortOrder == null }.map { LegacyCategoryOrderInput(it.id, it.name, CategoryType.valueOf(it.type), keys[it.id]) },
+        )
+    return map {
+        CategoryEntity(
+            it.id,
+            it.name,
+            it.type,
+            it.icon,
+            it.color,
+            it.isDefault,
+            keys[it.id]?.id,
+            it.sortOrder ?: legacyOrders.getValue(it.id),
+        )
+    }
+}
 
 private fun TransactionEntity.toBackup() =
     BackupTransaction(

@@ -7,18 +7,20 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
@@ -45,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -86,81 +90,93 @@ fun AddEditTransactionScreen(
             LoadingState(modifier = Modifier.padding(padding))
             return@Scaffold
         }
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // 標題列
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
-                SingleChoiceSegmentedButtonRow {
-                    SegmentedButton(
-                        selected = state.type == TransactionType.EXPENSE,
-                        onClick = { viewModel.onSelectType(TransactionType.EXPENSE) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                    ) { Text(stringResource(R.string.type_expense)) }
-                    SegmentedButton(
-                        selected = state.type == TransactionType.INCOME,
-                        onClick = { viewModel.onSelectType(TransactionType.INCOME) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                    ) { Text(stringResource(R.string.type_income)) }
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // UI-SPEC §5 的壓縮順序：基準 360×760dp 的內容區放不下「兩列分類＋56dp 鍵台」時，
+            // 鍵高降到 48dp、主鍵上下內距縮小，把高度讓給分類網格（實測 360×760dp 上差約 46dp）。
+            val compact = maxHeight < COMPACT_CONTENT_HEIGHT
+            Column(modifier = Modifier.fillMaxSize()) {
+                // 標題列
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    TextButton(onClick = onCancel) { Text(stringResource(R.string.common_cancel)) }
+                    SingleChoiceSegmentedButtonRow {
+                        SegmentedButton(
+                            selected = state.type == TransactionType.EXPENSE,
+                            onClick = { viewModel.onSelectType(TransactionType.EXPENSE) },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                        ) { Text(stringResource(R.string.type_expense)) }
+                        SegmentedButton(
+                            selected = state.type == TransactionType.INCOME,
+                            onClick = { viewModel.onSelectType(TransactionType.INCOME) },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                        ) { Text(stringResource(R.string.type_income)) }
+                    }
+                    Spacer(Modifier.size(48.dp))
                 }
-                Spacer(Modifier.size(48.dp))
-            }
 
-            // 金額區
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                state.wallet?.let { wallet ->
+                // 金額區（上下內距 8dp：讓分類網格一次露出兩列，UI-SPEC §5、UX-001）
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    state.wallet?.let { wallet ->
+                        Text(
+                            "${wallet.name} · ${wallet.currency}",
+                            style = typography.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    val amountColor =
+                        when {
+                            state.amount == 0L -> extraColors.fg3
+                            state.type == TransactionType.INCOME -> extraColors.income
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
                     Text(
-                        "${wallet.name} · ${wallet.currency}",
-                        style = typography.caption,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = viewModel.formattedAmount(),
+                        style = typography.amountInput,
+                        color = amountColor,
                     )
                 }
-                val amountColor =
-                    when {
-                        state.amount == 0L -> extraColors.fg3
-                        state.type == TransactionType.INCOME -> extraColors.income
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
-                Text(
-                    text = viewModel.formattedAmount(),
-                    style = typography.amountInput,
-                    color = amountColor,
+
+                // 分類網格
+                CategoryGrid(
+                    categories = state.categoriesForType,
+                    selectedCategoryId = state.selectedCategoryId,
+                    onSelect = viewModel::onSelectCategory,
+                    modifier = Modifier.weight(1f),
                 )
-            }
 
-            // 分類網格
-            CategoryGrid(
-                categories = state.categoriesForType,
-                selectedCategoryId = state.selectedCategoryId,
-                onSelect = viewModel::onSelectCategory,
-                modifier = Modifier.weight(1f),
-            )
+                DateAndNoteRow(
+                    date = state.date,
+                    note = state.note,
+                    onSelectDate = viewModel::onSelectDate,
+                    onNoteChange = viewModel::onNoteChange,
+                )
 
-            DateAndNoteRow(
-                date = state.date,
-                note = state.note,
-                onSelectDate = viewModel::onSelectDate,
-                onNoteChange = viewModel::onNoteChange,
-            )
+                NumericKeypad(
+                    onDigit = viewModel::onDigit,
+                    onBackspace = viewModel::onBackspace,
+                    keyHeight = if (compact) 48.dp else 56.dp,
+                )
 
-            NumericKeypad(onDigit = viewModel::onDigit, onBackspace = viewModel::onBackspace)
-
-            Button(
-                onClick = viewModel::submit,
-                enabled = state.canSubmit,
-                modifier = Modifier.fillMaxWidth().padding(20.dp),
-            ) {
-                Text(stringResource(if (state.isEditing) R.string.common_save else R.string.transaction_submit))
+                Button(
+                    onClick = viewModel::submit,
+                    enabled = state.canSubmit,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = if (compact) 8.dp else 20.dp),
+                ) {
+                    Text(stringResource(if (state.isEditing) R.string.common_save else R.string.transaction_submit))
+                }
             }
         }
     }
 }
+
+/** 低於這個內容高度（扣掉系統列）就用緊湊尺寸；360×760dp 的手機內容區約 710dp。 */
+private val COMPACT_CONTENT_HEIGHT = 740.dp
 
 @Composable
 private fun CategoryGrid(
@@ -180,7 +196,8 @@ private fun CategoryGrid(
                 modifier =
                     Modifier
                         .padding(6.dp)
-                        .clickable(role = Role.Button) { onSelect(category.id) },
+                        // selectable：TalkBack 唸得出「已選取」，選中不能只靠外框顏色（UX-001）
+                        .selectable(selected = selected, role = Role.Button) { onSelect(category.id) },
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(
@@ -199,7 +216,14 @@ private fun CategoryGrid(
                 ) {
                     Text(category.icon, fontSize = 22.sp)
                 }
-                Text(category.displayName(rememberCategoryNames()), fontSize = 11.sp)
+                // 外框是分類色本身，色盲使用者分不出來；選中時名稱加粗（UI-SPEC §5、UX-001）
+                Text(
+                    category.displayName(rememberCategoryNames()),
+                    fontSize = 11.sp,
+                    fontWeight = if (selected) FontWeight.W700 else FontWeight.Normal,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
         }
     }
@@ -278,7 +302,7 @@ private fun DatePill(
         selected = selected,
         onClick = onClick,
         label = { Text(label) },
-        modifier = Modifier.padding(end = 6.dp).heightIn(min = 36.dp),
+        modifier = Modifier.padding(end = 6.dp).heightIn(min = 48.dp),
     )
 }
 
@@ -286,6 +310,7 @@ private fun DatePill(
 private fun NumericKeypad(
     onDigit: (String) -> Unit,
     onBackspace: () -> Unit,
+    keyHeight: Dp,
 ) {
     val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "00", "0", "⌫")
     val extraColors = LocalAppExtraColors.current
@@ -302,7 +327,9 @@ private fun NumericKeypad(
                 modifier =
                     Modifier
                         .padding(4.dp)
-                        .aspectRatio(1.6f)
+                        // 固定鍵高（UI-SPEC §2.4）：aspectRatio 會讓寬螢幕上的鍵台長得太高，把分類網格擠成一列
+                        .fillMaxWidth()
+                        .height(keyHeight)
                         .background(if (key == "⌫") Color.Transparent else extraColors.key, RoundedCornerShape(12.dp))
                         .clickable(role = Role.Button) {
                             if (key == "⌫") onBackspace() else onDigit(key)
