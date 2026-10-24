@@ -6,7 +6,7 @@
 | 對應截圖 | 04、05、06、10、28 |
 | 要改的 UI-SPEC 章節 | §5 記帳頁（第 3、4、5 點）、§2.4 尺寸（日期 pill 與鍵台鍵高） |
 | 取代 | 無 |
-| 合約 PR | （待開） |
+| 合約 PR | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) |
 | 實作 PR | （待開） |
 
 設計畫布（改前／改後畫面）：https://claude.ai/artifact/Tw2d6cpLrfZksTkRW1ndNF 　對應「新｜預設（空）」「新｜已輸入金額、選分類」。
