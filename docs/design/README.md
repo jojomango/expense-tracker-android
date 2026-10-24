@@ -13,6 +13,12 @@
 | [UX-002](decisions/UX-002-add-note-keyboard.md) | 編輯備註時數字鍵收起 | 06、10、28 | 已決定 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | — | 2026-10-24 |
 | [UX-003](decisions/UX-003-category-display-order.md) | 分類顯示順序照預設順序 | 04、05、19、28 | 已決定 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | — | 2026-10-24 |
 
+**待設計討論**（實作時人類先決定、要在下一次設計討論確認的項目）
+
+| 來源 | 內容 | 日期 |
+|---|---|---|
+| UX-001 實作 | 記帳頁「選日期」pill 改成只放日曆圖示（英文四個 pill 在 360dp 放不下一列）；請確認圖示與互動是否 OK，或提出其他做法 | 2026-10-24 |
+
 **狀態的意思**
 
 | 狀態 | 意思 |

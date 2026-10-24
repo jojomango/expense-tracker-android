@@ -22,10 +22,13 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -45,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -251,9 +255,12 @@ private fun DateAndNoteRow(
                 ) {
                     "${date.monthNumber}/${date.dayOfMonth}"
                 } else {
-                    stringResource(R.string.date_pick)
+                    null
                 },
             selected = date != today && date != yesterday,
+            // 還沒選其他日期時只放日曆圖示：英文四個 pill 在 360dp 放不下一列（人類 2026-10-24 決定，待設計確認）
+            icon = Icons.Filled.CalendarMonth,
+            iconDescription = stringResource(R.string.date_pick),
         ) { showDatePicker = true }
         Spacer(Modifier.weight(1f))
         DatePill(label = stringResource(R.string.transaction_add_note), selected = showNoteField) { showNoteField = !showNoteField }
@@ -294,14 +301,22 @@ private fun LocalDate.atStartOfDayInstant(): Instant =
 
 @Composable
 private fun DatePill(
-    label: String,
+    label: String?,
     selected: Boolean,
+    icon: ImageVector? = null,
+    iconDescription: String? = null,
     onClick: () -> Unit,
 ) {
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) },
+        label = {
+            if (label != null) {
+                Text(label)
+            } else if (icon != null) {
+                Icon(icon, contentDescription = iconDescription, modifier = Modifier.size(20.dp))
+            }
+        },
         modifier = Modifier.padding(end = 6.dp).heightIn(min = 48.dp),
     )
 }

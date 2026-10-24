@@ -61,7 +61,7 @@ class CategoryOrderTest {
         val en = sortedForDisplay(seeds).map { it.id }
         assertEquals(zh, en)
         assertEquals(
-            listOf("Food", "Transport", "Housing", "Shopping", "Entertainment", "Medical", "Other"),
+            listOf("Food", "Transport", "Housing", "Shopping", "Leisure", "Medical", "Other"),
             names(seeds, CategoryType.EXPENSE, EnTestCategoryNames),
         )
     }
