@@ -24,7 +24,7 @@ for arg in "$@"; do
       exit 0
       ;;
     *)
-      echo "不認得的參數：$arg（可用 --skip-verify、--no-tag、--help）" >&2
+      echo "不認得的參數：${arg}（可用 --skip-verify、--no-tag、--help）" >&2
       exit 2
       ;;
   esac
@@ -51,7 +51,7 @@ branch=$(git branch --show-current)
 if [[ "${ALLOW_NON_MAIN:-}" == "1" ]]; then
   echo "  （ALLOW_NON_MAIN=1：略過分支與乾淨檢查，不會 git pull）目前分支：$branch"
 else
-  [[ "$branch" == "main" ]] || fail "目前在 $branch，請先 git switch main"
+  [[ "$branch" == "main" ]] || fail "目前在 ${branch}，請先 git switch main"
   [[ -z "$(git status --porcelain --untracked-files=no)" ]] || fail "有未 commit 的改動，請先 commit 或還原"
   git pull --ff-only --quiet || fail "git pull 失敗（本機 main 跟雲端分岔了？）"
 fi
@@ -76,7 +76,7 @@ if [[ -n "$last_tag_code" && "$last_tag_code" -ge "$version_code" ]]; then
   version_code=$((last_tag_code + 1))
 fi
 version_name=$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' app/build.gradle.kts | head -1)
-echo "  版本：$version_name（versionCode $version_code）"
+echo "  版本：${version_name}（versionCode ${version_code}）"
 
 gradle_args=("-PexpenseVersionCode=$version_code")
 if $skip_verify; then
@@ -96,7 +96,7 @@ owner=$("$keytool" -printcert -jarfile "$aab" 2>/dev/null | sed -n 's/^Owner: //
 [[ "$owner" != *"Android Debug"* ]] || fail "AAB 是用 debug 金鑰簽的，Play 會拒收（檢查 ~/.gradle/gradle.properties）"
 manifest=app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
 built_code=$(sed -n 's/.*android:versionCode="\([0-9]*\)".*/\1/p' "$manifest" | head -1)
-[[ "$built_code" == "$version_code" ]] || fail "組出來的 versionCode 是 $built_code，預期 $version_code"
+[[ "$built_code" == "$version_code" ]] || fail "組出來的 versionCode 是 ${built_code}，預期 $version_code"
 echo "  簽章：$owner"
 echo "  versionCode：$built_code"
 
@@ -105,7 +105,7 @@ cp "$aab" "$out"
 
 if $make_tag; then
   git tag "internal-$version_code" "$commit"
-  tag_note="本機 tag internal-$version_code（要分享到 GitHub：git push origin internal-$version_code）"
+  tag_note="本機 tag internal-${version_code}（要分享到 GitHub：git push origin internal-${version_code}）"
 else
   tag_note="沒有打 tag（--no-tag）"
 fi
@@ -113,9 +113,9 @@ fi
 cat <<EOF
 
 ✓ 完成
-  檔案：$out（$(du -h "$out" | cut -f1 | tr -d ' ')）
-  版本：$version_name（versionCode $version_code），commit $commit
-  $tag_note
+  檔案：${out}（$(du -h "$out" | cut -f1 | tr -d ' ')）
+  版本：${version_name}（versionCode ${version_code}），commit ${commit}
+  ${tag_note}
 
 下一步（手動，約 1 分鐘）：
   1. Play Console → 測試 → 內部測試 → 建立新版本
