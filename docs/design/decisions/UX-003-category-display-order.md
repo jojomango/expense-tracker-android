@@ -6,7 +6,7 @@
 | 對應截圖 | 04、05、19、28 |
 | 要改的 UI-SPEC 章節 | §5 記帳頁（第 3 點）；分類管理頁；另會牽涉 SPEC.md §3.3 |
 | 取代 | 無 |
-| 合約 PR | （待開） |
+| 合約 PR | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) |
 | 實作 PR | （待開） |
 
 決策單原稿：https://claude.ai/artifact/7gyr6J92fkuA1caeyV1UYW

@@ -6,7 +6,7 @@
 | 對應截圖 | 06、10、28 |
 | 要改的 UI-SPEC 章節 | §5 記帳頁（第 2、4、5 點） |
 | 取代 | 無 |
-| 合約 PR | （待開） |
+| 合約 PR | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) |
 | 實作 PR | （待開） |
 
 設計畫布：https://claude.ai/artifact/Tw2d6cpLrfZksTkRW1ndNF 　對應「新｜備註編輯中」。

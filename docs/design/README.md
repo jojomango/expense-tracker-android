@@ -9,9 +9,9 @@
 
 | 編號 | 主題 | 對應截圖 | 狀態 | 合約 PR | 實作 PR | 更新日期 |
 |---|---|---|---|---|---|---|
-| [UX-001](decisions/UX-001-add-category-grid.md) | 記帳頁分類網格一次露出兩列 | 04、05、06、10、28 | 已決定 | — | — | 2026-10-23 |
-| [UX-002](decisions/UX-002-add-note-keyboard.md) | 編輯備註時數字鍵收起 | 06、10、28 | 已決定 | — | — | 2026-10-23 |
-| [UX-003](decisions/UX-003-category-display-order.md) | 分類顯示順序照預設順序 | 04、05、19、28 | 已決定 | — | — | 2026-10-23 |
+| [UX-001](decisions/UX-001-add-category-grid.md) | 記帳頁分類網格一次露出兩列 | 04、05、06、10、28 | 已決定 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | — | 2026-10-24 |
+| [UX-002](decisions/UX-002-add-note-keyboard.md) | 編輯備註時數字鍵收起 | 06、10、28 | 已決定 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | — | 2026-10-24 |
+| [UX-003](decisions/UX-003-category-display-order.md) | 分類顯示順序照預設順序 | 04、05、19、28 | 已決定 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | — | 2026-10-24 |
 
 **狀態的意思**
 
