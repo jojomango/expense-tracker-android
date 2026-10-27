@@ -34,7 +34,7 @@ import javax.inject.Singleton
 class PlayDonationBilling
     @Inject
     constructor(
-        @ApplicationContext context: Context,
+        @ApplicationContext private val context: Context,
         private val analyticsTracker: AnalyticsTracker,
     ) {
         private val handler = DonationPurchaseHandler()
@@ -46,7 +46,9 @@ class PlayDonationBilling
         private val messageFlow = MutableSharedFlow<DonationMessage>(extraBufferCapacity = 4)
         val messages: SharedFlow<DonationMessage> = messageFlow
 
-        private val client: BillingClient =
+        // lazy：設定頁一打開就會建立這個 Singleton，但 BillingClient 要等使用者展開「支持開發者」（refresh）才建。
+        // 第一次載入 Billing 套件的類別在慢的裝置上要好幾秒，放在建構子裡會讓設定頁卡住（Phase 10 驗證時的 ANR）。
+        private val client: BillingClient by lazy {
             BillingClient
                 .newBuilder(context)
                 .setListener { result, purchases ->
@@ -60,6 +62,7 @@ class PlayDonationBilling
                 .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
                 .enableAutoServiceReconnection()
                 .build()
+        }
 
         fun refresh() {
             if (offersState.value !is DonationOffers.Available) offersState.value = DonationOffers.Loading
