@@ -88,6 +88,9 @@ data class Money internal constructor(
         return round(raw * 100) / 100.0
     }
 
+    /** 週小計用（UI-SPEC §4.3 v2.6）：正數加「+」，負數同 [format] 帶「-」，零不帶正負號（T2.5.8）。 */
+    fun formatSigned(): String = if (amount > 0) "+${format()}" else format()
+
     /**
      * 格式化為使用者可見字串，例如 `NT$100.50`、`¥1,000`、`-NT$5.00`。
      * 千分位分組手刻實作，不依賴平台 locale（見 SPEC.md P1 的可攜性精神）。

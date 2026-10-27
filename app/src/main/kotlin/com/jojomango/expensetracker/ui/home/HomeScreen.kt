@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.R
+import com.jojomango.expensetracker.domain.Budget
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.domain.CategoryNames
 import com.jojomango.expensetracker.domain.Currencies
@@ -212,11 +213,26 @@ private fun HomeContent(
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
                         ) {
                             Text(
                                 Week.groupTitle(group.range.start, state.weekStartDay, today, weekTitleLabels(LocalContext.current)),
                                 style = typography.label,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            // 該週淨額：淨收入用收入色，其他用次要文字色（UI-SPEC §4.3 v2.6）
+                            val net = Budget.netTotal(group.items, wallet.currency)
+                            Text(
+                                net.formatSigned(),
+                                style = typography.label,
+                                color =
+                                    if (net.amount >
+                                        0
+                                    ) {
+                                        LocalAppExtraColors.current.income
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                             )
                         }
                     }
