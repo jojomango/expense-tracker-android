@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expense Tracker</title>
+<meta name="description" content="A private, offline budget tracker for Android. No sign-up, no ads.">
+<link rel="alternate" hreflang="zh-Hant" href="https://jojomango.github.io/expense-tracker-android/">
+<link rel="alternate" hreflang="en" href="https://jojomango.github.io/expense-tracker-android/en/">
+<link rel="icon" href="../assets/icon-192.png">
+<!-- 由 scripts/site/gen.py 產生，請改那支程式，不要直接改這個檔案。沒有任何追蹤或分析程式碼。 -->
+<style>
+  /* 版面：App 自己的色票與圖示；左文右圖的功能列，手機上改成單欄 */
+  :root { --bg:#F2F1EF; --surface:#FFFFFF; --fg:#1C1B1F; --fg2:#5F5C66; --line:#E2DFDA; --accent:#C1502E; --ink:#17171A; --gold:#F6C445; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F0F12; --surface:#1A1A1F; --fg:#ECEBEF; --fg2:#A7A4AE; --line:#2B2A30; --accent:#E2795A; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.75 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Segoe UI",sans-serif; }
+  a { color:var(--accent); }
+  .wrap { max-width:1040px; margin:0 auto; padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
+  header.top { display:flex; justify-content:flex-end; padding-block:18px; font-size:15px; }
+  .hero { display:grid; grid-template-columns:auto 1fr; gap:28px; align-items:center; padding-block:28px 56px; }
+  .hero img { width:120px; height:120px; border-radius:28px; box-shadow:0 10px 30px rgba(23,23,26,.25); }
+  .hero h1 { margin:0; font-size:clamp(34px,6vw,54px); line-height:1.15; letter-spacing:.01em; text-wrap:balance; }
+  .hero .tag { margin:10px 0 4px; font-size:clamp(19px,2.6vw,24px); font-weight:600; text-wrap:balance; }
+  .hero .sub { margin:0; color:var(--fg2); }
+  .soon { display:inline-block; margin-top:18px; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
+  .trust { background:var(--ink); color:#F2F1EF; border-radius:24px; padding:32px clamp(22px,4vw,44px); }
+  .trust h2 { margin:0 0 8px; font-size:24px; color:var(--gold); }
+  .trust p { margin:0; max-width:64ch; color:#D9D6DE; }
+  .feature { display:grid; grid-template-columns:1fr 280px; gap:clamp(24px,5vw,64px); align-items:center; padding-block:52px; border-bottom:1px solid var(--line); }
+  .feature:nth-of-type(even) { grid-template-columns:280px 1fr; }
+  .feature:nth-of-type(even) .text { order:2; }
+  .feature h2 { margin:0 0 10px; font-size:clamp(22px,3vw,28px); line-height:1.3; text-wrap:balance; }
+  .feature p { margin:0; color:var(--fg2); max-width:46ch; }
+  .shot { width:100%; max-width:280px; justify-self:center; border-radius:28px; border:1px solid var(--line); box-shadow:0 12px 30px rgba(23,23,26,.12); background:var(--surface); }
+  footer { display:flex; flex-wrap:wrap; gap:8px 24px; padding-block:40px 56px; color:var(--fg2); font-size:15px; }
+  @media (max-width:720px) {
+    .hero { grid-template-columns:1fr; text-align:left; padding-block:8px 40px; }
+    .hero img { width:88px; height:88px; border-radius:22px; }
+    .feature, .feature:nth-of-type(even) { grid-template-columns:1fr; padding-block:40px; }
+    .feature:nth-of-type(even) .text { order:0; }
+    .shot { max-width:240px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a href="../" hreflang="zh-Hant">繁體中文</a></header>
+  <section class="hero">
+    <img src="../assets/icon-512.png" alt="" width="120" height="120">
+    <div>
+      <h1>Expense Tracker</h1>
+      <p class="tag">Know what’s left to spend this week, the moment you open it.</p>
+      <p class="sub">A private, offline budget tracker for Android. No sign-up, no ads.</p>
+      <span class="soon">Coming soon to Google Play</span>
+    </div>
+  </section>
+  <section class="trust"><h2>Your entries stay on your phone</h2><p>No account, no sign-in, no ads. Every entry is stored only on your own phone and never uploaded anywhere. Settings has an optional “Help improve the app” switch, off by default; even when it’s on, only anonymous usage and crash info is sent, never your entries.</p></section>
+    <section class="feature">
+      <div class="text"><h2>Your weekly budget at a glance</h2><p>The top of the home screen shows what’s left this week, how many days remain and how much you can spend per day. Overspending is clearly marked, and each week shows its net total.</p></div>
+      <img class="shot" src="../assets/screens/en/home.webp" alt="Your weekly budget at a glance" width="540" height="1080" loading="lazy">
+    </section>
+    <section class="feature">
+      <div class="text"><h2>Add an entry in seconds</h2><p>A custom number pad and category icons, with your common categories all in view. Pick today, yesterday or any date, and add a note.</p></div>
+      <img class="shot" src="../assets/screens/en/add.webp" alt="Add an entry in seconds" width="540" height="1080" loading="lazy">
+    </section>
+    <section class="feature">
+      <div class="text"><h2>See where your money goes</h2><p>A donut chart of this week’s or this month’s spending by category, plus an 8-week trend.</p></div>
+      <img class="shot" src="../assets/screens/en/stats.webp" alt="See where your money goes" width="540" height="1080" loading="lazy">
+    </section>
+    <section class="feature">
+      <div class="text"><h2>Multiple wallets and currencies</h2><p>Keep everyday spending, trips and household costs apart. Each wallet has its own currency, and they never get mixed up.</p></div>
+      <img class="shot" src="../assets/screens/en/wallets.webp" alt="Multiple wallets and currencies" width="540" height="1080" loading="lazy">
+    </section>
+    <section class="feature">
+      <div class="text"><h2>Dark mode, two languages</h2><p>Follows your system’s dark mode. Available in English and Traditional Chinese, with TalkBack support.</p></div>
+      <img class="shot" src="../assets/screens/en/dark.webp" alt="Dark mode, two languages" width="540" height="1080" loading="lazy">
+    </section>
+    <section class="feature">
+      <div class="text"><h2>You own your backups</h2><p>Export a backup file with one tap and keep it wherever you like. Import it on a new phone to restore everything; the app reminds you every 7 days.</p></div>
+      <img class="shot" src="../assets/screens/en/settings.webp" alt="You own your backups" width="540" height="1080" loading="lazy">
+    </section>
+  <footer><a href="../privacy-policy-en.html">Privacy policy</a><span>Contact: jojomango99@gmail.com</span><span>© 2026 jojomango</span></footer>
+</div>
+</body>
+</html>
