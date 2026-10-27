@@ -1,0 +1,41 @@
+# 介紹網頁與隱私權政策的發布（GitHub Pages）。
+# 只有手動觸發（Actions → Publish site → Run workflow）才會更新線上網站：
+# 平常 merge 到 main 不會改變網站，等 App 真的上架或改版時再發布（人類 2026-10-23 選定的 B 方案）。
+# repo 的 Settings → Pages → Source 要設成「GitHub Actions」。
+name: Publish site
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      # 只放公開的檔案：docs/store（上架作業筆記）與 docs/design（設計紀錄）不上網站
+      - name: Collect public files
+        run: |
+          mkdir -p _site/en
+          cp docs/index.html docs/privacy-policy.html docs/privacy-policy-en.html _site/
+          cp docs/en/index.html _site/en/
+          cp -R docs/assets _site/assets
+          touch _site/.nojekyll
+          find _site -type f | sort
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
