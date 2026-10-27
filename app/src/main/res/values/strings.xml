@@ -162,4 +162,5 @@
         <item quantity="one">%1$d day left</item>
         <item quantity="other">%1$d days left</item>
     </plurals>
+    <string name="transaction_back_to_keypad">Back to number pad to edit amount</string>
 </resources>

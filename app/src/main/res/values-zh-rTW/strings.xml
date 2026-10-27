@@ -160,4 +160,5 @@
     <plurals name="budget_days_left">
         <item quantity="other">還有 %1$d 天</item>
     </plurals>
+    <string name="transaction_back_to_keypad">回到數字鍵輸入金額</string>
 </resources>

@@ -39,6 +39,16 @@ data class WeeklyTrendPoint(
  * （見 CLAUDE.md 禁令 2，不得呼叫 `Clock.System.now()`）。
  */
 object Budget {
+    /** 首頁週分組小計：收入減支出的淨額（UI-SPEC §4.3 v2.6，T2.5.6～T2.5.8）。 */
+    fun netTotal(
+        transactions: List<Transaction>,
+        currencyCode: String,
+    ): Money =
+        Money.of(
+            transactions.sumOf { if (it.type == TransactionType.INCOME) it.amount else -it.amount },
+            currencyCode,
+        )
+
     /**
      * 本週支出總額，跟 [Wallet.budgetMode] 無關（budgetMode = none 的錢包也能正常
      * 呼叫，見 TESTCASES.md T3.3.2）。只計 [TransactionType.EXPENSE]（D1：不扣收入）。

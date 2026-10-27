@@ -1,7 +1,8 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.jojomango.expensetracker.ui.transaction
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,12 +10,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,6 +27,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
@@ -49,9 +56,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,10 +105,16 @@ fun AddEditTransactionScreen(
             LoadingState(modifier = Modifier.padding(padding))
             return@Scaffold
         }
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+        // imePadding：系統鍵盤出現時整頁縮到鍵盤上方（UX-002，不依賴 adjustResize 的隱含行為）
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding).imePadding()) {
             // UI-SPEC §5 的壓縮順序：基準 360×760dp 的內容區放不下「兩列分類＋56dp 鍵台」時，
             // 鍵高降到 48dp、主鍵上下內距縮小，把高度讓給分類網格（實測 360×760dp 上差約 46dp）。
             val compact = maxHeight < COMPACT_CONTENT_HEIGHT
+            // 系統鍵盤與自製數字鍵台不能同時佔用下半部：編輯備註（鍵盤開著）時收起數字鍵台（UI-SPEC §5、UX-002）。
+            // 用鍵盤是否顯示而不是焦點來判斷：按返回鍵收鍵盤時焦點還在備註欄，數字鍵台也要回來。
+            val editingNote = WindowInsets.isImeVisible
+            val focusManager = LocalFocusManager.current
+            val backToKeypad = stringResource(R.string.transaction_back_to_keypad)
             Column(modifier = Modifier.fillMaxSize()) {
                 // 標題列
                 Row(
@@ -121,9 +138,21 @@ fun AddEditTransactionScreen(
                     Spacer(Modifier.size(48.dp))
                 }
 
-                // 金額區（上下內距 8dp：讓分類網格一次露出兩列，UI-SPEC §5、UX-001）
+                // 金額區（上下內距 8dp：讓分類網格一次露出兩列，UI-SPEC §5、UX-001）。
+                // 編輯備註時整個金額區可點：清除焦點、收起鍵盤，數字鍵台回來（UX-002）
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (editingNote) {
+                                    Modifier
+                                        .clickable(role = Role.Button) { focusManager.clearFocus() }
+                                        .semantics { contentDescription = backToKeypad }
+                                } else {
+                                    Modifier
+                                },
+                            ).padding(vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     state.wallet?.let { wallet ->
@@ -141,7 +170,7 @@ fun AddEditTransactionScreen(
                         }
                     Text(
                         text = viewModel.formattedAmount(),
-                        style = typography.amountInput,
+                        style = if (editingNote) typography.amountInput.copy(fontSize = 40.sp) else typography.amountInput,
                         color = amountColor,
                     )
                 }
@@ -161,11 +190,13 @@ fun AddEditTransactionScreen(
                     onNoteChange = viewModel::onNoteChange,
                 )
 
-                NumericKeypad(
-                    onDigit = viewModel::onDigit,
-                    onBackspace = viewModel::onBackspace,
-                    keyHeight = if (compact) 48.dp else 56.dp,
-                )
+                AnimatedVisibility(visible = !editingNote) {
+                    NumericKeypad(
+                        onDigit = viewModel::onDigit,
+                        onBackspace = viewModel::onBackspace,
+                        keyHeight = if (compact) 48.dp else 56.dp,
+                    )
+                }
 
                 Button(
                     onClick = viewModel::submit,
@@ -266,12 +297,17 @@ private fun DateAndNoteRow(
         DatePill(label = stringResource(R.string.transaction_add_note), selected = showNoteField) { showNoteField = !showNoteField }
     }
     if (showNoteField) {
+        val focusManager = LocalFocusManager.current
         OutlinedTextField(
             value = note,
             onValueChange = onNoteChange,
             placeholder = { Text(stringResource(R.string.transaction_note)) },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            shape = RoundedCornerShape(12.dp),
+            // 「完成」只收鍵盤、不送出這筆（UX-002 人類決定）；備註為空也不自動收合
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).heightIn(min = 56.dp),
         )
     }
     if (showDatePicker) {

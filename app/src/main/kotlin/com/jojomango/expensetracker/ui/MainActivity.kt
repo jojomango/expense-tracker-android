@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -110,6 +111,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // 所有版本都 edge-to-edge（Android 15+ 本來就強制）：記帳頁要靠 WindowInsets 知道系統鍵盤有沒有開（UX-002）
+        enableEdgeToEdge()
         // 只在全新啟動時套用：換語言會重建 Activity，重建時 intent 還帶著同一個參數，
         // 再套用一次就會把使用者剛選的語言蓋回去。
         if (savedInstanceState == null) applyLanguageLaunchArgument()

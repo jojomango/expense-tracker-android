@@ -2,12 +2,12 @@
 
 | 欄位 | 內容 |
 |---|---|
-| 狀態 | 已決定 |
+| 狀態 | 實作中 |
 | 對應截圖 | 06、10、28 |
 | 要改的 UI-SPEC 章節 | §5 記帳頁（第 2、4、5 點） |
 | 取代 | 無 |
 | 合約 PR | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) |
-| 實作 PR | （待開） |
+| 實作 PR | [#32](https://github.com/jojomango/expense-tracker-android/pull/32) |
 
 設計畫布：https://claude.ai/artifact/Tw2d6cpLrfZksTkRW1ndNF 　對應「新｜備註編輯中」。
 決策單原稿：https://claude.ai/artifact/2yPB9HxcjwCV1QwjfTA8CJ
