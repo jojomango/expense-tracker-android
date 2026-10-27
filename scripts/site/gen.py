@@ -50,7 +50,7 @@ CSS = '''
   .feature:nth-of-type(even) .text { order:2; }
   .feature h2 { margin:0 0 10px; font-size:clamp(22px,3vw,28px); line-height:1.3; text-wrap:balance; }
   .feature p { margin:0; color:var(--fg2); max-width:46ch; }
-  .shot { width:100%; max-width:280px; justify-self:center; border-radius:28px; border:1px solid var(--line); box-shadow:0 12px 30px rgba(23,23,26,.12); background:var(--surface); }
+  .shot { width:100%; height:auto; max-width:280px; justify-self:center; border-radius:28px; border:1px solid var(--line); box-shadow:0 12px 30px rgba(23,23,26,.12); background:var(--surface); }
   footer { display:flex; flex-wrap:wrap; gap:8px 24px; padding-block:40px 56px; color:var(--fg2); font-size:15px; }
   @media (max-width:720px) {
     .hero { grid-template-columns:1fr; text-align:left; padding-block:8px 40px; }
