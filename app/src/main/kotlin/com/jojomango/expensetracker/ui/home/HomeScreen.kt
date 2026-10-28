@@ -42,6 +42,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -157,7 +158,7 @@ private fun formatAmount(
 }
 
 @Composable
-private fun HomeContent(
+internal fun HomeContent(
     state: HomeUiState,
     padding: PaddingValues,
     onAddTransaction: () -> Unit,
@@ -240,15 +241,19 @@ private fun HomeContent(
                         Card(shape = RoundedCornerShape(16.dp)) {
                             Column {
                                 group.items.forEachIndexed { index, transaction ->
-                                    TransactionRow(
-                                        transaction = transaction,
-                                        wallet = wallet,
-                                        categoryName = categoryNameOf(state, transaction, rememberCategoryNames()),
-                                        categoryIcon = state.categories.firstOrNull { it.id == transaction.categoryId }?.icon ?: "📦",
-                                        categoryColor = colorOf(transaction.categoryId, state.categories),
-                                        onClick = { onEditTransaction(transaction.id) },
-                                        onDelete = { onDelete(transaction) },
-                                    )
+                                    // 左滑狀態要跟著交易走，不是跟著位置走：沒有 key 時，刪掉一列後
+                                    // 補上來的那筆會繼承「已滑開」的狀態，畫面上只剩垃圾桶背景（空白列）。
+                                    key(transaction.id) {
+                                        TransactionRow(
+                                            transaction = transaction,
+                                            wallet = wallet,
+                                            categoryName = categoryNameOf(state, transaction, rememberCategoryNames()),
+                                            categoryIcon = state.categories.firstOrNull { it.id == transaction.categoryId }?.icon ?: "📦",
+                                            categoryColor = colorOf(transaction.categoryId, state.categories),
+                                            onClick = { onEditTransaction(transaction.id) },
+                                            onDelete = { onDelete(transaction) },
+                                        )
+                                    }
                                     if (index != group.items.lastIndex) {
                                         HorizontalDivider()
                                     }
