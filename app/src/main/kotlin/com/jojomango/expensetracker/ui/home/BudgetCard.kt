@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -68,6 +69,11 @@ fun BudgetCard(
                     modifier = Modifier.fillMaxWidth().height(8.dp),
                     color = if (isOverBudget) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     trackColor = extraColors.track,
+                    // Material3 1.3 起預設在右端畫一個 stop indicator 小點、填色與底色間留空隙；
+                    // UI-SPEC §2.4 只要圓角的單一長條，兩者都關掉
+                    strokeCap = StrokeCap.Round,
+                    gapSize = 0.dp,
+                    drawStopIndicator = {},
                 )
             }
 

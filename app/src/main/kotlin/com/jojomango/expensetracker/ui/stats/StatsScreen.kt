@@ -35,6 +35,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -193,6 +194,11 @@ private fun CategoryLegendRow(slice: CategorySlice) {
             modifier = Modifier.fillMaxWidth().height(4.dp),
             color = color,
             trackColor = extraColors.track,
+            // Material3 1.3 起預設在右端畫一個 stop indicator 小點、填色與底色間留空隙；
+            // UI-SPEC §2.4 只要圓角的單一長條，兩者都關掉
+            strokeCap = StrokeCap.Round,
+            gapSize = 0.dp,
+            drawStopIndicator = {},
         )
     }
 }
