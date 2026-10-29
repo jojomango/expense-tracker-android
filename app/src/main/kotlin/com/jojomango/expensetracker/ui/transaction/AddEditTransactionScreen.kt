@@ -4,7 +4,6 @@ package com.jojomango.expensetracker.ui.transaction
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,22 +21,20 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -47,6 +44,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,14 +53,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,9 +66,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.TransactionType
-import com.jojomango.expensetracker.domain.displayName
 import com.jojomango.expensetracker.ui.common.LoadingState
-import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 import kotlinx.datetime.Clock
@@ -114,11 +108,15 @@ fun AddEditTransactionScreen(
             // 用鍵盤是否顯示而不是焦點來判斷：按返回鍵收鍵盤時焦點還在備註欄，數字鍵台也要回來。
             val editingNote = WindowInsets.isImeVisible
             val focusManager = LocalFocusManager.current
-            val backToKeypad = stringResource(R.string.transaction_back_to_keypad)
+            // 備註聚焦時分類區用單列或摘要列，由鍵盤上方剩下的高度決定（UI-SPEC §5 第 3 點、UX-005）
+            var lastNoteLayout by remember { mutableStateOf(NoteCategoryLayout.ROW) }
+            val noteLayout = noteCategoryLayout(maxHeight, lastNoteLayout)
+            SideEffect { lastNoteLayout = noteLayout }
+            val tight = editingNote && noteLayout == NoteCategoryLayout.SUMMARY
             Column(modifier = Modifier.fillMaxSize()) {
                 // 標題列
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = if (tight) 0.dp else 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -139,55 +137,47 @@ fun AddEditTransactionScreen(
                 }
 
                 // 金額區（上下內距 8dp：讓分類網格一次露出兩列，UI-SPEC §5、UX-001）。
-                // 編輯備註時整個金額區可點：清除焦點、收起鍵盤，數字鍵台回來（UX-002）
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (editingNote) {
-                                    Modifier
-                                        .clickable(role = Role.Button) { focusManager.clearFocus() }
-                                        .semantics { contentDescription = backToKeypad }
-                                } else {
-                                    Modifier
-                                },
-                            ).padding(vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    state.wallet?.let { wallet ->
-                        Text(
-                            "${wallet.name} · ${wallet.currency}",
-                            style = typography.caption,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    val amountColor =
+                // 編輯備註時整個金額區可點：清除焦點、收起鍵盤，數字鍵台回來（UX-002）；
+                // 鍵盤上方空間不足時改成單行，把高度讓給分類摘要列與備註欄（UX-005）
+                AmountArea(
+                    walletLabel = state.wallet?.let { "${it.name} · ${it.currency}" },
+                    amountText = viewModel.formattedAmount(),
+                    amountColor =
                         when {
                             state.amount == 0L -> extraColors.fg3
                             state.type == TransactionType.INCOME -> extraColors.income
                             else -> MaterialTheme.colorScheme.onSurface
-                        }
-                    Text(
-                        text = viewModel.formattedAmount(),
-                        style = if (editingNote) typography.amountInput.copy(fontSize = 40.sp) else typography.amountInput,
-                        color = amountColor,
+                        },
+                    editingNote = editingNote,
+                    singleLine = tight,
+                    onBackToKeypad = { focusManager.clearFocus() },
+                )
+
+                // 分類網格；編輯備註時改單列或摘要列（UX-005），多出來的高度留白，主鍵仍緊接在備註欄下方
+                if (editingNote) {
+                    NoteFocusedCategories(
+                        layout = noteLayout,
+                        categories = state.categoriesForType,
+                        selectedCategoryId = state.selectedCategoryId,
+                        onSelect = viewModel::onSelectCategory,
+                        onShowGrid = { focusManager.clearFocus() },
+                    )
+                    Spacer(Modifier.weight(1f))
+                } else {
+                    CategoryGrid(
+                        categories = state.categoriesForType,
+                        selectedCategoryId = state.selectedCategoryId,
+                        onSelect = viewModel::onSelectCategory,
+                        modifier = Modifier.weight(1f),
                     )
                 }
-
-                // 分類網格
-                CategoryGrid(
-                    categories = state.categoriesForType,
-                    selectedCategoryId = state.selectedCategoryId,
-                    onSelect = viewModel::onSelectCategory,
-                    modifier = Modifier.weight(1f),
-                )
 
                 DateAndNoteRow(
                     date = state.date,
                     note = state.note,
                     onSelectDate = viewModel::onSelectDate,
                     onNoteChange = viewModel::onNoteChange,
+                    compact = tight,
                 )
 
                 AnimatedVisibility(visible = !editingNote) {
@@ -210,6 +200,47 @@ fun AddEditTransactionScreen(
     }
 }
 
+@Composable
+private fun AmountArea(
+    walletLabel: String?,
+    amountText: String,
+    amountColor: Color,
+    editingNote: Boolean,
+    singleLine: Boolean,
+    onBackToKeypad: () -> Unit,
+) {
+    val typography = LocalAppTypography.current
+    val backToKeypad = stringResource(R.string.transaction_back_to_keypad)
+    val modifier =
+        if (editingNote) {
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button, onClick = onBackToKeypad)
+                .semantics { contentDescription = backToKeypad }
+        } else {
+            Modifier.fillMaxWidth()
+        }
+    val walletText: @Composable () -> Unit = {
+        walletLabel?.let { Text(it, style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+    if (singleLine) {
+        Row(modifier = modifier.height(36.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            walletText()
+            Spacer(Modifier.weight(1f))
+            Text(amountText, style = typography.donutTotal, color = amountColor)
+        }
+    } else {
+        Column(modifier = modifier.padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            walletText()
+            Text(
+                text = amountText,
+                style = if (editingNote) typography.amountInput.copy(fontSize = 40.sp) else typography.amountInput,
+                color = amountColor,
+            )
+        }
+    }
+}
+
 /** 低於這個內容高度（扣掉系統列）就用緊湊尺寸；360×760dp 的手機內容區約 710dp。 */
 private val COMPACT_CONTENT_HEIGHT = 740.dp
 
@@ -225,89 +256,48 @@ private fun CategoryGrid(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp),
     ) {
         items(categories, key = { it.id }) { category ->
-            val color = runCatching { Color(android.graphics.Color.parseColor(category.color)) }.getOrDefault(Color.Gray)
-            val selected = category.id == selectedCategoryId
-            Column(
-                modifier =
-                    Modifier
-                        .padding(6.dp)
-                        // selectable：TalkBack 唸得出「已選取」，選中不能只靠外框顏色（UX-001）
-                        .selectable(selected = selected, role = Role.Button) { onSelect(category.id) },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(50.dp)
-                            .background(color.copy(alpha = LocalAppExtraColors.current.categoryTintAlpha), RoundedCornerShape(16.dp))
-                            .then(
-                                if (selected) {
-                                    Modifier.border(2.5.dp, color, RoundedCornerShape(16.dp))
-                                } else {
-                                    Modifier
-                                },
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(category.icon, fontSize = 22.sp)
-                }
-                // 外框是分類色本身，色盲使用者分不出來；選中時名稱加粗（UI-SPEC §5、UX-001）
-                Text(
-                    category.displayName(rememberCategoryNames()),
-                    fontSize = 11.sp,
-                    fontWeight = if (selected) FontWeight.W700 else FontWeight.Normal,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
+            CategoryCell(
+                category = category,
+                selected = category.id == selectedCategoryId,
+                onClick = { onSelect(category.id) },
+                modifier = Modifier.padding(6.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun DateAndNoteRow(
+internal fun DateAndNoteRow(
     date: LocalDate,
     note: String,
     onSelectDate: (LocalDate) -> Unit,
     onNoteChange: (String) -> Unit,
+    today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+    compact: Boolean = false,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     var showNoteField by remember { mutableStateOf(note.isNotEmpty()) }
-    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val yesterday = today.minus(1, DateTimeUnit.DAY)
 
-    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+    Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = if (compact) 4.dp else 8.dp)) {
         DatePill(label = stringResource(R.string.date_today), selected = date == today) { onSelectDate(today) }
         DatePill(label = stringResource(R.string.date_yesterday), selected = date == yesterday) { onSelectDate(yesterday) }
-        DatePill(
-            label =
-                if (date != today &&
-                    date != yesterday
-                ) {
-                    "${date.monthNumber}/${date.dayOfMonth}"
-                } else {
-                    null
-                },
-            selected = date != today && date != yesterday,
-            // 還沒選其他日期時只放日曆圖示：英文四個 pill 在 360dp 放不下一列（人類 2026-10-24 決定，待設計確認）
-            icon = Icons.Filled.CalendarMonth,
-            iconDescription = stringResource(R.string.date_pick),
-        ) { showDatePicker = true }
+        // 只放日曆圖示：英文四個 pill 在 360dp 放不下一列；選了其他日期才在圖示旁顯示 M/D（UI-SPEC §5 第 4 點、UX-004）
+        val otherDate = date != today && date != yesterday
+        CalendarPill(
+            label = if (otherDate) "${date.monthNumber}/${date.dayOfMonth}" else null,
+            onClick = { showDatePicker = true },
+        )
         Spacer(Modifier.weight(1f))
         DatePill(label = stringResource(R.string.transaction_add_note), selected = showNoteField) { showNoteField = !showNoteField }
     }
     if (showNoteField) {
         val focusManager = LocalFocusManager.current
-        OutlinedTextField(
+        NoteField(
             value = note,
             onValueChange = onNoteChange,
-            placeholder = { Text(stringResource(R.string.transaction_note)) },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            // 「完成」只收鍵盤、不送出這筆（UX-002 人類決定）；備註為空也不自動收合
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).heightIn(min = 56.dp),
+            onDone = { focusManager.clearFocus() },
+            height = if (compact) 48.dp else 56.dp,
         )
     }
     if (showDatePicker) {
@@ -337,23 +327,47 @@ private fun LocalDate.atStartOfDayInstant(): Instant =
 
 @Composable
 private fun DatePill(
-    label: String?,
+    label: String,
     selected: Boolean,
-    icon: ImageVector? = null,
-    iconDescription: String? = null,
     onClick: () -> Unit,
 ) {
     FilterChip(
         selected = selected,
         onClick = onClick,
+        label = { Text(label) },
+        modifier = Modifier.padding(end = 6.dp).heightIn(min = 48.dp),
+    )
+}
+
+/** 日曆 pill：未選其他日期時是 48×48dp 的方形圖示；選了之後顯示 M/D 並把它當成狀態唸出來（UX-004）。 */
+@Composable
+private fun CalendarPill(
+    label: String?,
+    onClick: () -> Unit,
+) {
+    val description = stringResource(R.string.date_pick)
+    FilterChip(
+        selected = label != null,
+        onClick = onClick,
         label = {
             if (label != null) {
                 Text(label)
-            } else if (icon != null) {
-                Icon(icon, contentDescription = iconDescription, modifier = Modifier.size(20.dp))
+            } else {
+                Icon(Icons.Filled.CalendarMonth, contentDescription = description, modifier = Modifier.size(20.dp))
             }
         },
-        modifier = Modifier.padding(end = 6.dp).heightIn(min = 48.dp),
+        leadingIcon =
+            if (label != null) {
+                { Icon(Icons.Filled.CalendarMonth, contentDescription = description, modifier = Modifier.size(18.dp)) }
+            } else {
+                null
+            },
+        modifier =
+            Modifier
+                .padding(end = 6.dp)
+                .heightIn(min = 48.dp)
+                .widthIn(min = 48.dp)
+                .semantics { if (label != null) stateDescription = label },
     )
 }
 

@@ -161,4 +161,7 @@
         <item quantity="other">還有 %1$d 天</item>
     </plurals>
     <string name="transaction_back_to_keypad">回到數字鍵輸入金額</string>
+    <string name="transaction_category_change">更換</string>
+    <string name="transaction_category_choose">選擇分類</string>
+    <string name="transaction_category_change_desc">更換分類，目前是%1$s</string>
 </resources>
