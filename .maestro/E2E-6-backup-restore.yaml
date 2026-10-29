@@ -15,7 +15,10 @@ appId: com.jojomango.expensetracker
     # 固定以繁中執行，不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）
     arguments:
       language: zh-TW
-- assertVisible: "建立你的第一個錢包"
+# clearState 後冷啟動偶爾超過 assertVisible 的預設等待（失敗截圖是整片空白），等久一點
+- extendedWaitUntil:
+    visible: "建立你的第一個錢包"
+    timeout: 20000
 - tapOn: "錢包名稱"
 - inputText: "日常"
 - tapOn: "幣別（ISO 4217，如 TWD）"
@@ -112,7 +115,10 @@ appId: com.jojomango.expensetracker
     # 固定以繁中執行，不受 emulator 系統語言影響（TESTCASES.md E2E-14 末段）
     arguments:
       language: zh-TW
-- assertVisible: "建立你的第一個錢包"
+# clearState 後冷啟動偶爾超過 assertVisible 的預設等待（失敗截圖是整片空白），等久一點
+- extendedWaitUntil:
+    visible: "建立你的第一個錢包"
+    timeout: 20000
 
 # When 開啟 app 並匯入該備份檔（replace 模式）
 # 全新裝置還沒有錢包，從引導頁直接進入還原，不用先建一個用不到的錢包
@@ -120,6 +126,10 @@ appId: com.jojomango.expensetracker
 - scrollUntilVisible:
     element: "取代（清空現有資料）"
 - tapOn: "取代（清空現有資料）"
+# 確認欄位是選了「取代」才出現的，可能剛好落在畫面最底被導覽列擋住而點不到，再捲一次
+- scrollUntilVisible:
+    element: "輸入「確認取代」以確認清空現有資料"
+    centerElement: true
 - tapOn: "輸入「確認取代」以確認清空現有資料"
 - inputText: "確認取代"
 # 收鍵盤這一步不能送任何按鍵：
