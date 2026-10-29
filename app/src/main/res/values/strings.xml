@@ -175,4 +175,7 @@
         <item>Sun</item>
     </string-array>
     <bool name="day_title_weekday_first">true</bool>
+    <string name="transaction_category_change">Change</string>
+    <string name="transaction_category_choose">Choose category</string>
+    <string name="transaction_category_change_desc">Change category, currently %1$s</string>
 </resources>

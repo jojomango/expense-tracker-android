@@ -173,4 +173,7 @@
         <item>週日</item>
     </string-array>
     <bool name="day_title_weekday_first">false</bool>
+    <string name="transaction_category_change">更換</string>
+    <string name="transaction_category_choose">選擇分類</string>
+    <string name="transaction_category_change_desc">更換分類，目前是%1$s</string>
 </resources>

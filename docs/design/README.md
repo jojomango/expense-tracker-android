@@ -5,20 +5,25 @@
 
 ## 總表
 
-下一個新決策的編號：**UX-004**（每新增一份就把這行加 1）
+下一個新決策的編號：**UX-008**（每新增一份就把這行加 1）
 
 | 編號 | 主題 | 對應截圖 | 狀態 | 合約 PR | 實作 PR | 更新日期 |
 |---|---|---|---|---|---|---|
 | [UX-001](decisions/UX-001-add-category-grid.md) | 記帳頁分類網格一次露出兩列 | 04、05、06、10、28 | 已完成 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | [#30](https://github.com/jojomango/expense-tracker-android/pull/30) | 2026-10-27 |
 | [UX-002](decisions/UX-002-add-note-keyboard.md) | 編輯備註時數字鍵收起 | 06、10、28 | 已完成 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | [#32](https://github.com/jojomango/expense-tracker-android/pull/32) | 2026-10-27 |
 | [UX-003](decisions/UX-003-category-display-order.md) | 分類顯示順序照預設順序 | 04、05、19、28 | 已完成 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | [#30](https://github.com/jojomango/expense-tracker-android/pull/30) | 2026-10-27 |
+| [UX-004](decisions/UX-004-add-date-icon.md) | 「選日期」改為日曆圖示 | 04、05、06、10、27、28 | 已決定 | | | 2026-10-28 |
+| [UX-005](decisions/UX-005-add-note-category-row.md) | 備註聚焦時分類單列／矮手機摘要列 | 06、10、28 | 已決定 | | | 2026-10-28 |
+| [UX-006](decisions/UX-006-home-list-day-groups.md) | 首頁日小標題、預算卡隨列表捲走、年份分隔、底部留白 | 08、09、24、25、27 | 已決定 | | | 2026-10-28 |
+| [UX-007](decisions/UX-007-row-delete-talkback.md) | 交易列 TalkBack 刪除動作 | 08、09 | 已決定 | | | 2026-10-28 |
 
 **待設計討論**（實作時人類先決定、要在下一次設計討論確認的項目）
 
 | 來源 | 內容 | 日期 |
 |---|---|---|
-| UX-002 實作 | 備註欄展開時分類網格只剩約一列半（符合決策的退回規則，但矮手機上更明顯）；請看看要不要調整 | 2026-10-27 |
-| UX-001 實作 | 記帳頁「選日期」pill 改成只放日曆圖示（英文四個 pill 在 360dp 放不下一列）；請確認圖示與互動是否 OK，或提出其他做法 | 2026-10-24 |
+| UX-005（#39） | 360×700 摘要列下方約 50dp 空白：先照實作上線，人類實測後決定是否調整 | 2026-10-29 |
+| UX-005（#39） | 640dp 高、備註展開但鍵盤未開時分類網格被擠到不可見（UX-001 既有行為）：pending，實測後決定 | 2026-10-29 |
+| UX-005（#39） | 摘要列以 clearAndSetSemantics 合成一句給 TalkBack：人類實測後看是否需調整 | 2026-10-29 |
 
 **狀態的意思**
 
@@ -54,6 +59,7 @@
   - 介面規格：[`UI-SPEC.md`](../../UI-SPEC.md)；產品規格：[`SPEC.md`](../../SPEC.md)；實作限制：[`CLAUDE.md`](../../CLAUDE.md)
   - 最新畫面：操作導覽截圖 https://claude.ai/artifact/6e96D2c3jSTuhAkssNMQxX （每張截圖有編號，討論時用編號指畫面；只有被分享的人打得開）
   - 決策單格式：[`TEMPLATE.md`](TEMPLATE.md)
+  - 設計畫布（UX-004～007 的模擬圖）：https://claude.ai/artifact/Tw2d6cpLrfZksTkRW1ndNF
 
 ## 給設計討論用的 prompt
 
