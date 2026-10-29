@@ -12,10 +12,10 @@
 | [UX-001](decisions/UX-001-add-category-grid.md) | 記帳頁分類網格一次露出兩列 | 04、05、06、10、28 | 已完成 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | [#30](https://github.com/jojomango/expense-tracker-android/pull/30) | 2026-10-27 |
 | [UX-002](decisions/UX-002-add-note-keyboard.md) | 編輯備註時數字鍵收起 | 06、10、28 | 已完成 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | [#32](https://github.com/jojomango/expense-tracker-android/pull/32) | 2026-10-27 |
 | [UX-003](decisions/UX-003-category-display-order.md) | 分類顯示順序照預設順序 | 04、05、19、28 | 已完成 | [#29](https://github.com/jojomango/expense-tracker-android/pull/29) | [#30](https://github.com/jojomango/expense-tracker-android/pull/30) | 2026-10-27 |
-| [UX-004](decisions/UX-004-add-date-icon.md) | 「選日期」改為日曆圖示 | 04、05、06、10、27、28 | 已決定 | | | 2026-10-28 |
-| [UX-005](decisions/UX-005-add-note-category-row.md) | 備註聚焦時分類單列／矮手機摘要列 | 06、10、28 | 已決定 | | | 2026-10-28 |
-| [UX-006](decisions/UX-006-home-list-day-groups.md) | 首頁日小標題、預算卡隨列表捲走、年份分隔、底部留白 | 08、09、24、25、27 | 已決定 | | | 2026-10-28 |
-| [UX-007](decisions/UX-007-row-delete-talkback.md) | 交易列 TalkBack 刪除動作 | 08、09 | 已決定 | | | 2026-10-28 |
+| [UX-004](decisions/UX-004-add-date-icon.md) | 「選日期」改為日曆圖示 | 04、05、06、10、27、28 | 實作中（已 merge，待重拍截圖） | [#37](https://github.com/jojomango/expense-tracker-android/pull/37) | [#39](https://github.com/jojomango/expense-tracker-android/pull/39) | 2026-10-29 |
+| [UX-005](decisions/UX-005-add-note-category-row.md) | 備註聚焦時分類單列／矮手機摘要列 | 06、10、28 | 實作中（已 merge，待重拍截圖） | [#37](https://github.com/jojomango/expense-tracker-android/pull/37) | [#39](https://github.com/jojomango/expense-tracker-android/pull/39) | 2026-10-29 |
+| [UX-006](decisions/UX-006-home-list-day-groups.md) | 首頁日小標題、預算卡隨列表捲走、年份分隔、底部留白 | 08、09、24、25、27 | 實作中（已 merge，待重拍截圖） | [#37](https://github.com/jojomango/expense-tracker-android/pull/37) | [#40](https://github.com/jojomango/expense-tracker-android/pull/40) | 2026-10-29 |
+| [UX-007](decisions/UX-007-row-delete-talkback.md) | 交易列 TalkBack 刪除動作 | 08、09 | 實作中（已 merge，待重拍截圖） | [#37](https://github.com/jojomango/expense-tracker-android/pull/37) | [#40](https://github.com/jojomango/expense-tracker-android/pull/40) | 2026-10-29 |
 
 **待設計討論**（實作時人類先決定、要在下一次設計討論確認的項目）
 
