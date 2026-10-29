@@ -161,4 +161,16 @@
         <item quantity="other">還有 %1$d 天</item>
     </plurals>
     <string name="transaction_back_to_keypad">回到數字鍵輸入金額</string>
+    <string name="home_day_header_desc">%1$s，淨額 %2$s</string>
+    <string name="home_year_separator_desc">%1$d 年</string>
+    <string-array name="weekday_short">
+        <item>週一</item>
+        <item>週二</item>
+        <item>週三</item>
+        <item>週四</item>
+        <item>週五</item>
+        <item>週六</item>
+        <item>週日</item>
+    </string-array>
+    <bool name="day_title_weekday_first">false</bool>
 </resources>
