@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.CategoryNames
+import com.jojomango.expensetracker.domain.DayTitleLabels
 import com.jojomango.expensetracker.domain.DefaultCategoryKey
 import com.jojomango.expensetracker.domain.WeekTitleLabels
 
@@ -43,6 +44,15 @@ fun rememberCategoryNames(): CategoryNames {
     val configuration = LocalConfiguration.current
     return remember(context, configuration) { ResourceCategoryNames(context) }
 }
+
+/** 首頁日小標題的文字（UI-SPEC §4.3 v2.7）。星期順序跟 [kotlinx.datetime.DayOfWeek] 一樣從週一開始。 */
+fun dayTitleLabels(context: Context) =
+    DayTitleLabels(
+        today = context.getString(R.string.date_today),
+        yesterday = context.getString(R.string.date_yesterday),
+        weekdays = context.resources.getStringArray(R.array.weekday_short).toList(),
+        weekdayFirst = context.resources.getBoolean(R.bool.day_title_weekday_first),
+    )
 
 fun weekTitleLabels(context: Context) =
     WeekTitleLabels(

@@ -163,6 +163,18 @@
         <item quantity="other">%1$d days left</item>
     </plurals>
     <string name="transaction_back_to_keypad">Back to number pad to edit amount</string>
+    <string name="home_day_header_desc">%1$s, net %2$s</string>
+    <string name="home_year_separator_desc">%1$d</string>
+    <string-array name="weekday_short">
+        <item>Mon</item>
+        <item>Tue</item>
+        <item>Wed</item>
+        <item>Thu</item>
+        <item>Fri</item>
+        <item>Sat</item>
+        <item>Sun</item>
+    </string-array>
+    <bool name="day_title_weekday_first">true</bool>
     <string name="transaction_category_change">Change</string>
     <string name="transaction_category_choose">Choose category</string>
     <string name="transaction_category_change_desc">Change category, currently %1$s</string>
