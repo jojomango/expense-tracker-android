@@ -167,6 +167,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.compose.ui.test.junit4)
 }
 
 ksp {
