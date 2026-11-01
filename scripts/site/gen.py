@@ -8,11 +8,11 @@ T = {
    trust_h='你的記帳資料只在你的手機上', trust_p='沒有帳號、不用登入、沒有廣告。每一筆收支都只存在你自己的手機裡，不會上傳到任何地方。設定頁有一個預設關閉的「協助改善 App」，打開後也只會傳送匿名的使用情形與當機資訊，不含任何記帳內容。',
    features=[
     ('home','每週預算，一眼看懂','首頁最上方就是本週還能花多少、還剩幾天、平均每天能花多少。超支時清楚標示，每一週的收支淨額也列在週標題旁。'),
+    ('wallets','多錢包、多幣別','日常、旅行、家庭分開記。每個錢包有自己的幣別，日圓就是日圓、新台幣就是新台幣，彼此不混在一起。'),
     ('add','幾秒記好一筆','自製數字鍵盤加上分類圖示，常用分類一次就看得到。可以選今天、昨天或任何日期，加上備註。'),
     ('stats','看懂錢花去哪','圓環圖顯示本週或本月各分類的支出比例，再用長條圖看近 8 週的趨勢。'),
-    ('wallets','多錢包、多幣別','日常、旅行、家庭分開記。每個錢包有自己的幣別，日圓就是日圓、新台幣就是新台幣，彼此不混在一起。'),
-    ('dark','深色模式與中英文','跟著系統切換深色模式；介面支援繁體中文與英文，也支援 TalkBack 螢幕閱讀器。'),
     ('settings','備份由你掌握','一鍵匯出備份檔，存到你想要的地方；換手機時匯入就能完整還原，App 每個月底提醒你備份。'),
+    ('dark','深色模式與中英文','跟著系統切換深色模式；介面支援繁體中文與英文，也支援 TalkBack 螢幕閱讀器。'),
    ]),
  'en': dict(lang='en', title='Expense Tracker', name='Expense Tracker', other_href='../', other='繁體中文', base='../',
    tagline='Know what’s left to spend this week, the moment you open it.', sub='A private, offline budget tracker for Android. No sign-up, no ads.',
@@ -20,11 +20,11 @@ T = {
    trust_h='Your entries stay on your phone', trust_p='No account, no sign-in, no ads. Every entry is stored only on your own phone and never uploaded anywhere. Settings has an optional “Help improve the app” switch, off by default; even when it’s on, only anonymous usage and crash info is sent, never your entries.',
    features=[
     ('home','Your weekly budget at a glance','The top of the home screen shows what’s left this week, how many days remain and how much you can spend per day. Overspending is clearly marked, and each week shows its net total.'),
+    ('wallets','Multiple wallets and currencies','Keep everyday spending, trips and household costs apart. Each wallet has its own currency, and they never get mixed up.'),
     ('add','Add an entry in seconds','A custom number pad and category icons, with your common categories all in view. Pick today, yesterday or any date, and add a note.'),
     ('stats','See where your money goes','A donut chart of this week’s or this month’s spending by category, plus an 8-week trend.'),
-    ('wallets','Multiple wallets and currencies','Keep everyday spending, trips and household costs apart. Each wallet has its own currency, and they never get mixed up.'),
-    ('dark','Dark mode, two languages','Follows your system’s dark mode. Available in English and Traditional Chinese, with TalkBack support.'),
     ('settings','You own your backups','Export a backup file with one tap and keep it wherever you like. Import it on a new phone to restore everything; the app reminds you at the end of each month.'),
+    ('dark','Dark mode, two languages','Follows your system’s dark mode. Available in English and Traditional Chinese, with TalkBack support.'),
    ]),
 }
 CSS = '''
