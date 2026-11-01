@@ -1,11 +1,16 @@
 package com.jojomango.expensetracker.domain
 
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import kotlin.time.Duration.Companion.days
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 
-/** SPEC.md §3.6「每 7 天提醒一次備份」。 */
-val BACKUP_REMINDER_INTERVAL = 7.days
+/** SPEC.md §3.6：開始使用滿這個天數，才會在月底提醒備份。 */
+const val BACKUP_REMINDER_MIN_DAYS = 30
 
 /**
  * 備份提醒需要的時間點。這是**這台裝置**的狀態，不是使用者資料——不進 Room、也不進
@@ -22,29 +27,47 @@ data class BackupReminderState(
 )
 
 /**
- * 距離上次備份（沒備份過就是第一次啟動）是否已滿 7 天。邏輯逐條對應網頁版
- * `shouldRemindBackup`：兩個時間點都沒有就不提醒，那代表還沒走過首次啟動流程，
- * 不該提醒使用者備份不存在的資料。設定頁的提醒 banner 用這個判斷。
+ * 今天或今天之前最近的一個月底。提醒時機以它為準，而不是「今天是不是月底」：
+ * WorkManager 不保證月底當天執行得到，關機或系統延後時要能補發。
+ */
+private fun latestMonthEnd(today: LocalDate): LocalDate {
+    val monthStart = LocalDate(today.year, today.month, 1)
+    val monthEnd = monthStart.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+    return if (today == monthEnd) today else monthStart.minus(1, DateTimeUnit.DAY)
+}
+
+private fun Instant.localDate(timeZone: TimeZone): LocalDate = toLocalDateTime(timeZone).date
+
+/**
+ * SPEC.md §3.6：最近月底距首次啟動滿 30 天，而且該月開始之後還沒備份過。
+ * [BackupReminderState.firstLaunchAt] 是 `null` 代表還沒走過首次啟動流程，不該提醒使用者
+ * 備份不存在的資料。設定頁的提示用這個判斷，所以它會一直顯示到使用者備份為止。
  */
 fun isBackupDue(
     state: BackupReminderState,
     now: Instant,
+    timeZone: TimeZone,
 ): Boolean {
-    val baseline = state.lastBackupAt ?: state.firstLaunchAt ?: return false
-    return now - baseline >= BACKUP_REMINDER_INTERVAL
+    val firstLaunch = state.firstLaunchAt?.localDate(timeZone) ?: return false
+    val monthEnd = latestMonthEnd(now.localDate(timeZone))
+    val monthStart = LocalDate(monthEnd.year, monthEnd.month, 1)
+    val usedLongEnough = firstLaunch.plus(BACKUP_REMINDER_MIN_DAYS, DateTimeUnit.DAY) <= monthEnd
+    val backedUp = state.lastBackupAt?.localDate(timeZone)?.let { it >= monthStart } ?: false
+    return usedLongEnough && !backedUp
 }
 
 /**
  * 要不要發系統通知。跟 [isBackupDue] 的差別是多一層節流：WorkManager 每天檢查一次，
- * 使用者一直不備份的話，只看 [isBackupDue] 會變成滿 7 天後天天跳通知，不符合
- * 「每 7 天提醒一次」。網頁版沒有這個問題，因為它的提醒是頁內 banner。
+ * 只看 [isBackupDue] 的話，使用者不備份就會天天跳通知；同一個月底最多發一次。
  */
 fun shouldSendBackupReminder(
     state: BackupReminderState,
     now: Instant,
+    timeZone: TimeZone,
 ): Boolean {
-    val lastReminded = state.lastRemindedAt
-    return isBackupDue(state, now) && (lastReminded == null || now - lastReminded >= BACKUP_REMINDER_INTERVAL)
+    val lastReminded = state.lastRemindedAt?.localDate(timeZone)
+    val alreadyReminded = lastReminded != null && lastReminded >= latestMonthEnd(now.localDate(timeZone))
+    return isBackupDue(state, now, timeZone) && !alreadyReminded
 }
 
 /** SPEC.md §3.6 的備份檔名 `expense-backup-YYYYMMDD-HHmm.json`，用裝置的本地時間。 */

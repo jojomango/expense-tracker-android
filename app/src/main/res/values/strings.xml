@@ -50,7 +50,7 @@
     <string name="donation_large">🎉 Big support</string>
     <string name="donation_thanks">Thank you for your support!</string>
     <string name="donation_unavailable">Can’t connect to Google Play right now. Please try again later.</string>
-    <string name="settings_notifications_off">Backup reminders are off. Turn them on to get a reminder every 7 days.</string>
+    <string name="settings_notifications_off">Backup reminders are off. Turn them on to get a reminder at the end of each month.</string>
     <string name="settings_notifications_enable">Turn on</string>
     <string name="settings_never_backed_up">Never backed up</string>
     <string name="settings_last_backup">Last backup: %1$s</string>
@@ -98,9 +98,9 @@
     <string name="wallet_deleted_message">Deleted %1$s</string>
     <string name="category_default_cannot_delete">Built-in categories can’t be deleted</string>
     <string name="notification_channel_name">Backup reminders</string>
-    <string name="notification_channel_description">Reminds you to export a backup every 7 days</string>
+    <string name="notification_channel_description">Reminds you to export a backup at the end of each month</string>
     <string name="notification_backup_title">Time to back up</string>
-    <string name="notification_backup_text">It’s been more than 7 days since your last backup. Export one so you don’t lose your data.</string>
+    <string name="notification_backup_text">It’s been a while since your last backup. Export one so you don’t lose your data.</string>
     <string name="wallet_switcher_title">Switch wallet</string>
     <string name="wallet_switcher_current">Current wallet</string>
     <string name="wallet_switcher_manage">Manage wallets…</string>

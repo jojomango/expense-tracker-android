@@ -67,7 +67,7 @@ class SettingsViewModel
         val isBackupDue: StateFlow<Boolean> =
             backupReminderRepository
                 .observe()
-                .map { isBackupDue(it, Clock.System.now()) }
+                .map { isBackupDue(it, Clock.System.now(), TimeZone.currentSystemDefault()) }
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         val lastBackupAt: StateFlow<Instant?> =

@@ -35,7 +35,7 @@ Your own categories
 Common categories like Food, Transport and Housing are built in, and you can add your own with custom icons and colors.
 
 You own your backups
-Export a backup file with one tap and save it wherever you like (for example, your cloud drive). Import it on a new phone to restore everything. The app reminds you to back up every 7 days.
+Export a backup file with one tap and save it wherever you like (for example, your cloud drive). Import it on a new phone to restore everything. The app reminds you to back up at the end of each month.
 
 The details matter
 Dark mode, a configurable first day of the week, TalkBack screen reader support, and both English and Traditional Chinese.

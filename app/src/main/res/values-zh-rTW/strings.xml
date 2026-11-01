@@ -50,7 +50,7 @@
     <string name="donation_large">🎉 大力支持</string>
     <string name="donation_thanks">謝謝你的支持！</string>
     <string name="donation_unavailable">目前無法連線到 Google Play，請稍後再試</string>
-    <string name="settings_notifications_off">備份提醒通知目前是關閉的，開啟後每 7 天會提醒你備份一次。</string>
+    <string name="settings_notifications_off">備份提醒通知目前是關閉的，開啟後每個月底會提醒你備份。</string>
     <string name="settings_notifications_enable">開啟通知</string>
     <string name="settings_never_backed_up">尚未備份過</string>
     <string name="settings_last_backup">上次備份：%1$s</string>
@@ -98,9 +98,9 @@
     <string name="wallet_deleted_message">已刪除 %1$s</string>
     <string name="category_default_cannot_delete">系統預設分類無法刪除</string>
     <string name="notification_channel_name">備份提醒</string>
-    <string name="notification_channel_description">每 7 天提醒你匯出一次備份</string>
+    <string name="notification_channel_description">每個月底提醒你匯出備份</string>
     <string name="notification_backup_title">該備份資料了</string>
-    <string name="notification_backup_text">距離上次備份已經超過 7 天，建議匯出備份以免資料遺失。</string>
+    <string name="notification_backup_text">你已經一段時間沒有備份資料了，建議匯出備份以免資料遺失。</string>
     <string name="wallet_switcher_title">切換錢包</string>
     <string name="wallet_switcher_current">目前錢包</string>
     <string name="wallet_switcher_manage">管理錢包…</string>
