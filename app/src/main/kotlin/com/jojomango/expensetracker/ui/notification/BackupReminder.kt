@@ -26,6 +26,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
 import java.util.concurrent.TimeUnit
 
 private const val CHANNEL_ID = "backup_reminder"
@@ -36,11 +37,11 @@ private const val WORK_NAME = "backup_reminder"
 const val EXTRA_OPEN_SETTINGS = "com.jojomango.expensetracker.OPEN_SETTINGS"
 
 /**
- * SPEC.md §3.6：「每 7 天提醒一次備份，用 WorkManager 排程本地通知，不是推播」。
+ * SPEC.md §3.6：每個月月底提醒備份，用 WorkManager 排程本地通知，不是推播。
  *
- * 每天檢查一次，而不是直接排一個 7 天週期的 work：使用者一匯出，計時就要從那一刻重新
- * 起算，固定 7 天週期做不到這件事。「到底要不要發」完全交給 domain 的
- * [shouldSendBackupReminder]（有單元測試），這裡只負責讀狀態、發通知、記錄發過了。
+ * 每天檢查一次，而不是排在月底當天：WorkManager 不保證準時，月底沒跑到要能補發。
+ * 「到底要不要發」完全交給 domain 的 [shouldSendBackupReminder]（有單元測試），
+ * 這裡只負責讀狀態、發通知、記錄發過了。
  */
 object BackupReminderScheduler {
     fun schedule(context: Context) {
@@ -77,8 +78,8 @@ class BackupReminderWorker(
                 .backupReminderRepository()
         val now = Clock.System.now()
         // 通知發不出去（使用者關掉了通知）就不記錄「提醒過了」——等使用者之後打開通知，
-        // 下一次檢查就會馬上提醒，而不是再等 7 天。
-        if (shouldSendBackupReminder(repository.get(), now) && showNotification(applicationContext)) {
+        // 下一次檢查就會馬上提醒，而不是等到下個月底。
+        if (shouldSendBackupReminder(repository.get(), now, TimeZone.currentSystemDefault()) && showNotification(applicationContext)) {
             repository.recordReminder(now)
         }
         return Result.success()
