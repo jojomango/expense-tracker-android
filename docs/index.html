@@ -24,7 +24,9 @@
   .hero h1 { margin:0; font-size:clamp(34px,6vw,54px); line-height:1.15; letter-spacing:.01em; text-wrap:balance; }
   .hero .tag { margin:10px 0 4px; font-size:clamp(19px,2.6vw,24px); font-weight:600; text-wrap:balance; }
   .hero .sub { margin:0; color:var(--fg2); }
-  .soon { display:inline-block; margin-top:18px; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
+  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .join { padding:8px 16px; border-radius:999px; background:var(--accent); color:var(--bg); font-size:15px; font-weight:600; text-decoration:none; }
+  .soon { display:inline-block; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
   .trust { background:var(--ink); color:#F2F1EF; border-radius:24px; padding:32px clamp(22px,4vw,44px); }
   .trust h2 { margin:0 0 8px; font-size:24px; color:var(--gold); }
   .trust p { margin:0; max-width:64ch; color:#D9D6DE; }
@@ -53,7 +55,7 @@
       <h1>記帳本</h1>
       <p class="tag">打開就知道這週還能花多少。</p>
       <p class="sub">純本地、免登入、沒有廣告的 Android 記帳 App。</p>
-      <span class="soon">即將在 Google Play 推出</span>
+      <div class="cta"><a class="join" href="https://groups.google.com/g/expensetrackeradr">加入封閉測試</a><span class="soon">即將在 Google Play 推出</span></div>
     </div>
   </section>
   <section class="trust"><h2>你的記帳資料只在你的手機上</h2><p>沒有帳號、不用登入、沒有廣告。每一筆收支都只存在你自己的手機裡，不會上傳到任何地方。設定頁有一個預設關閉的「協助改善 App」，打開後也只會傳送匿名的使用情形與當機資訊，不含任何記帳內容。</p></section>

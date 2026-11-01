@@ -24,7 +24,9 @@
   .hero h1 { margin:0; font-size:clamp(34px,6vw,54px); line-height:1.15; letter-spacing:.01em; text-wrap:balance; }
   .hero .tag { margin:10px 0 4px; font-size:clamp(19px,2.6vw,24px); font-weight:600; text-wrap:balance; }
   .hero .sub { margin:0; color:var(--fg2); }
-  .soon { display:inline-block; margin-top:18px; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
+  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .join { padding:8px 16px; border-radius:999px; background:var(--accent); color:var(--bg); font-size:15px; font-weight:600; text-decoration:none; }
+  .soon { display:inline-block; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
   .trust { background:var(--ink); color:#F2F1EF; border-radius:24px; padding:32px clamp(22px,4vw,44px); }
   .trust h2 { margin:0 0 8px; font-size:24px; color:var(--gold); }
   .trust p { margin:0; max-width:64ch; color:#D9D6DE; }
@@ -53,7 +55,7 @@
       <h1>Expense Tracker</h1>
       <p class="tag">Know what’s left to spend this week, the moment you open it.</p>
       <p class="sub">A private, offline budget tracker for Android. No sign-up, no ads.</p>
-      <span class="soon">Coming soon to Google Play</span>
+      <div class="cta"><a class="join" href="https://groups.google.com/g/expensetrackeradr">Join the closed test</a><span class="soon">Coming soon to Google Play</span></div>
     </div>
   </section>
   <section class="trust"><h2>Your entries stay on your phone</h2><p>No account, no sign-in, no ads. Every entry is stored only on your own phone and never uploaded anywhere. Settings has an optional “Help improve the app” switch, off by default; even when it’s on, only anonymous usage and crash info is sent, never your entries.</p></section>
