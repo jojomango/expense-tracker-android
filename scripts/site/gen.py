@@ -4,7 +4,7 @@ repo = sys.argv[1]
 T = {
  'zh': dict(lang='zh-Hant-TW', title='記帳本', name='記帳本', other_href='en/', other='English', base='',
    tagline='打開就知道這週還能花多少。', sub='純本地、免登入、沒有廣告的 Android 記帳 App。',
-   soon='即將在 Google Play 推出', privacy_href='privacy-policy.html', privacy='隱私權政策', contact='聯絡：',
+   soon='即將在 Google Play 推出', join='加入封閉測試', privacy_href='privacy-policy.html', privacy='隱私權政策', contact='聯絡：',
    trust_h='你的記帳資料只在你的手機上', trust_p='沒有帳號、不用登入、沒有廣告。每一筆收支都只存在你自己的手機裡，不會上傳到任何地方。設定頁有一個預設關閉的「協助改善 App」，打開後也只會傳送匿名的使用情形與當機資訊，不含任何記帳內容。',
    features=[
     ('home','每週預算，一眼看懂','首頁最上方就是本週還能花多少、還剩幾天、平均每天能花多少。超支時清楚標示，每一週的收支淨額也列在週標題旁。'),
@@ -16,7 +16,7 @@ T = {
    ]),
  'en': dict(lang='en', title='Expense Tracker', name='Expense Tracker', other_href='../', other='繁體中文', base='../',
    tagline='Know what’s left to spend this week, the moment you open it.', sub='A private, offline budget tracker for Android. No sign-up, no ads.',
-   soon='Coming soon to Google Play', privacy_href='../privacy-policy-en.html', privacy='Privacy policy', contact='Contact: ',
+   soon='Coming soon to Google Play', join='Join the closed test', privacy_href='../privacy-policy-en.html', privacy='Privacy policy', contact='Contact: ',
    trust_h='Your entries stay on your phone', trust_p='No account, no sign-in, no ads. Every entry is stored only on your own phone and never uploaded anywhere. Settings has an optional “Help improve the app” switch, off by default; even when it’s on, only anonymous usage and crash info is sent, never your entries.',
    features=[
     ('home','Your weekly budget at a glance','The top of the home screen shows what’s left this week, how many days remain and how much you can spend per day. Overspending is clearly marked, and each week shows its net total.'),
@@ -41,7 +41,9 @@ CSS = '''
   .hero h1 { margin:0; font-size:clamp(34px,6vw,54px); line-height:1.15; letter-spacing:.01em; text-wrap:balance; }
   .hero .tag { margin:10px 0 4px; font-size:clamp(19px,2.6vw,24px); font-weight:600; text-wrap:balance; }
   .hero .sub { margin:0; color:var(--fg2); }
-  .soon { display:inline-block; margin-top:18px; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
+  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .join { padding:8px 16px; border-radius:999px; background:var(--accent); color:var(--bg); font-size:15px; font-weight:600; text-decoration:none; }
+  .soon { display:inline-block; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
   .trust { background:var(--ink); color:#F2F1EF; border-radius:24px; padding:32px clamp(22px,4vw,44px); }
   .trust h2 { margin:0 0 8px; font-size:24px; color:var(--gold); }
   .trust p { margin:0; max-width:64ch; color:#D9D6DE; }
@@ -89,7 +91,7 @@ for code, t in T.items():
       <h1>{t['name']}</h1>
       <p class="tag">{t['tagline']}</p>
       <p class="sub">{t['sub']}</p>
-      <span class="soon">{t['soon']}</span>
+      <div class="cta"><a class="join" href="https://groups.google.com/g/expensetrackeradr">{t['join']}</a><span class="soon">{t['soon']}</span></div>
     </div>
   </section>
   <section class="trust"><h2>{t['trust_h']}</h2><p>{t['trust_p']}</p></section>
