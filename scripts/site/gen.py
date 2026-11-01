@@ -76,7 +76,8 @@ for code, t in T.items():
 <link rel="alternate" hreflang="zh-Hant" href="https://jojomango.github.io/expense-tracker-android/">
 <link rel="alternate" hreflang="en" href="https://jojomango.github.io/expense-tracker-android/en/">
 <link rel="icon" href="{b}assets/icon-192.png">
-<!-- 由 scripts/site/gen.py 產生，請改那支程式，不要直接改這個檔案。沒有任何追蹤或分析程式碼。 -->
+<!-- 由 scripts/site/gen.py 產生，請改那支程式，不要直接改這個檔案。 -->
+<script data-goatcounter="https://jojomango99.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 <style>{CSS}</style>
 </head>
 <body>
