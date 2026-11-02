@@ -130,4 +130,52 @@ class BackupReminderTest {
             backupFileName(LocalDateTime(2026, 12, 31, 23, 59)),
         )
     }
+
+    private fun auto(
+        first: String = "2026-01-01",
+        backup: String? = null,
+        reminded: String? = null,
+    ) = BackupReminderState(day(first), backup?.let(::day), reminded?.let(::day), autoBackupEnabled = true)
+
+    @Test
+    @DisplayName("T4.5.1 — 自動關閉時不執行")
+    fun `T4 5 1`() {
+        assertFalse(shouldAttemptAutoBackup(auto().copy(autoBackupEnabled = false), 1, day("2026-10-31"), taipei))
+    }
+
+    @Test
+    @DisplayName("T4.5.2 — 自動開啟且月底到期時執行")
+    fun `T4 5 2`() {
+        assertTrue(shouldAttemptAutoBackup(auto(), 1, day("2026-10-31"), taipei))
+    }
+
+    @Test
+    @DisplayName("T4.5.3 — 沒有交易時不覆蓋既有備份")
+    fun `T4 5 3`() {
+        assertFalse(shouldAttemptAutoBackup(auto(), 0, day("2026-10-31"), taipei))
+    }
+
+    @Test
+    @DisplayName("T4.5.4 — 未滿 30 天不執行")
+    fun `T4 5 4`() {
+        assertFalse(shouldAttemptAutoBackup(auto(first = "2026-10-02"), 1, day("2026-10-31"), taipei))
+    }
+
+    @Test
+    @DisplayName("T4.5.5 — 當月已備份不執行")
+    fun `T4 5 5`() {
+        assertFalse(shouldAttemptAutoBackup(auto(backup = "2026-10-01"), 1, day("2026-10-31"), taipei))
+    }
+
+    @Test
+    @DisplayName("T4.5.6 — 月底沒跑到時補做")
+    fun `T4 5 6`() {
+        assertTrue(shouldAttemptAutoBackup(auto(backup = "2026-09-30"), 1, day("2026-11-02"), taipei))
+    }
+
+    @Test
+    @DisplayName("T4.5.7 — 通知節流不影響重試")
+    fun `T4 5 7`() {
+        assertTrue(shouldAttemptAutoBackup(auto(reminded = "2026-10-31"), 1, day("2026-10-31"), taipei))
+    }
 }

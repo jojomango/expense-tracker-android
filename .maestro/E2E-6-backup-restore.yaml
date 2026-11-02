@@ -92,20 +92,28 @@ appId: com.jojomango.expensetracker
 
 # When 在設定中點擊「匯出備份」
 - tapOn: "設定"
+- scrollUntilVisible:
+    element: "匯出備份"
+    centerElement: true
 - tapOn: "匯出備份"
 
 # Then 透過 Storage Access Framework 選擇存放位置後成功寫出一個 JSON 檔
-# 挑選器帶入的預設檔名要符合 SPEC.md §3.6 的 expense-backup-YYYYMMDD-HHmm.json
+# 挑選器帶入的預設檔名要符合 SPEC.md §3.6 v2.9 的 expense-backup.json
 - assertVisible:
     id: "android:id/title"
-    text: "expense-backup-\\d{8}-\\d{4}\\.json"
-# 記下這次實際匯出的檔名，匯入時才能精準點到這一個——Downloads 裡可能還留著之前
-# 跑測試時匯出的舊備份檔，內容的日期不同，點錯的話餘額驗證會失敗。
-- copyTextFrom:
-    id: "android:id/title"
+    text: "expense-backup\\.json"
 - tapOn:
     id: "android:id/button1"
-- assertVisible: "已匯出 expense-backup-.*"
+- assertVisible: "已匯出 expense-backup.*"
+
+# 再按一次匯出：App 記住了這個檔案，要先詢問，並更新同一個檔案（SPEC.md §3.6 v2.9）
+- scrollUntilVisible:
+    element: "匯出備份"
+    centerElement: true
+- tapOn: "匯出備份"
+- assertVisible: "要更新上次的備份嗎？"
+- tapOn: "更新備份"
+- assertVisible: "已匯出 expense-backup.*"
 
 # Given 清除 app 資料（模擬換裝置）
 - clearState
@@ -144,7 +152,11 @@ appId: com.jojomango.expensetracker
 - scrollUntilVisible:
     element: "選擇備份檔並匯入"
 - tapOn: "選擇備份檔並匯入"
-- tapOn: "${maestro.copiedText}"
+# 同名檔案已存在時系統會改名成「expense-backup (1).json」。Downloads 依修改時間排序，
+# 第一個就是這次匯出的檔案；點到舊檔的話，下面的餘額驗證會失敗。
+- tapOn:
+    text: "expense-backup.*\\.json"
+    index: 0
 - assertVisible: "匯入完成"
 
 # Then 週起始日等設定一併還原

@@ -96,4 +96,27 @@ interface BackupReminderRepository {
     suspend fun recordBackup(now: Instant)
 
     suspend fun recordReminder(now: Instant)
+
+    suspend fun setAutoBackupEnabled(enabled: Boolean)
+
+    suspend fun setBackupFileLocation(location: String?)
+}
+
+enum class BackupWriteResult { SUCCESS, MISSING, FAILED }
+
+/** 使用者選的備份檔。`location` 對 domain 來說只是不透明的字串，實作才知道它是什麼。 */
+interface BackupFileStore {
+    suspend fun write(
+        location: String,
+        content: String,
+    ): BackupWriteResult
+
+    suspend fun exists(location: String): Boolean
+
+    suspend fun displayName(location: String): String?
+
+    /** 回傳 `false` 代表這個位置不支援長期存取，App 下次就寫不進去。 */
+    suspend fun keep(location: String): Boolean
+
+    suspend fun release(location: String)
 }

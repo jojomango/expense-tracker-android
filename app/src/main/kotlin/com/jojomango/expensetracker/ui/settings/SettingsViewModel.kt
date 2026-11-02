@@ -2,7 +2,6 @@ package com.jojomango.expensetracker.ui.settings
 
 import android.content.Context
 import android.net.Uri
-import android.provider.OpenableColumns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jojomango.expensetracker.R
@@ -15,9 +14,7 @@ import com.jojomango.expensetracker.domain.ImportMode
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.SettingsRepository
 import com.jojomango.expensetracker.domain.Theme
-import com.jojomango.expensetracker.domain.backupFileName
 import com.jojomango.expensetracker.domain.decodeBackup
-import com.jojomango.expensetracker.domain.encodeBackup
 import com.jojomango.expensetracker.domain.isBackupDue
 import com.jojomango.expensetracker.ui.analytics.AnalyticsEvent
 import com.jojomango.expensetracker.ui.analytics.AnalyticsTracker
@@ -40,7 +37,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import java.io.IOException
 import javax.inject.Inject
 
@@ -107,8 +103,6 @@ class SettingsViewModel
             backupState.update { it.copy(confirmText = text) }
         }
 
-        fun suggestedBackupFileName(): String = backupFileName(Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()))
-
         /**
          * 打開檔案挑選器之前先檢查。取代模式要先輸入確認字——在選檔**之前**擋下來，
          * 不然使用者選完檔案才被告知要回頭輸入，還得重選一次。
@@ -123,27 +117,6 @@ class SettingsViewModel
                 return false
             }
             return true
-        }
-
-        fun exportTo(uri: Uri) {
-            runExclusive {
-                val written =
-                    runCatching {
-                        val json = encodeBackup(backupRepository.export())
-                        withContext(Dispatchers.IO) {
-                            val stream = context.contentResolver.openOutputStream(uri, "wt") ?: throw IOException("Cannot open file")
-                            stream.use { it.write(json.toByteArray(Charsets.UTF_8)) }
-                        }
-                    }
-                if (written.isSuccess) {
-                    // 只有真的寫成功才算備份過——寫到一半失敗不能重設提醒的計時。
-                    backupReminderRepository.recordBackup(Clock.System.now())
-                    analyticsTracker.track(AnalyticsEvent.BackupExported)
-                    messageFlow.emit(UiMessage(R.string.settings_export_done, listOf(displayNameOf(uri) ?: suggestedBackupFileName())))
-                } else {
-                    messageFlow.emit(UiMessage(R.string.settings_export_failed))
-                }
-            }
         }
 
         // 例外本身的 message 是 domain 層給開發者看的英文，不是給使用者看的；這裡刻意
@@ -192,11 +165,4 @@ class SettingsViewModel
                 }
             }
         }
-
-        private fun displayNameOf(uri: Uri): String? =
-            runCatching {
-                context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getString(0) else null
-                }
-            }.getOrNull()
     }

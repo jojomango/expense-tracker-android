@@ -63,10 +63,20 @@ class PreferencesBackupReminderRepository
                         firstLaunchAt = prefs.readInstant(KEY_FIRST_LAUNCH_AT),
                         lastBackupAt = prefs.readInstant(KEY_LAST_BACKUP_AT),
                         lastRemindedAt = prefs.readInstant(KEY_LAST_REMINDED_AT),
+                        autoBackupEnabled = prefs.getBoolean(KEY_AUTO_BACKUP_ENABLED, false),
+                        backupFileLocation = prefs.getString(KEY_BACKUP_FILE_LOCATION, null),
                     )
                 state.compareAndSet(null, loaded)
                 state.value ?: loaded
             }
+
+        override suspend fun setAutoBackupEnabled(enabled: Boolean) {
+            update { it.copy(autoBackupEnabled = enabled) }
+        }
+
+        override suspend fun setBackupFileLocation(location: String?) {
+            update { it.copy(backupFileLocation = location) }
+        }
 
         private suspend fun update(transform: (BackupReminderState) -> BackupReminderState) {
             writeLock.withLock {
@@ -76,20 +86,12 @@ class PreferencesBackupReminderRepository
                         writeInstant(KEY_FIRST_LAUNCH_AT, next.firstLaunchAt)
                         writeInstant(KEY_LAST_BACKUP_AT, next.lastBackupAt)
                         writeInstant(KEY_LAST_REMINDED_AT, next.lastRemindedAt)
+                        putBoolean(KEY_AUTO_BACKUP_ENABLED, next.autoBackupEnabled)
+                        putString(KEY_BACKUP_FILE_LOCATION, next.backupFileLocation)
                     }
                 }
                 state.value = next
             }
-        }
-
-        private fun SharedPreferences.readInstant(key: String): Instant? =
-            if (contains(key)) Instant.fromEpochMilliseconds(getLong(key, 0L)) else null
-
-        private fun SharedPreferences.Editor.writeInstant(
-            key: String,
-            value: Instant?,
-        ) {
-            if (value == null) remove(key) else putLong(key, value.toEpochMilliseconds())
         }
 
         private companion object {
@@ -97,5 +99,17 @@ class PreferencesBackupReminderRepository
             const val KEY_FIRST_LAUNCH_AT = "first_launch_at"
             const val KEY_LAST_BACKUP_AT = "last_backup_at"
             const val KEY_LAST_REMINDED_AT = "last_reminded_at"
+            const val KEY_AUTO_BACKUP_ENABLED = "auto_backup_enabled"
+            const val KEY_BACKUP_FILE_LOCATION = "backup_file_location"
         }
     }
+
+private fun SharedPreferences.readInstant(key: String): Instant? =
+    if (contains(key)) Instant.fromEpochMilliseconds(getLong(key, 0L)) else null
+
+private fun SharedPreferences.Editor.writeInstant(
+    key: String,
+    value: Instant?,
+) {
+    if (value == null) remove(key) else putLong(key, value.toEpochMilliseconds())
+}
