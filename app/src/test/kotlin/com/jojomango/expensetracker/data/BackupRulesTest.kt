@@ -77,4 +77,15 @@ class BackupRulesTest {
         assertFalse(all.any { it.domain == "database" && it.path.startsWith("expense-tracker.db") })
         assertFalse(all.any { it.domain == "database" && it.path == "." }, "整個 database domain 被排除了")
     }
+
+    @Test
+    @DisplayName("T4.6.12 — 自動備份開關與記住的檔案所在的 SharedPreferences 被排除")
+    fun `T4 6 12`() {
+        val source = File("src/main/kotlin/com/jojomango/expensetracker/data/PreferencesBackupReminderRepository.kt").readText()
+        assertTrue(source.contains("""PREFS_NAME = "backup_reminder""""))
+        assertTrue(source.contains("KEY_AUTO_BACKUP_ENABLED") && source.contains("KEY_BACKUP_FILE_LOCATION"))
+        val rule = Rule("sharedpref", "backup_reminder.xml")
+        assertTrue(rule in excludesIn("data_extraction_rules.xml", "cloud-backup"))
+        assertTrue(rule in excludesIn("backup_rules.xml", null))
+    }
 }

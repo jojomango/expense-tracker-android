@@ -19,11 +19,15 @@ const val BACKUP_REMINDER_MIN_DAYS = 30
  * @property firstLaunchAt 這台裝置第一次啟動 app 的時間；`null` 代表還沒記錄過。
  * @property lastBackupAt 最近一次**成功**匯出備份的時間；`null` 代表從未備份過。
  * @property lastRemindedAt 最近一次真的發出備份通知的時間，只用來節流通知。
+ * @property autoBackupEnabled 使用者是否開啟每月自動備份，預設關閉。
+ * @property backupFileLocation App 記住的備份檔位置；`null` 代表還沒有。
  */
 data class BackupReminderState(
     val firstLaunchAt: Instant?,
     val lastBackupAt: Instant?,
     val lastRemindedAt: Instant? = null,
+    val autoBackupEnabled: Boolean = false,
+    val backupFileLocation: String? = null,
 )
 
 /**
@@ -70,7 +74,21 @@ fun shouldSendBackupReminder(
     return isBackupDue(state, now, timeZone) && !alreadyReminded
 }
 
-/** SPEC.md §3.6 的備份檔名 `expense-backup-YYYYMMDD-HHmm.json`，用裝置的本地時間。 */
+/**
+ * SPEC.md §3.6 v2.9：要不要在這次檢查時自動更新備份檔。不看 `lastRemindedAt`：
+ * 通知節流只管通知，失敗後隔天還是要重試。沒有交易時不覆蓋，避免重灌後蓋掉好的備份。
+ */
+fun shouldAttemptAutoBackup(
+    state: BackupReminderState,
+    transactionCount: Int,
+    now: Instant,
+    timeZone: TimeZone,
+): Boolean = state.autoBackupEnabled && transactionCount > 0 && isBackupDue(state, now, timeZone)
+
+/** SPEC.md §3.6 v2.9：App 記住並持續更新的備份檔，預設用這個固定檔名。 */
+const val BACKUP_FILE_NAME = "expense-backup.json"
+
+/** SPEC.md §3.6 「另存新檔」的檔名 `expense-backup-YYYYMMDD-HHmm.json`，用裝置的本地時間。 */
 fun backupFileName(localDateTime: LocalDateTime): String {
     fun Int.pad2() = toString().padStart(2, '0')
     val date = "${localDateTime.year}${localDateTime.monthNumber.pad2()}${localDateTime.dayOfMonth.pad2()}"

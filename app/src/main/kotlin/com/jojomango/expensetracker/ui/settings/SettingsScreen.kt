@@ -100,6 +100,7 @@ fun SettingsScreen(
     onManageCategories: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
     supportViewModel: PrivacyAndSupportViewModel = hiltViewModel(),
+    backupExportViewModel: BackupExportViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -108,6 +109,9 @@ fun SettingsScreen(
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { snackbarHostState.showSnackbar(it.resolve(context)) }
+    }
+    LaunchedEffect(Unit) {
+        backupExportViewModel.messages.collect { snackbarHostState.showSnackbar(it.resolve(context)) }
     }
     LaunchedEffect(Unit) {
         supportViewModel.donationMessages.collect { snackbarHostState.showSnackbar(context.getString(it.stringRes)) }
@@ -168,7 +172,7 @@ fun SettingsScreen(
 
             PrivacySection(supportViewModel)
 
-            BackupSection(viewModel)
+            BackupSection(viewModel, backupExportViewModel)
 
             DonationSection(supportViewModel)
         }
@@ -235,20 +239,21 @@ private fun PrivacySection(viewModel: PrivacyAndSupportViewModel) {
 }
 
 @Composable
-private fun BackupSection(viewModel: SettingsViewModel) {
+private fun BackupSection(
+    viewModel: SettingsViewModel,
+    exportViewModel: BackupExportViewModel,
+) {
     val backup by viewModel.backup.collectAsState()
+    val export by exportViewModel.state.collectAsState()
+    val autoBackupEnabled by exportViewModel.autoBackupEnabled.collectAsState()
+    val backupFileName by exportViewModel.backupFileName.collectAsState()
+    val isWorking = backup.isWorking || export.isWorking
     val isBackupDue by viewModel.isBackupDue.collectAsState()
     val lastBackupAt by viewModel.lastBackupAt.collectAsState()
     val typography = LocalAppTypography.current
     val confirmPhrase = stringResource(R.string.settings_replace_confirm_phrase)
 
-    // SPEC.md §3.6：用 Storage Access Framework 讓使用者自己選存放位置（例如 Google Drive
-    // 同步的資料夾）。使用者在挑選器按取消時 uri 是 null，什麼都不做——那是使用者的決定，
-    // 不是錯誤，也不該被當成「已經備份過」。
-    val exportLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
-            if (uri != null) viewModel.exportTo(uri)
-        }
+    BackupExportEffects(exportViewModel)
     val importLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) viewModel.importFrom(uri)
@@ -274,10 +279,16 @@ private fun BackupSection(viewModel: SettingsViewModel) {
         style = typography.caption,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    AutoBackupRow(
+        enabled = autoBackupEnabled,
+        fileName = backupFileName,
+        onEnabledChange = exportViewModel::setAutoBackupEnabled,
+        onChangeFile = exportViewModel::changeBackupFile,
+    )
     Spacer(Modifier.height(8.dp))
     Button(
-        onClick = { exportLauncher.launch(viewModel.suggestedBackupFileName()) },
-        enabled = !backup.isWorking,
+        onClick = exportViewModel::onExportClicked,
+        enabled = !isWorking,
         modifier = Modifier.fillMaxWidth(),
     ) { Text(stringResource(R.string.settings_export)) }
 
@@ -337,11 +348,11 @@ private fun BackupSection(viewModel: SettingsViewModel) {
                 importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
             }
         },
-        enabled = !backup.isWorking,
+        enabled = !isWorking,
         modifier = Modifier.fillMaxWidth(),
     ) { Text(stringResource(R.string.settings_import_choose_file)) }
 
-    if (backup.isWorking) {
+    if (isWorking) {
         LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
     }
 
@@ -449,7 +460,7 @@ private fun NotificationRow() {
 }
 
 @Composable
-private fun lastBackupText(lastBackupAt: Instant?): String {
+internal fun lastBackupText(lastBackupAt: Instant?): String {
     if (lastBackupAt == null) return stringResource(R.string.settings_never_backed_up)
     val t = lastBackupAt.toLocalDateTime(TimeZone.currentSystemDefault())
     val minute = t.minute.toString().padStart(2, '0')

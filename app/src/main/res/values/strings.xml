@@ -178,4 +178,15 @@
     <string name="transaction_category_change">Change</string>
     <string name="transaction_category_choose">Choose category</string>
     <string name="transaction_category_change_desc">Change category, currently %1$s</string>
+    <string name="settings_auto_backup_title">Back up automatically each month</string>
+    <string name="settings_auto_backup_description">Updates the backup file you choose at the end of each month.</string>
+    <string name="settings_auto_backup_file">Backup file: %1$s</string>
+    <string name="settings_auto_backup_change_file">Change backup file</string>
+    <string name="settings_backup_update_title">Update your last backup?</string>
+    <string name="settings_backup_update_file">File: %1$s</string>
+    <string name="settings_backup_update_note">This replaces the file with your current data.</string>
+    <string name="settings_backup_update_confirm">Update backup</string>
+    <string name="settings_backup_update_save_new">Save as new file</string>
+    <string name="settings_backup_file_missing">Can’t find your last backup file. Please choose a location again.</string>
+    <string name="notification_auto_backup_failed">Automatic backup didn’t finish. Open the app and choose your backup file again.</string>
 </resources>

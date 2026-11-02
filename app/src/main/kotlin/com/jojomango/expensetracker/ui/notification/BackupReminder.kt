@@ -17,8 +17,10 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.jojomango.expensetracker.R
+import com.jojomango.expensetracker.data.BackupCheck
+import com.jojomango.expensetracker.domain.BackupFileStore
 import com.jojomango.expensetracker.domain.BackupReminderRepository
-import com.jojomango.expensetracker.domain.shouldSendBackupReminder
+import com.jojomango.expensetracker.domain.BackupRepository
 import com.jojomango.expensetracker.ui.MainActivity
 import com.jojomango.expensetracker.ui.i18n.AppLocale
 import dagger.hilt.EntryPoint
@@ -40,8 +42,7 @@ const val EXTRA_OPEN_SETTINGS = "com.jojomango.expensetracker.OPEN_SETTINGS"
  * SPEC.md §3.6：每個月月底提醒備份，用 WorkManager 排程本地通知，不是推播。
  *
  * 每天檢查一次，而不是排在月底當天：WorkManager 不保證準時，月底沒跑到要能補發。
- * 「到底要不要發」完全交給 domain 的 [shouldSendBackupReminder]（有單元測試），
- * 這裡只負責讀狀態、發通知、記錄發過了。
+ * 「要不要備份、要不要發」完全交給 [BackupCheck]（有單元測試），這裡只負責發通知。
  */
 object BackupReminderScheduler {
     fun schedule(context: Context) {
@@ -65,6 +66,10 @@ object BackupReminderScheduler {
 @InstallIn(SingletonComponent::class)
 interface BackupReminderEntryPoint {
     fun backupReminderRepository(): BackupReminderRepository
+
+    fun backupRepository(): BackupRepository
+
+    fun backupFileStore(): BackupFileStore
 }
 
 class BackupReminderWorker(
@@ -72,21 +77,20 @@ class BackupReminderWorker(
     params: WorkerParameters,
 ) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
-        val repository =
-            EntryPointAccessors
-                .fromApplication(applicationContext, BackupReminderEntryPoint::class.java)
-                .backupReminderRepository()
-        val now = Clock.System.now()
-        // 通知發不出去（使用者關掉了通知）就不記錄「提醒過了」——等使用者之後打開通知，
-        // 下一次檢查就會馬上提醒，而不是等到下個月底。
-        if (shouldSendBackupReminder(repository.get(), now, TimeZone.currentSystemDefault()) && showNotification(applicationContext)) {
-            repository.recordReminder(now)
-        }
+        val entryPoint = EntryPointAccessors.fromApplication(applicationContext, BackupReminderEntryPoint::class.java)
+        BackupCheck(entryPoint.backupReminderRepository(), entryPoint.backupRepository(), entryPoint.backupFileStore())
+            .run(Clock.System.now(), TimeZone.currentSystemDefault()) { autoBackupFailed ->
+                showNotification(applicationContext, autoBackupFailed)
+            }
+        // 自動備份失敗也回成功：這是每日週期工作，明天本來就會再試一次。
         return Result.success()
     }
 }
 
-private fun showNotification(context: Context): Boolean {
+private fun showNotification(
+    context: Context,
+    autoBackupFailed: Boolean,
+): Boolean {
     val hasPermission =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -106,13 +110,14 @@ private fun showNotification(context: Context): Boolean {
         )
     // 通知不在 Activity 裡，Context 沒有套用 App 語言，要自己包一次（SPEC.md §3.9）。
     val localized = AppLocale.wrap(context)
+    val text = localized.getString(if (autoBackupFailed) R.string.notification_auto_backup_failed else R.string.notification_backup_text)
     val notification =
         NotificationCompat
             .Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_backup)
             .setContentTitle(localized.getString(R.string.notification_backup_title))
-            .setContentText(localized.getString(R.string.notification_backup_text))
-            .setStyle(NotificationCompat.BigTextStyle().bigText(localized.getString(R.string.notification_backup_text)))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
