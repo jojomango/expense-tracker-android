@@ -452,3 +452,37 @@ fun dailyAllowance(
 - 點選後立即套用，畫面停在設定頁（允許整頁重新繪製、捲動位置回到頂端）
 - 英文介面沿用同一套字級與版面；英文字串比繁中長時，按鈕與標籤可以換行，**不得截斷**（不用 `…`）
 
+---
+
+## §13 備份檔與自動備份（v2.9）
+
+對應 `SPEC.md` §3.6，放在「備份與還原」區塊。由上而下：月底提示（既有）→ 上次備份時間（既有）→
+**自動備份** → 「匯出備份」按鈕（既有）→ 匯入（既有）。
+
+### §13.1 自動備份列
+
+- 一列 `ListItem`：標題「每月自動備份」／「Back up automatically each month」（`rowTitle`），
+  右側 Material 3 `Switch`，預設關閉；整列可點，TalkBack 唸成一個開關
+- 副標（`caption`，fg2）：
+  - 沒有記住的檔案：「每月底自動更新你選的備份檔。」／「Updates the backup file you choose at the end of each month.」
+  - 有記住的檔案：「備份檔：{檔名}」／「Backup file: {name}」
+- 開啟中才顯示 `TextButton`「更換備份檔」／「Change backup file」：開檔案選擇器，成功後改記這個檔案
+
+### §13.2 更新確認對話框
+
+Material 3 `AlertDialog`：
+
+- 標題：「要更新上次的備份嗎？」／「Update your last backup?」
+- 內文：「上次備份：{日期}\n檔案：{檔名}\n這次會用目前的資料取代這個檔案。」／
+  「Last backup: {date}\nFile: {name}\nThis replaces the file with your current data.」
+- 按鈕三個，由強到弱：「更新備份」／「Update backup」、「另存新檔」／「Save as new file」、
+  「取消」／「Cancel」
+- SAF 拿不到完整路徑，檔案位置**只顯示檔名**；取不到檔名就省略「檔案」這一行
+
+### §13.3 提示文字
+
+- 找不到記住的檔案（`Snackbar`）：「找不到上次的備份檔，請重新選擇位置。」／
+  「Can’t find your last backup file. Please choose a location again.」
+- 自動備份失敗（通知）：標題沿用提醒標題，內文「自動備份沒有完成，請打開 App 重新選擇備份檔。」／
+  「Automatic backup didn’t finish. Open the app and choose your backup file again.」
+
