@@ -20,6 +20,7 @@ class DaySectionsTest {
         walletId = "w",
         type = type,
         amount = amount,
+        currency = "TWD",
         categoryId = null,
         date = date,
         note = null,

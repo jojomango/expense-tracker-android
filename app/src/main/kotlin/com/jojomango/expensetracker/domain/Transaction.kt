@@ -7,7 +7,7 @@ import kotlinx.datetime.LocalDate
 enum class TransactionType { EXPENSE, INCOME }
 
 /**
- * SPEC.md §3.2 交易。幣別隱含由 [walletId] 對應的 [Wallet] 決定，不獨立儲存。
+ * SPEC.md §3.2 交易。（v2.12）每筆交易自己存 [currency]，可以跟錢包的預設幣別不同；金額的小數位數依它決定。
  * [date] 只含曆日（[LocalDate]），不含時間／時區——記帳本不需要時分秒。
  */
 data class Transaction(
@@ -15,6 +15,7 @@ data class Transaction(
     val walletId: String,
     val type: TransactionType,
     val amount: Long,
+    val currency: String,
     val categoryId: String?,
     val date: LocalDate,
     val note: String? = null,

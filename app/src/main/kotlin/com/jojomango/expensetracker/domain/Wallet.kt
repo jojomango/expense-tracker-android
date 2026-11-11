@@ -7,8 +7,8 @@ package com.jojomango.expensetracker.domain
 enum class BudgetMode { NONE, WEEKLY, TOTAL }
 
 /**
- * SPEC.md §3.1 錢包。`currency` 建立後不可修改——這條規則在 UI/Repository 層
- * 執行（不提供「修改幣別」的操作），型別本身不需要額外表達不可變性。
+ * SPEC.md §3.1 錢包。`currency` 是**預設幣別**（v2.12）：預算以它計算，可以修改；
+ * 已記錄的交易各自保留自己的幣別，不會跟著改。
  */
 data class Wallet(
     val id: String,

@@ -52,6 +52,7 @@ class HomeListTest {
         walletId = wallet.id,
         type = TransactionType.EXPENSE,
         amount = 33000,
+        currency = wallet.currency,
         categoryId = null,
         date = date,
         note = note,

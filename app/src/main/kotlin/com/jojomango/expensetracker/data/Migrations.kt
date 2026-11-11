@@ -58,5 +58,17 @@ internal object Migrations {
             }
         }
 
-    val all: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+    /**
+     * v3 → v4（SPEC.md §3.6 v2.12）：transactions 新增 `currency`，補為所屬錢包的幣別（T4.1.10）。
+     * 先給空字串當 NOT NULL 的預設值，再一次 UPDATE；交易一定有錢包（外鍵 CASCADE），不會留下空字串。
+     */
+    val MIGRATION_3_4 =
+        object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transactions ADD COLUMN currency TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE transactions SET currency = (SELECT currency FROM wallets WHERE wallets.id = transactions.walletId)")
+            }
+        }
+
+    val all: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
 }

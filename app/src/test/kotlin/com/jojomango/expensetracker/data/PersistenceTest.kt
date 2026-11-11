@@ -63,6 +63,7 @@ class PersistenceTest {
         walletId = walletId,
         type = TransactionType.EXPENSE,
         amount = 10000,
+        currency = "TWD",
         categoryId = categoryId,
         date = LocalDate(2026, 8, 12),
         createdAt = fixedInstant,

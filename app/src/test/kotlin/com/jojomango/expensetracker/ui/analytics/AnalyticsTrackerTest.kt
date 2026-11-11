@@ -41,6 +41,7 @@ class AnalyticsTrackerTest {
             walletId = "w-日常",
             type = TransactionType.EXPENSE,
             amount = 12345,
+            currency = "JPY",
             categoryId = "c-咖啡",
             date = LocalDate(2026, 8, 12),
             note = "祕密",

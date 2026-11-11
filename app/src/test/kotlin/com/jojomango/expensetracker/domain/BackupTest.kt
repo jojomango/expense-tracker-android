@@ -17,7 +17,7 @@ class BackupTest {
             wallets = listOf(BackupWallet("w1", "日常", "TWD", "NONE", null, false)),
             transactions =
                 listOf(
-                    BackupTransaction("t1", "w1", "EXPENSE", 100, "c1", "2026-08-12", null, 0, 0),
+                    BackupTransaction("t1", "w1", "EXPENSE", 100, "c1", "2026-08-12", null, 0, 0, currency = "TWD"),
                 ),
             categories = listOf(BackupCategory("c1", "飲食", "EXPENSE", "🍜", "#C1502E", isDefault = true)),
             settings = BackupSettings(1, "SYSTEM", null),

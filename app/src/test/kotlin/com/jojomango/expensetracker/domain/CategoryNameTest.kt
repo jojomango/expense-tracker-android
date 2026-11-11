@@ -90,6 +90,7 @@ class CategoryNameTest {
         walletId = "w",
         type = TransactionType.EXPENSE,
         amount = amount,
+        currency = "TWD",
         categoryId = categoryId,
         date = kotlinx.datetime.LocalDate(2026, 10, 1),
         note = null,

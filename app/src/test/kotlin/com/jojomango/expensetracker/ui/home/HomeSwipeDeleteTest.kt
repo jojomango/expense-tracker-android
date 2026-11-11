@@ -41,6 +41,7 @@ class HomeSwipeDeleteTest {
         walletId = wallet.id,
         type = TransactionType.EXPENSE,
         amount = 100,
+        currency = wallet.currency,
         categoryId = null,
         date = LocalDate(2026, 10, 27),
         note = note,

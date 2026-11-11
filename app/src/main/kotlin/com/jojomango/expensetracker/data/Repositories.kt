@@ -24,6 +24,7 @@ import com.jojomango.expensetracker.domain.WalletRepository
 import com.jojomango.expensetracker.domain.assertCanDeleteCategory
 import com.jojomango.expensetracker.domain.assertCanDeleteWallet
 import com.jojomango.expensetracker.domain.assertCanRemoveActiveWallet
+import com.jojomango.expensetracker.domain.fillLegacyCurrencies
 import com.jojomango.expensetracker.domain.legacySortOrders
 import com.jojomango.expensetracker.domain.mergeTransactionsById
 import com.jojomango.expensetracker.domain.validateBackup
@@ -152,6 +153,7 @@ class RoomBackupRepository
             mode: ImportMode,
         ) {
             validateBackup(payload)
+            val filled = fillLegacyCurrencies(payload)
             db.withTransaction {
                 when (mode) {
                     ImportMode.REPLACE -> {
@@ -159,21 +161,21 @@ class RoomBackupRepository
                         db.categoryDao().deleteAll()
                         db.walletDao().deleteAll()
 
-                        db.walletDao().upsertAll(payload.wallets.map { it.toEntity() })
-                        db.categoryDao().upsertAll(payload.categories.toEntities())
-                        db.transactionDao().upsertAll(payload.transactions.map { it.toEntity() })
-                        db.settingsDao().upsert(payload.settings.toEntity())
+                        db.walletDao().upsertAll(filled.wallets.map { it.toEntity() })
+                        db.categoryDao().upsertAll(filled.categories.toEntities())
+                        db.transactionDao().upsertAll(filled.transactions.map { it.toEntity() })
+                        db.settingsDao().upsert(filled.settings.toEntity())
                     }
                     ImportMode.MERGE -> {
                         // 錢包／分類沒有 updatedAt 可比較，merge 時匯入端直接覆蓋同 id 的既有資料。
-                        db.walletDao().upsertAll(payload.wallets.map { it.toEntity() })
-                        db.categoryDao().upsertAll(payload.categories.toEntities())
+                        db.walletDao().upsertAll(filled.wallets.map { it.toEntity() })
+                        db.categoryDao().upsertAll(filled.categories.toEntities())
 
                         val existingTransactions = db.transactionDao().getAllOnce().map { it.toBackup() }
-                        val merged = mergeTransactionsById(existingTransactions, payload.transactions)
+                        val merged = mergeTransactionsById(existingTransactions, filled.transactions)
                         db.transactionDao().upsertAll(merged.map { it.toEntity() })
 
-                        db.settingsDao().upsert(payload.settings.toEntity())
+                        db.settingsDao().upsert(filled.settings.toEntity())
                     }
                 }
             }
@@ -220,6 +222,7 @@ private fun TransactionEntity.toBackup() =
         walletId = walletId,
         type = type,
         amount = amount,
+        currency = currency,
         categoryId = categoryId,
         date = date.toString(),
         note = note,
@@ -233,6 +236,8 @@ private fun BackupTransaction.toEntity() =
         walletId = walletId,
         type = type,
         amount = amount,
+        // fillLegacyCurrencies 之後一定有值（validateBackup 已擋掉 v2 缺幣別的檔案）
+        currency = requireNotNull(currency) { "Transaction $id has no currency" },
         categoryId = categoryId,
         date = LocalDate.parse(date),
         note = note,

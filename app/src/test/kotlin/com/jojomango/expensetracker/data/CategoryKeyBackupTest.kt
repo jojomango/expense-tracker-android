@@ -39,12 +39,11 @@ class CategoryKeyBackupTest {
     }
 
     @Test
-    fun `T10 3 3 — 匯出的預設分類帶有代號，schemaVersion 仍為 1`() =
+    fun `T10 3 3 — 匯出的預設分類帶有代號，schemaVersion 不因代號提高`() =
         runTest {
             categoryRepo.seedDefaultsIfEmpty()
             val payload = backupRepo.export()
-            assertEquals(1, CURRENT_BACKUP_SCHEMA_VERSION)
-            assertEquals(1, payload.schemaVersion)
+            assertEquals(CURRENT_BACKUP_SCHEMA_VERSION, payload.schemaVersion)
             assertEquals(DefaultCategoryKey.entries.map { it.id }.toSet(), payload.categories.mapNotNull { it.defaultKey }.toSet())
             assertTrue(encodeBackup(payload).contains("\"defaultKey\":\"food\""))
         }

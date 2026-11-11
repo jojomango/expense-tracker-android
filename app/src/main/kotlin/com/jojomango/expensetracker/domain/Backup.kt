@@ -4,8 +4,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
-/** SPEC.md §3.6 匯出/匯入。目前只有 v1，日後 schema 有變動就把這個數字往上加。 */
-const val CURRENT_BACKUP_SCHEMA_VERSION = 1
+/** SPEC.md §3.6 匯出/匯入。v2（v2.12）：交易多了必填的 `currency`。 */
+const val CURRENT_BACKUP_SCHEMA_VERSION = 2
+
+/** 第一個要求每筆交易都有 `currency` 的版本；比它舊的檔案匯入時用 [fillLegacyCurrencies] 補上。 */
+private const val FIRST_SCHEMA_WITH_TRANSACTION_CURRENCY = 2
 
 @Serializable
 data class BackupWallet(
@@ -28,6 +31,11 @@ data class BackupTransaction(
     val note: String?,
     val createdAt: Long,
     val updatedAt: Long,
+    /**
+     * v2 起必填；v1 的檔案沒有這個欄位，匯入時補為所屬錢包的幣別（SPEC.md §3.6 v2.12）。
+     * 放在最後並給預設值，既有的位置參數呼叫才不會把 `categoryId` 誤填進這裡。
+     */
+    val currency: String? = null,
 )
 
 @Serializable
@@ -101,7 +109,7 @@ fun decodeBackup(json: String): BackupPayload =
  * 驗證 schema version 與參照完整性。任何一項不合法就拋錯——呼叫端必須在拋錯時
  * 完全不寫入任何資料（原子性，T4.2.3），這裡只負責檢查、不負責寫入。
  */
-@Suppress("ThrowsCount") // 3 種獨立的驗證失敗原因（schema 太新/錢包缺失/分類缺失），拆更多函式沒有比較清楚
+@Suppress("ThrowsCount") // 4 種獨立的驗證失敗原因（schema 太新/錢包缺失/分類缺失/幣別不合法），拆更多函式沒有比較清楚
 fun validateBackup(payload: BackupPayload) {
     if (payload.schemaVersion > CURRENT_BACKUP_SCHEMA_VERSION) {
         throw BackupSchemaTooNewException(
@@ -118,6 +126,9 @@ fun validateBackup(payload: BackupPayload) {
         }
         if (tx.categoryId != null && tx.categoryId !in categoryIds) {
             throw BackupIntegrityException("Transaction ${tx.id} references missing category ${tx.categoryId}")
+        }
+        if (payload.schemaVersion >= FIRST_SCHEMA_WITH_TRANSACTION_CURRENCY && !Currencies.builtIn.containsKey(tx.currency)) {
+            throw BackupIntegrityException("Transaction ${tx.id} has missing or unknown currency ${tx.currency}")
         }
     }
 }
@@ -140,4 +151,15 @@ fun mergeTransactionsById(
         }
     }
     return byId.values.toList()
+}
+
+/**
+ * v1 的備份沒有交易幣別：補為所屬錢包的幣別（T4.2.10）。必須在 [validateBackup] 之後呼叫，
+ * 那時已確認每筆交易的錢包都存在。
+ */
+fun fillLegacyCurrencies(payload: BackupPayload): BackupPayload {
+    val walletCurrency = payload.wallets.associate { it.id to it.currency }
+    return payload.copy(
+        transactions = payload.transactions.map { it.copy(currency = it.currency ?: walletCurrency.getValue(it.walletId)) },
+    )
 }

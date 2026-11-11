@@ -5,6 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.jojomango.expensetracker.domain.BackupCategory
 import com.jojomango.expensetracker.domain.BackupPayload
 import com.jojomango.expensetracker.domain.BackupSettings
+import com.jojomango.expensetracker.domain.CURRENT_BACKUP_SCHEMA_VERSION
 import com.jojomango.expensetracker.domain.CategoryType
 import com.jojomango.expensetracker.domain.ImportMode
 import com.jojomango.expensetracker.domain.OTHER_CATEGORY_SORT_ORDER
@@ -82,14 +83,14 @@ class CategoryOrderPersistenceTest {
         }
 
     @Test
-    fun `T6 4 9 — 匯出後立即匯入（replace）：sortOrder 不變、schemaVersion 仍為 1`() =
+    fun `T6 4 9 — 匯出後立即匯入（replace）：sortOrder 不變、schemaVersion 不因 sortOrder 提高`() =
         runTest {
             val db = newInMemoryTestDatabase()
             try {
                 RoomCategoryRepository(db.categoryDao()).seedDefaultsIfEmpty()
                 val repo = RoomBackupRepository(db)
                 val exported = repo.export()
-                assertEquals(1, exported.schemaVersion)
+                assertEquals(CURRENT_BACKUP_SCHEMA_VERSION, exported.schemaVersion)
                 repo.import(exported, ImportMode.REPLACE)
                 assertEquals(
                     exported.categories.associate { it.id to it.sortOrder },
