@@ -212,4 +212,11 @@
     <string name="currency_name_chf">Swiss Franc</string>
     <string name="currency_name_nzd">New Zealand Dollar</string>
     <string name="currency_name_mop">Macanese Pataca</string>
+    <string name="wallet_default_currency_label">Default currency</string>
+    <string name="wallet_currency_change_note">Changing the default currency doesn’t change existing transactions.</string>
+    <string name="wallet_currency_changed_budget">Currency changed. Please enter the budget again.</string>
+    <string name="transaction_currency_desc">Currency: %1$s, double tap to change</string>
+    <string name="transaction_choose_currency">Choose currency</string>
+    <string name="budget_also_spent">Also spent %1$s</string>
+    <string name="currency_separator" translatable="false">" · "</string>
 </resources>

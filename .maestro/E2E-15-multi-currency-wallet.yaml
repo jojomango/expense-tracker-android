@@ -1,0 +1,105 @@
+appId: com.jojomango.expensetracker
+---
+# TESTCASES.md E2E-15 一個錢包多幣別（v2.12）
+#
+# 測案寫「US$」，但內建幣別表的美元符號是「$」，這支 flow 照現行符號（見 PR「需要人類決策」）。
+# Maestro 的文字比對是 regex，所以 `$` 要寫成 `\\$`。
+
+# Given 錢包「宿霧」，預設幣別 PHP，週預算 10000
+# 不直接用 `launchApp: { clearState: true }`——見 scripts/settle-after-clear.js 檔頭。
+- clearState
+- runScript: scripts/settle-after-clear.js
+- launchApp:
+    stopApp: false
+    arguments:
+      language: zh-TW
+- assertVisible: "建立你的第一個錢包"
+- tapOn: "錢包名稱"
+- inputText: "宿霧"
+- tapOn: "幣別"
+- inputText: "PHP"
+- tapOn: "菲律賓披索 · PHP · ₱"
+- tapOn: "每週"
+- tapOn: "預算金額"
+- inputText: "10000"
+- hideKeyboard
+- tapOn: "建立錢包"
+- assertVisible: "₱10,000.00"
+
+# When 新增支出 ₱1,200 分類「飲食」
+- tapOn: "記帳"
+- tapOn: "1"
+- tapOn: "2"
+- tapOn: "00"
+- tapOn: "飲食"
+- tapOn: "記一筆"
+- assertVisible: "₱8,800.00"
+
+# And 新增支出，把幣別換成 USD，金額 40，分類「交通」
+- tapOn: "記帳"
+- tapOn: "幣別：菲律賓披索，點兩下更換"
+- assertVisible: "選擇幣別"
+- tapOn: "美元 · USD · \\$"
+- assertVisible: "幣別：美元，點兩下更換"
+- tapOn: "4"
+- tapOn: "0"
+- assertVisible: "\\$40.00"
+- tapOn: "交通"
+- tapOn: "記一筆"
+
+# Then 預算卡顯示本週還可以花「₱8,800.00」，下方「另有 $40.00」
+- assertVisible: "₱8,800.00"
+- assertVisible: "另有 \\$40.00"
+# And 本週小計並排「-₱1,200.00 · -$40.00」（兩段是兩個文字節點）
+- assertVisible: "-₱1,200.00"
+- assertVisible: ".*· -\\$40\\.00"
+# And 畫面任何位置皆不出現 PHP 與 USD 相加的數字
+- assertNotVisible: ".*1,240.*"
+- assertNotVisible: ".*8,760.*"
+
+# T8.5.1：下一筆新增仍預選錢包的預設幣別，不沿用上一筆的 USD
+- tapOn: "記帳"
+- assertVisible: "幣別：菲律賓披索，點兩下更換"
+- tapOn: "取消"
+
+# When 到統計頁
+# Then 出現 PHP、USD 兩個幣別 chip，預設選 PHP，圓環中心為 ₱1,200.00
+- tapOn: "統計"
+- assertVisible: "本週支出"
+# FilterChip 的選取狀態是父節點的 checked，文字在子節點
+- assertVisible:
+    checked: true
+    containsChild:
+      text: "PHP"
+- assertVisible: "USD"
+- assertVisible: "₱1,200.00"
+# When 點 USD / Then 圓環中心為 $40.00
+- tapOn: "USD"
+- assertVisible: "\\$40.00"
+- assertNotVisible: "₱1,200.00"
+
+# When 編輯錢包，把預設幣別改成 USD，重新輸入週預算 500
+- tapOn: "首頁"
+- tapOn: "宿霧"
+- tapOn: "管理錢包…"
+- tapOn: "宿霧"
+- assertVisible: "改預設幣別不會改變已記錄交易的幣別。"
+- tapOn: "預設幣別"
+- inputText: "USD"
+- tapOn: "美元 · USD · \\$"
+- assertVisible: "幣別改了，請重新輸入預算金額。"
+- assertVisible:
+    enabled: false
+    containsChild:
+      text: "儲存"
+- tapOn: "預算金額"
+- inputText: "500"
+- hideKeyboard
+- tapOn: "儲存"
+- tapOn: "返回"
+
+# Then 預算卡顯示「$460.00」，下方「另有 ₱1,200.00」
+- assertVisible: "\\$460.00"
+- assertVisible: "另有 ₱1,200.00"
+# And 那筆 ₱1,200 的交易仍顯示「-₱1,200.00」
+- assertVisible: "-₱1,200.00"

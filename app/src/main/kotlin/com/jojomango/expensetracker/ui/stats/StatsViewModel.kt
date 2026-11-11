@@ -11,6 +11,7 @@ import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.DefaultCategoryKey
 import com.jojomango.expensetracker.domain.Money
 import com.jojomango.expensetracker.domain.Month
+import com.jojomango.expensetracker.domain.MultiCurrency
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.SettingsRepository
 import com.jojomango.expensetracker.domain.Transaction
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -53,7 +55,11 @@ data class CategorySlice(
 
 data class StatsUiState(
     val isLoading: Boolean = true,
+    val walletId: String? = null,
+    /** 目前選取的幣別；圓環、圖例、趨勢都只看這個幣別（UI-SPEC.md §15.4）。 */
     val currency: String = "TWD",
+    /** 錢包交易用到的幣別，兩種以上才顯示 chip 列。 */
+    val currencies: List<String> = emptyList(),
     val period: StatsPeriod = StatsPeriod.WEEK,
     val periodTotal: Money? = null,
     val categorySlices: List<CategorySlice> = emptyList(),
@@ -65,6 +71,13 @@ private data class StatsContext(
     val categories: List<Category>,
     val settings: Settings,
     val period: StatsPeriod,
+    val selectedCurrency: SelectedCurrency?,
+)
+
+/** 記住是哪個錢包選的：切換錢包時回到預設選取（UI-SPEC.md §15.4）。 */
+private data class SelectedCurrency(
+    val walletId: String,
+    val code: String,
 )
 
 /**
@@ -85,6 +98,8 @@ class StatsViewModel
         private val analyticsTracker: AnalyticsTracker,
     ) : ViewModel() {
         private val period = MutableStateFlow(StatsPeriod.WEEK)
+        private val selectedCurrency = MutableStateFlow<SelectedCurrency?>(null)
+        private var lastWalletId: String? = null
 
         private fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
@@ -94,17 +109,36 @@ class StatsViewModel
                 categoryRepository.observeCategories(),
                 settingsRepository.observe(),
                 period,
-            ) { wallets, categories, settings, period ->
+                selectedCurrency,
+            ) { wallets, categories, settings, period, selected ->
                 val wallet =
                     wallets.firstOrNull { it.id == settings.defaultWalletId }
                         ?: wallets.firstOrNull { !it.archived }
-                StatsContext(wallet, categories, settings, period)
+                StatsContext(wallet, categories, settings, period, selected)
             }.flatMapLatest { ctx ->
                 val wallet = ctx.wallet
                 if (wallet == null) {
                     flowOf(StatsUiState(isLoading = false))
                 } else {
-                    transactionRepository.observeByWallet(wallet.id).map { transactions -> buildUiState(wallet, ctx, transactions) }
+                    // 切回原本的錢包也要從預設選取開始，不沿用上次點過的 chip（UI-SPEC.md §15.4）
+                    if (wallet.id != lastWalletId) {
+                        lastWalletId = wallet.id
+                        selectedCurrency.value = null
+                    }
+                    transactionRepository.observeByWallet(wallet.id).map { transactions ->
+                        buildStatsUiState(
+                            wallet = wallet,
+                            transactions = transactions,
+                            categories = ctx.categories,
+                            query =
+                                StatsQuery(
+                                    period = ctx.period,
+                                    currency = ctx.selectedCurrency?.takeIf { it.walletId == wallet.id }?.code,
+                                    weekStartDay = ctx.settings.weekStartDay,
+                                    referenceDate = today(),
+                                ),
+                        )
+                    }
                 }
             }.stateIn(
                 scope = viewModelScope,
@@ -118,49 +152,72 @@ class StatsViewModel
             analyticsTracker.track(AnalyticsEvent.StatsPeriodSwitched(newPeriod))
         }
 
-        private fun buildUiState(
-            wallet: Wallet,
-            ctx: StatsContext,
-            transactions: List<Transaction>,
-        ): StatsUiState {
-            val referenceDate = today()
-            val range =
-                when (ctx.period) {
-                    StatsPeriod.WEEK -> Week.rangeOf(referenceDate, ctx.settings.weekStartDay)
-                    StatsPeriod.MONTH -> Month.rangeOf(referenceDate)
-                }
-            val periodTransactions = transactions.filter { it.date in range }
-            val summary =
-                Budget.summarizeByCategory(
-                    periodTransactions,
-                    ctx.categories,
-                    TransactionType.EXPENSE,
-                    wallet.currency,
-                    NamesResolvedOnScreen,
-                )
-            val slices =
-                summary.map { item ->
-                    CategorySlice(
-                        categoryId = item.categoryId,
-                        category = ctx.categories.firstOrNull { it.id == item.categoryId },
-                        icon = ctx.categories.firstOrNull { it.id == item.categoryId }?.icon ?: "📦",
-                        color = colorOf(item.categoryId, ctx.categories),
-                        amount = item.total,
-                        percent = item.percent,
-                    )
-                }
-            val periodTotal = Money.sum(summary.map { it.total }, wallet.currency)
-            val trend = Budget.summarizeWeeklyTrend(wallet, transactions, ctx.settings.weekStartDay, referenceDate, weeksCount = 8)
-            return StatsUiState(
-                isLoading = false,
-                currency = wallet.currency,
-                period = ctx.period,
-                periodTotal = periodTotal,
-                categorySlices = slices,
-                trendPoints = trend,
-            )
+        fun selectCurrency(code: String) {
+            val walletId = uiState.value.walletId ?: return
+            selectedCurrency.value = SelectedCurrency(walletId, code)
         }
     }
+
+/** 要算哪一段：期間、幣別 chip（`null` = 沒點過）、週起始日與「今天」。 */
+internal data class StatsQuery(
+    val period: StatsPeriod,
+    val currency: String?,
+    val weekStartDay: DayOfWeek,
+    val referenceDate: LocalDate,
+)
+
+/**
+ * 統計頁的畫面狀態（UI-SPEC.md §6、§15.4）。[StatsQuery.currency] 是使用者點過的 chip；
+ * 沒點過、或那個幣別在這個錢包沒有交易時，用 [MultiCurrency.statsCurrency] 的預設選取。
+ */
+internal fun buildStatsUiState(
+    wallet: Wallet,
+    transactions: List<Transaction>,
+    categories: List<Category>,
+    query: StatsQuery,
+): StatsUiState {
+    val weekStartDay = query.weekStartDay
+    val referenceDate = query.referenceDate
+    val currencies = MultiCurrency.currenciesUsed(transactions, wallet.currency)
+    val currency = query.currency?.takeIf { it in currencies } ?: MultiCurrency.statsCurrency(transactions, wallet.currency)
+    val range =
+        when (query.period) {
+            StatsPeriod.WEEK -> Week.rangeOf(referenceDate, weekStartDay)
+            StatsPeriod.MONTH -> Month.rangeOf(referenceDate)
+        }
+    val summary =
+        Budget.summarizeByCategory(
+            transactions.filter { it.date in range },
+            categories,
+            TransactionType.EXPENSE,
+            currency,
+            NamesResolvedOnScreen,
+        )
+    val slices =
+        summary.map { item ->
+            val category = categories.firstOrNull { it.id == item.categoryId }
+            CategorySlice(
+                categoryId = item.categoryId,
+                category = category,
+                icon = category?.icon ?: "📦",
+                color = colorOf(item.categoryId, categories),
+                amount = item.total,
+                percent = item.percent,
+            )
+        }
+    // 趨勢圖沿用「錢包幣別」的計算，把錢包當成以選取幣別為預設的錢包來算
+    val trend = Budget.summarizeWeeklyTrend(wallet.copy(currency = currency), transactions, weekStartDay, referenceDate, weeksCount = 8)
+    return StatsUiState(
+        isLoading = false,
+        walletId = wallet.id,
+        currency = currency,
+        currencies = currencies,
+        period = query.period,
+        periodTotal = Money.sum(summary.map { it.total }, currency),
+        categorySlices = slices,
+        trendPoints = trend,
+    )
+}
 
 /**
  * 彙總結果的 `name` 在這裡用不到：[CategorySlice] 存的是分類本身，名稱到畫面上才依目前語言決定。

@@ -121,4 +121,34 @@ class MultiCurrencyBudgetTest {
     fun `T3 9 9`() {
         assertThrows(IllegalArgumentException::class.java) { Money.of(100, "PHP").plus(Money.of(100, "USD")) }
     }
+
+    @Test
+    @DisplayName("T3.9.10 — 統計預設選取：預設幣別 PHP 沒有交易、只有 USD 與 JPY 時選 JPY")
+    fun `T3 9 10`() {
+        val noPhp = listOf(tx(4_000, "USD"), tx(500, "JPY"))
+        assertEquals("JPY", MultiCurrency.statsCurrency(noPhp, "PHP"))
+    }
+
+    @Test
+    @DisplayName("T3.9.10 補充 — 預設幣別有交易時選預設幣別；完全沒有交易時也是預設幣別")
+    fun `T3 9 10 default`() {
+        assertEquals("PHP", MultiCurrency.statsCurrency(transactions, "PHP"))
+        assertEquals("PHP", MultiCurrency.statsCurrency(emptyList(), "PHP"))
+    }
+
+    @Test
+    @DisplayName("UI-SPEC §15.4 — 統計 chip：用到的幣別，預設幣別在前、其餘依內建順序")
+    fun `stats chips order`() {
+        val mixed = transactions + tx(300, "JPY")
+        assertEquals(listOf("PHP", "JPY", "USD"), MultiCurrency.currenciesUsed(mixed, "PHP"))
+    }
+
+    @Test
+    @DisplayName("T8.5.2 — 幣別 sheet 順序：預設幣別 → 用過的其他幣別 → 其餘內建幣別，不重複")
+    fun `picker order`() {
+        val order = MultiCurrency.pickerOrder("PHP", transactions + tx(300, "JPY"))
+        assertEquals(listOf("PHP", "JPY", "USD"), order.take(3))
+        assertEquals(Currencies.builtIn.keys.toSet(), order.toSet())
+        assertEquals(order.size, order.distinct().size)
+    }
 }

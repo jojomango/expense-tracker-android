@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.jojomango.expensetracker.R
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +28,7 @@ class CurrencyPickerFieldTest {
 
     private var selected = "TWD"
 
-    private fun setField(enabled: Boolean = true) {
+    private fun setField(labelRes: Int = R.string.wallet_currency_label) {
         compose.setContent {
             var code by remember { mutableStateOf(selected) }
             CurrencyPickerField(
@@ -35,7 +37,8 @@ class CurrencyPickerFieldTest {
                     code = it
                     selected = it
                 },
-                enabled = enabled,
+                enabled = true,
+                labelRes = labelRes,
             )
         }
     }
@@ -86,10 +89,11 @@ class CurrencyPickerFieldTest {
 
     @Test
     @Config(qualifiers = "zh-rTW")
-    fun `T8_4_11 — 編輯既有錢包時幣別欄不可修改`() {
+    fun `T8_4_11 — 編輯既有錢包時幣別欄可以修改，標籤為「預設幣別」`() {
         selected = "JPY"
-        setField(enabled = false)
-        compose.onNodeWithTag(CURRENCY_FIELD_TAG).assertIsNotEnabled()
+        setField(labelRes = R.string.wallet_default_currency_label)
+        compose.onNodeWithTag(CURRENCY_FIELD_TAG).assertIsEnabled()
+        compose.onNodeWithText("預設幣別").assertExists()
         compose.onNodeWithTag(CURRENCY_FIELD_TAG).assertTextContains("日圓 · JPY · ¥")
     }
 }

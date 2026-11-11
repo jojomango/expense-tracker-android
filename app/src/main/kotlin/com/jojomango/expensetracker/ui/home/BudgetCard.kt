@@ -79,7 +79,8 @@ fun BudgetCard(
 
             // 「已用 X/Y · 還有 N 天」「日均可用」是週預算特有的概念（見
             // HomeViewModel.buildUiState 的說明），只在 WEEKLY 模式顯示。
-            if (wallet.budgetMode == BudgetMode.WEEKLY && state.weeklyBalance != null && state.daysLeftInWeek != null) {
+            val weeklyDetails = wallet.budgetMode == BudgetMode.WEEKLY && state.weeklyBalance != null && state.daysLeftInWeek != null
+            if (weeklyDetails) {
                 WeeklyBudgetDetailRows(state, wallet, typography)
             }
 
@@ -93,8 +94,25 @@ fun BudgetCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            // 週預算時「另有」緊接在「已用 X/Y」那行下方（WeeklyBudgetDetailRows 裡），其他模式放在卡片最後
+            if (!weeklyDetails) OtherCurrencyLine(state.otherCurrencyExpenses, typography)
         }
     }
+}
+
+/** 「另有 US$40.00 · ¥500」：其他幣別各自列出，不換算、不相加（UI-SPEC.md §15.3）。 */
+@Composable
+private fun OtherCurrencyLine(
+    others: List<Money>,
+    typography: AppTypography,
+) {
+    if (others.isEmpty()) return
+    Spacer(Modifier.height(8.dp))
+    Text(
+        stringResource(R.string.budget_also_spent, others.joinToString(stringResource(R.string.currency_separator)) { it.format() }),
+        style = typography.caption,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable
@@ -161,6 +179,7 @@ private fun WeeklyBudgetDetailRows(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+    OtherCurrencyLine(state.otherCurrencyExpenses, typography)
     if (state.dailyAllowance != null) {
         Spacer(Modifier.height(12.dp))
         HorizontalDivider()

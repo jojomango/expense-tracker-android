@@ -4,6 +4,7 @@ package com.jojomango.expensetracker.ui.stats
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -83,12 +85,34 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
                 ) { Text(stringResource(R.string.stats_this_month)) }
             }
 
+            StatsCurrencyChips(currencies = state.currencies, selected = state.currency, onSelect = viewModel::selectCurrency)
+
             Spacer(Modifier.height(16.dp))
             DonutCard(state = state)
 
             Spacer(Modifier.height(16.dp))
             TrendCard(points = state.trendPoints)
             Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+/** 錢包用到兩種以上幣別時才出現；可橫向捲動（UI-SPEC.md §15.4）。 */
+@Composable
+internal fun StatsCurrencyChips(
+    currencies: List<String>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    if (currencies.size < 2) return
+    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp).horizontalScroll(rememberScrollState())) {
+        currencies.forEach { code ->
+            FilterChip(
+                selected = code == selected,
+                onClick = { onSelect(code) },
+                label = { Text(code) },
+                modifier = Modifier.padding(end = 8.dp),
+            )
         }
     }
 }

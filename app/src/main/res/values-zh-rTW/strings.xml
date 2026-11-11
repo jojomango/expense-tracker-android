@@ -209,4 +209,10 @@
     <string name="currency_name_chf">瑞士法郎</string>
     <string name="currency_name_nzd">紐西蘭幣</string>
     <string name="currency_name_mop">澳門幣</string>
+    <string name="wallet_default_currency_label">預設幣別</string>
+    <string name="wallet_currency_change_note">改預設幣別不會改變已記錄交易的幣別。</string>
+    <string name="wallet_currency_changed_budget">幣別改了，請重新輸入預算金額。</string>
+    <string name="transaction_currency_desc">幣別：%1$s，點兩下更換</string>
+    <string name="transaction_choose_currency">選擇幣別</string>
+    <string name="budget_also_spent">另有 %1$s</string>
 </resources>

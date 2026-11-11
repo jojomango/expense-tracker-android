@@ -4,6 +4,7 @@ package com.jojomango.expensetracker.ui.common
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenuItem
@@ -84,6 +85,18 @@ private val currencyNameRes: Map<String, Int> =
         "MOP" to R.string.currency_name_mop,
     )
 
+/** 目前介面語言的幣別名稱（UI-SPEC.md §14.3），例如「美元」。 */
+internal fun currencyName(
+    context: Context,
+    code: String,
+): String = currencyNameRes[code]?.let(context::getString) ?: code
+
+/** 「{名稱} · {代碼} · {符號}」——幣別選單與記帳頁的幣別 sheet 共用（UI-SPEC.md §14.3、§15.2）。 */
+internal fun currencyOptionLabel(
+    context: Context,
+    code: String,
+): String = context.getString(R.string.currency_option, currencyName(context, code), code, Currencies.builtIn[code]?.symbol ?: code)
+
 // 搜尋要同時比對中英文名稱（不論介面語言），所以兩種語言的資源都要讀
 private fun Context.inLocale(tag: String): Context =
     createConfigurationContext(Configuration(resources.configuration).apply { setLocale(Locale.forLanguageTag(tag)) })
@@ -107,13 +120,12 @@ fun CurrencyPickerField(
     onSelect: (String) -> Unit,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    @StringRes labelRes: Int = R.string.wallet_currency_label,
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val options = remember(configuration) { currencyOptions(context) }
-    val label: (CurrencyOption) -> String = { option ->
-        context.getString(R.string.currency_option, context.getString(currencyNameRes.getValue(option.code)), option.code, option.symbol)
-    }
+    val label: (CurrencyOption) -> String = { option -> currencyOptionLabel(context, option.code) }
     var expanded by remember { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     val close = {
@@ -141,7 +153,7 @@ fun CurrencyPickerField(
                 query = it
                 expanded = true
             },
-            label = { Text(stringResource(R.string.wallet_currency_label)) },
+            label = { Text(stringResource(labelRes)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             singleLine = true,
             enabled = enabled,

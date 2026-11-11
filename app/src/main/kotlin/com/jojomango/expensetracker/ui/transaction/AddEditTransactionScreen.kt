@@ -139,8 +139,23 @@ fun AddEditTransactionScreen(
                 // 金額區（上下內距 8dp：讓分類網格一次露出兩列，UI-SPEC §5、UX-001）。
                 // 編輯備註時整個金額區可點：清除焦點、收起鍵盤，數字鍵台回來（UX-002）；
                 // 鍵盤上方空間不足時改成單行，把高度讓給分類摘要列與備註欄（UX-005）
+                var showCurrencySheet by remember { mutableStateOf(false) }
+                if (showCurrencySheet) {
+                    CurrencySheet(
+                        codes = state.currencyChoices,
+                        selected = state.currency,
+                        onSelect = {
+                            viewModel.onSelectCurrency(it)
+                            showCurrencySheet = false
+                        },
+                        onDismiss = { showCurrencySheet = false },
+                    )
+                }
                 AmountArea(
-                    walletLabel = state.wallet?.let { "${it.name} · ${it.currency}" },
+                    walletLabel =
+                        state.wallet?.let { wallet ->
+                            { CurrencyButton(walletName = wallet.name, currency = state.currency, onClick = { showCurrencySheet = true }) }
+                        },
                     amountText = viewModel.formattedAmount(),
                     amountColor =
                         when {
@@ -202,7 +217,7 @@ fun AddEditTransactionScreen(
 
 @Composable
 private fun AmountArea(
-    walletLabel: String?,
+    walletLabel: (@Composable () -> Unit)?,
     amountText: String,
     amountColor: Color,
     editingNote: Boolean,
@@ -220,9 +235,7 @@ private fun AmountArea(
         } else {
             Modifier.fillMaxWidth()
         }
-    val walletText: @Composable () -> Unit = {
-        walletLabel?.let { Text(it, style = typography.caption, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-    }
+    val walletText: @Composable () -> Unit = { walletLabel?.invoke() }
     if (singleLine) {
         Row(modifier = modifier.height(36.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
             walletText()

@@ -8,6 +8,7 @@ import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.CategoryType
 import com.jojomango.expensetracker.domain.Currencies
 import com.jojomango.expensetracker.domain.Money
+import com.jojomango.expensetracker.domain.MultiCurrency
 import com.jojomango.expensetracker.domain.Transaction
 import com.jojomango.expensetracker.domain.TransactionRepository
 import com.jojomango.expensetracker.domain.TransactionType
@@ -37,6 +38,10 @@ data class AddEditTransactionUiState(
     val isLoading: Boolean = true,
     val isEditing: Boolean = false,
     val wallet: Wallet? = null,
+    /** 這筆交易的幣別（UI-SPEC.md §15.2）；載入完成前先用錢包的預設幣別。 */
+    val currency: String = wallet?.currency ?: "TWD",
+    /** 幣別 sheet 的列表順序（[MultiCurrency.pickerOrder]）。 */
+    val currencyChoices: List<String> = emptyList(),
     val type: TransactionType = TransactionType.EXPENSE,
     val amountDigits: String = "",
     val categories: List<Category> = emptyList(),
@@ -53,7 +58,7 @@ data class AddEditTransactionUiState(
      */
     val amount: Long
         get() {
-            val decimalDigits = wallet?.currency?.let { Currencies.builtIn[it]?.decimalDigits } ?: 2
+            val decimalDigits = Currencies.builtIn[currency]?.decimalDigits ?: 2
             return majorDigitsToMinorUnits(amountDigits, decimalDigits)
         }
     val categoriesForType: List<Category> get() = categories.filter { it.type == categoryTypeOf(type) }
@@ -64,6 +69,12 @@ data class AddEditTransactionUiState(
             if (type == TransactionType.EXPENSE) CategoryType.EXPENSE else CategoryType.INCOME
     }
 }
+
+/** 新增交易用錢包的預設幣別、不沿用上一筆；編輯時用這筆交易的幣別（UI-SPEC.md §15.2，T8.5.1、T8.5.5）。 */
+internal fun initialCurrency(
+    wallet: Wallet,
+    existing: Transaction?,
+): String = existing?.currency ?: wallet.currency
 
 @HiltViewModel
 class AddEditTransactionViewModel
@@ -94,7 +105,7 @@ class AddEditTransactionViewModel
                         loadedOriginal = existing
                         val w = existing?.walletId?.let { walletRepository.getWallet(it) }
                         if (existing != null) {
-                            val decimalDigits = w?.currency?.let { Currencies.builtIn[it]?.decimalDigits } ?: 2
+                            val decimalDigits = Currencies.builtIn[existing.currency]?.decimalDigits ?: 2
                             internalState.value =
                                 internalState.value.copy(
                                     type = existing.type,
@@ -110,7 +121,14 @@ class AddEditTransactionViewModel
                         defaultWalletId?.let { walletRepository.getWallet(it) }
                             ?: walletRepository.getAllOnce().firstOrNull { !it.archived }
                     }
-                internalState.value = internalState.value.copy(isLoading = false, wallet = wallet)
+                val walletTransactions = wallet?.let { w -> transactionRepository.getAllOnce().filter { it.walletId == w.id } }.orEmpty()
+                internalState.value =
+                    internalState.value.copy(
+                        isLoading = false,
+                        wallet = wallet,
+                        currency = wallet?.let { initialCurrency(it, loadedOriginal) } ?: internalState.value.currency,
+                        currencyChoices = wallet?.let { MultiCurrency.pickerOrder(it.currency, walletTransactions) }.orEmpty(),
+                    )
             }
         }
 
@@ -120,6 +138,10 @@ class AddEditTransactionViewModel
 
         fun onBackspace() {
             internalState.value = internalState.value.copy(amountDigits = deleteDigit(internalState.value.amountDigits))
+        }
+
+        fun onSelectCurrency(code: String) {
+            internalState.value = internalState.value.copy(currency = code)
         }
 
         fun onSelectType(type: TransactionType) {
@@ -150,8 +172,7 @@ class AddEditTransactionViewModel
                         walletId = wallet.id,
                         type = state.type,
                         amount = state.amount,
-                        // 記帳頁還不能選幣別（UI 在下一個 PR）：新增用錢包的預設幣別，編輯保留原本的幣別
-                        currency = loadedOriginal?.currency ?: wallet.currency,
+                        currency = state.currency,
                         categoryId = state.selectedCategoryId,
                         date = state.date,
                         note = state.note.ifBlank { null },
@@ -165,7 +186,8 @@ class AddEditTransactionViewModel
         }
 
         fun formattedAmount(): String {
-            val wallet = internalState.value.wallet ?: return internalState.value.amountDigits
-            return Money.of(internalState.value.amount, wallet.currency).format()
+            val state = internalState.value
+            if (state.wallet == null) return state.amountDigits
+            return Money.of(state.amount, state.currency).format()
         }
     }

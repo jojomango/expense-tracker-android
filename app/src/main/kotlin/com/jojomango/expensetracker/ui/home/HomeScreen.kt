@@ -1,4 +1,4 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package com.jojomango.expensetracker.ui.home
 
@@ -7,12 +7,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,21 +62,23 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.R
-import com.jojomango.expensetracker.domain.Budget
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.domain.CategoryNames
 import com.jojomango.expensetracker.domain.Currencies
 import com.jojomango.expensetracker.domain.DaySections
 import com.jojomango.expensetracker.domain.Money
+import com.jojomango.expensetracker.domain.MultiCurrency
 import com.jojomango.expensetracker.domain.Transaction
 import com.jojomango.expensetracker.domain.TransactionType
-import com.jojomango.expensetracker.domain.Wallet
 import com.jojomango.expensetracker.domain.Week
 import com.jojomango.expensetracker.domain.WeekEntry
 import com.jojomango.expensetracker.domain.categoryDisplayName
@@ -165,8 +169,8 @@ private fun formatAmount(
     state: HomeUiState,
     transaction: Transaction,
 ): String {
-    val currency = state.currentWallet?.currency ?: return transaction.amount.toString()
-    return Money.of(transaction.amount, currency).format()
+    if (state.currentWallet == null) return transaction.amount.toString()
+    return Money.of(transaction.amount, transaction.currency).format()
 }
 
 @Composable
@@ -236,7 +240,7 @@ internal fun HomeContent(
                 item(key = "week-${group.range.start}") {
                     SubtotalHeader(
                         title = Week.groupTitle(group.range.start, state.weekStartDay, today, weekLabels),
-                        net = Budget.netTotal(group.items, wallet.currency),
+                        nets = MultiCurrency.netTotalsByCurrency(group.items, wallet.currency),
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                 }
@@ -247,7 +251,7 @@ internal fun HomeContent(
                             item(key = "day-${entry.date}") {
                                 DayHeader(
                                     title = DaySections.dayTitle(entry.date, today, dayLabels),
-                                    net = Budget.netTotal(entry.items, wallet.currency),
+                                    nets = MultiCurrency.netTotalsByCurrency(entry.items, wallet.currency),
                                 )
                             }
                             item(key = "day-card-${entry.date}") {
@@ -259,7 +263,6 @@ internal fun HomeContent(
                                             key(transaction.id) {
                                                 TransactionRow(
                                                     transaction = transaction,
-                                                    wallet = wallet,
                                                     categoryName = categoryNameOf(state, transaction, categoryNames),
                                                     categoryIcon =
                                                         state.categories.firstOrNull { it.id == transaction.categoryId }?.icon ?: "📦",
@@ -283,25 +286,37 @@ internal fun HomeContent(
     }
 }
 
-/** 週標題與日小標題共用：左文字、右淨額；淨收入用收入色，其他用次要文字色（UI-SPEC §4.3 v2.6／v2.7）。 */
+/**
+ * 週標題與日小標題共用：左文字、右淨額；淨收入用收入色，其他用次要文字色（UI-SPEC §4.3 v2.6／v2.7）。
+ * 多種幣別時各算一段並排，每段各自決定顏色；放不下就換行、靠右，不截斷（UI-SPEC §15.3）。
+ */
 @Composable
 private fun SubtotalHeader(
     title: String,
-    net: Money,
+    nets: List<Money>,
     modifier: Modifier = Modifier,
 ) {
     val typography = LocalAppTypography.current
+    val neutral = MaterialTheme.colorScheme.onSurfaceVariant
+    val income = LocalAppExtraColors.current.income
+    val separator = stringResource(R.string.currency_separator)
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = typography.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(
-            net.formatSigned(),
-            style = typography.label,
-            color = if (net.amount > 0) LocalAppExtraColors.current.income else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(title, style = typography.label, color = neutral)
+        FlowRow(modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp), horizontalArrangement = Arrangement.End) {
+            nets.forEachIndexed { index, net ->
+                Text(
+                    buildAnnotatedString {
+                        if (index > 0) withStyle(SpanStyle(color = neutral)) { append(separator) }
+                        withStyle(SpanStyle(color = if (net.amount > 0) income else neutral)) { append(net.formatSigned()) }
+                    },
+                    style = typography.label,
+                )
+            }
+        }
     }
 }
 
@@ -309,15 +324,16 @@ private fun SubtotalHeader(
 @Composable
 private fun DayHeader(
     title: String,
-    net: Money,
+    nets: List<Money>,
 ) {
-    val description = stringResource(R.string.home_day_header_desc, title, net.formatSigned())
+    val amounts = nets.joinToString(stringResource(R.string.currency_separator)) { it.formatSigned() }
+    val description = stringResource(R.string.home_day_header_desc, title, amounts)
     SubtotalHeader(
         title = title,
-        net = net,
+        nets = nets,
         modifier =
             Modifier
-                .height(28.dp)
+                .heightIn(min = 28.dp)
                 .clearAndSetSemantics {
                     heading()
                     contentDescription = description
@@ -354,7 +370,6 @@ private fun YearSeparator(year: Int) {
 @Composable
 private fun TransactionRow(
     transaction: Transaction,
-    wallet: Wallet,
     categoryName: String,
     categoryIcon: String,
     categoryColor: String,
@@ -440,7 +455,7 @@ private fun TransactionRow(
             val isExpense = transaction.type == TransactionType.EXPENSE
             val sign = if (isExpense) "-" else "+"
             val color = if (isExpense) MaterialTheme.colorScheme.onSurface else extraColors.income
-            Text(sign + Money.of(transaction.amount, wallet.currency).format(), style = typography.rowAmount, color = color)
+            Text(sign + Money.of(transaction.amount, transaction.currency).format(), style = typography.rowAmount, color = color)
         }
     }
 }
