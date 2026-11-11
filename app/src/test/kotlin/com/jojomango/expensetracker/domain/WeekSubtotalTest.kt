@@ -18,6 +18,7 @@ class WeekSubtotalTest {
         walletId = "w",
         type = type,
         amount = amount,
+        currency = "TWD",
         categoryId = null,
         date = LocalDate(2026, 10, 21),
         note = null,

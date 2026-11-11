@@ -65,6 +65,7 @@ class BackupPersistenceTest {
                 note = null,
                 createdAt = 0,
                 updatedAt = 0,
+                currency = "TWD",
             )
         return BackupPayload(
             schemaVersion = schemaVersion,
@@ -208,6 +209,7 @@ class BackupPersistenceTest {
                         note = null,
                         createdAt = 0,
                         updatedAt = 0,
+                        currency = "TWD",
                     )
                 }
             val payload =

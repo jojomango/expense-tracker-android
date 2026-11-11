@@ -45,7 +45,9 @@ object Budget {
         currencyCode: String,
     ): Money =
         Money.of(
-            transactions.sumOf { if (it.type == TransactionType.INCOME) it.amount else -it.amount },
+            transactions
+                .filter { it.currency == currencyCode }
+                .sumOf { if (it.type == TransactionType.INCOME) it.amount else -it.amount },
             currencyCode,
         )
 
@@ -115,7 +117,7 @@ object Budget {
         names: CategoryNames,
         registry: CurrencyRegistry = CurrencyRegistry(),
     ): List<CategorySummary> {
-        val filtered = transactions.filter { it.type == type }
+        val filtered = transactions.filter { it.type == type && it.currency == currencyCode }
         if (filtered.isEmpty()) return emptyList()
 
         val categoryById = categories.associateBy { it.id }
@@ -189,7 +191,7 @@ object Budget {
     ): Money {
         val matching =
             transactions.filter {
-                it.walletId == wallet.id && it.type == TransactionType.EXPENSE && predicate(it)
+                it.walletId == wallet.id && it.type == TransactionType.EXPENSE && it.currency == wallet.currency && predicate(it)
             }
         return Money.sum(matching.map { Money.of(it.amount, wallet.currency) }, wallet.currency)
     }

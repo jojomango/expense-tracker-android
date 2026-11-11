@@ -30,6 +30,7 @@ class BudgetTest {
         walletId = walletId,
         type = type,
         amount = amount,
+        currency = if (walletId == "travel" || walletId == "zero") "JPY" else "TWD",
         categoryId = categoryId,
         date = date,
         createdAt = fixedInstant,

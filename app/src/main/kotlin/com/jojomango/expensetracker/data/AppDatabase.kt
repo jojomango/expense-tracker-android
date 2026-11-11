@@ -12,7 +12,7 @@ import androidx.room.TypeConverters
     entities = [WalletEntity::class, TransactionEntity::class, CategoryEntity::class, SettingsEntity::class],
     // v2（Phase 10）：categories 新增 defaultKey，見 Migrations.MIGRATION_1_2
     // v3（UX-003）：categories 新增 sortOrder，見 Migrations.MIGRATION_2_3
-    version = 3,
+    version = 4,
     // schema JSON 輸出到 app/schemas（進版控），遷移測試用它建出舊版本的資料庫。
     exportSchema = true,
 )

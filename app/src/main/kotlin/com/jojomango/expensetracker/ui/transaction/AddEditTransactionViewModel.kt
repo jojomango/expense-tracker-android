@@ -150,6 +150,8 @@ class AddEditTransactionViewModel
                         walletId = wallet.id,
                         type = state.type,
                         amount = state.amount,
+                        // 記帳頁還不能選幣別（UI 在下一個 PR）：新增用錢包的預設幣別，編輯保留原本的幣別
+                        currency = loadedOriginal?.currency ?: wallet.currency,
                         categoryId = state.selectedCategoryId,
                         date = state.date,
                         note = state.note.ifBlank { null },
