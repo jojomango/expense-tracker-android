@@ -486,3 +486,56 @@ Material 3 `AlertDialog`：
 - 自動備份失敗（通知）：標題沿用提醒標題，內文「自動備份沒有完成，請打開 App 重新選擇備份檔。」／
   「Automatic backup didn’t finish. Open the app and choose your backup file again.」
 
+
+## §14 幣別選單（v2.11）
+
+對應 `SPEC.md` §3.1 錢包的 `currency`。新增錢包（含首次使用建立第一個錢包）時，幣別欄改為
+**可輸入搜尋的下拉選單**（Material 3 `ExposedDropdownMenuBox`），只能選內建的 20 種幣別，不能手打任意代碼。
+編輯既有錢包時，幣別照舊不可修改。
+
+### §14.1 欄位
+
+- 標籤：「幣別」／「Currency」（取代原本的「幣別（ISO 4217，如 TWD）」）
+- 預設選取 TWD
+- 選取後欄位顯示「{名稱} · {代碼} · {符號}」，例如「日圓 · JPY · ¥」／「Japanese Yen · JPY · ¥」
+- 點欄位或開始輸入就展開選單；選單每列同樣顯示「{名稱} · {代碼} · {符號}」，名稱用目前介面語言
+- 沒有符合的幣別時，選單只顯示一列不可點的「找不到符合的幣別」／「No matching currency」
+- 輸入後沒有選任何一項就離開欄位：欄位回到目前選取的幣別
+
+### §14.2 搜尋規則
+
+查詢字去掉前後空白、不分大小寫。符合任一條件就列出：
+
+1. 代碼以查詢字開頭（`j` → JPY）
+2. 中文名稱包含查詢字（`日` → 日圓）
+3. 英文名稱中任一個單字以查詢字開頭（`peso` → Philippine Peso）
+
+中英文名稱**不論介面語言都比對**。排序：先列代碼符合的，再列只有名稱符合的，各自維持內建順序。
+查詢字是空的就列出全部 20 種。
+
+### §14.3 幣別名稱
+
+| 代碼 | 中文 | English |
+|---|---|---|
+| TWD | 新台幣 | New Taiwan Dollar |
+| JPY | 日圓 | Japanese Yen |
+| USD | 美元 | US Dollar |
+| EUR | 歐元 | Euro |
+| KRW | 韓元 | South Korean Won |
+| CNY | 人民幣 | Chinese Yuan |
+| HKD | 港幣 | Hong Kong Dollar |
+| GBP | 英鎊 | British Pound |
+| AUD | 澳幣 | Australian Dollar |
+| SGD | 新加坡幣 | Singapore Dollar |
+| THB | 泰銖 | Thai Baht |
+| VND | 越南盾 | Vietnamese Dong |
+| MYR | 馬來西亞令吉 | Malaysian Ringgit |
+| PHP | 菲律賓披索 | Philippine Peso |
+| IDR | 印尼盾 | Indonesian Rupiah |
+| INR | 印度盧比 | Indian Rupee |
+| CAD | 加幣 | Canadian Dollar |
+| CHF | 瑞士法郎 | Swiss Franc |
+| NZD | 紐西蘭幣 | New Zealand Dollar |
+| MOP | 澳門幣 | Macanese Pataca |
+
+名稱是介面文字，放在 string resources，`domain` 不放（`CLAUDE.md` 程式碼風格）。
