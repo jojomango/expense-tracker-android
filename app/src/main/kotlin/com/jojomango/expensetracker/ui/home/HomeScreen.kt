@@ -81,7 +81,7 @@ import com.jojomango.expensetracker.domain.categoryDisplayName
 import com.jojomango.expensetracker.domain.colorOf
 import com.jojomango.expensetracker.domain.majorDigitsToMinorUnits
 import com.jojomango.expensetracker.ui.common.AmountKeyboardOptions
-import com.jojomango.expensetracker.ui.common.CurrencyCodeKeyboardOptions
+import com.jojomango.expensetracker.ui.common.CurrencyPickerField
 import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.i18n.dayTitleLabels
 import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
@@ -486,11 +486,10 @@ private fun FirstWalletOnboarding(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = currency,
-            onValueChange = { currency = it.uppercase() },
-            label = { Text(stringResource(R.string.wallet_currency_label)) },
-            keyboardOptions = CurrencyCodeKeyboardOptions,
+        CurrencyPickerField(
+            selected = currency,
+            onSelect = { currency = it },
+            enabled = true,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))

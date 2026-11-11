@@ -19,9 +19,9 @@ appId: com.jojomango.expensetracker
 # When 輸入名稱「日常」、幣別「TWD」、預算模式「每週」、金額「3000」
 - tapOn: "錢包名稱"
 - inputText: "日常"
-- tapOn: "幣別（ISO 4217，如 TWD）"
-- eraseText: 10
+- tapOn: "幣別"
 - inputText: "TWD"
+- tapOn: "新台幣 · TWD · NT\\$"
 - tapOn: "每週"
 - tapOn: "預算金額"
 - inputText: "3000"
