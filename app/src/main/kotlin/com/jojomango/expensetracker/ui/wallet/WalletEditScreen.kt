@@ -92,9 +92,11 @@ fun WalletEditScreen(
             CurrencyPickerField(
                 selected = state.currency,
                 onSelect = viewModel::onCurrencyChange,
-                enabled = !state.isEditing,
+                enabled = true,
                 modifier = Modifier.fillMaxWidth(),
+                labelRes = R.string.wallet_default_currency_label,
             )
+            WalletCurrencyNote(isEditing = state.isEditing)
             Spacer(Modifier.height(12.dp))
             Text(stringResource(R.string.wallet_budget_mode))
             Row {
@@ -113,12 +115,10 @@ fun WalletEditScreen(
             }
             if (state.budgetMode != BudgetMode.NONE) {
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = state.budgetAmountDigits,
-                    onValueChange = viewModel::onBudgetAmountChange,
-                    label = { Text(stringResource(R.string.wallet_budget_amount)) },
-                    keyboardOptions = AmountKeyboardOptions,
-                    modifier = Modifier.fillMaxWidth(),
+                BudgetAmountField(
+                    digits = state.budgetAmountDigits,
+                    currencyChanged = state.currencyChangedWithBudget,
+                    onChange = viewModel::onBudgetAmountChange,
                 )
             }
             Spacer(Modifier.height(24.dp))
@@ -193,5 +193,39 @@ private fun DeleteWalletDialog(
             ) { Text(stringResource(R.string.common_delete)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
+    )
+}
+
+/** 編輯時提醒：改預設幣別只影響之後的預設值，不會改寫已記錄的交易（UI-SPEC.md §15.1、T8.5.10）。 */
+@Composable
+internal fun WalletCurrencyNote(isEditing: Boolean) {
+    if (!isEditing) return
+    Text(
+        stringResource(R.string.wallet_currency_change_note),
+        style = LocalAppTypography.current.caption,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+    )
+}
+
+/** 預算金額欄；換了幣別時欄位已清空，下方提示重新輸入（UI-SPEC.md §15.1、T8.5.9）。 */
+@Composable
+internal fun BudgetAmountField(
+    digits: String,
+    currencyChanged: Boolean,
+    onChange: (String) -> Unit,
+) {
+    OutlinedTextField(
+        value = digits,
+        onValueChange = onChange,
+        label = { Text(stringResource(R.string.wallet_budget_amount)) },
+        supportingText =
+            if (currencyChanged) {
+                { Text(stringResource(R.string.wallet_currency_changed_budget)) }
+            } else {
+                null
+            },
+        keyboardOptions = AmountKeyboardOptions,
+        modifier = Modifier.fillMaxWidth(),
     )
 }

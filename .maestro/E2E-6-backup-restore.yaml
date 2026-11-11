@@ -50,7 +50,7 @@ appId: com.jojomango.expensetracker
 - tapOn: "新增"
 - tapOn: "錢包名稱"
 - inputText: "日本旅遊"
-- tapOn: "幣別"
+- tapOn: "預設幣別"
 - inputText: "JPY"
 - tapOn: "日圓 · JPY · ¥"
 - tapOn: "總預算"

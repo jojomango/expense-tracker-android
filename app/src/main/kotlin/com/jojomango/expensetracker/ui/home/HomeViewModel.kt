@@ -10,6 +10,7 @@ import com.jojomango.expensetracker.domain.BudgetStatus
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.CategoryRepository
 import com.jojomango.expensetracker.domain.Money
+import com.jojomango.expensetracker.domain.MultiCurrency
 import com.jojomango.expensetracker.domain.Settings
 import com.jojomango.expensetracker.domain.SettingsRepository
 import com.jojomango.expensetracker.domain.TotalBudgetStatus
@@ -50,6 +51,8 @@ data class HomeUiState(
     val weeklyExpenseTotal: Money? = null,
     val daysLeftInWeek: Int? = null,
     val dailyAllowance: Money? = null,
+    /** 預算卡的「另有」：預設幣別以外的支出，每種幣別一個（UI-SPEC.md §15.3）。 */
+    val otherCurrencyExpenses: List<Money> = emptyList(),
     val transactionGroups: List<WeekGroup<Transaction>> = emptyList(),
 ) {
     val needsOnboarding: Boolean get() = !isLoading && wallets.isEmpty()
@@ -155,6 +158,7 @@ class HomeViewModel
                 weeklyExpenseTotal = weeklyExpenseTotal,
                 daysLeftInWeek = daysLeft,
                 dailyAllowance = dailyAllowance,
+                otherCurrencyExpenses = MultiCurrency.otherCurrencyExpenses(wallet, transactions, ctx.settings.weekStartDay, referenceDate),
                 transactionGroups = groups,
             )
         }
@@ -202,7 +206,7 @@ class HomeViewModel
 /** 跟 [HomeViewModel.buildUiState] 的金額選擇邏輯一致（週預算優先、其次總預算、
  * 否則本週支出），抽出來給 [HomeViewModel.walletBalanceTexts] 共用，因為那裡是
  * 對「每一個」錢包各自算一次，不是只對目前選中的錢包。 */
-private fun formatWalletBalance(
+internal fun formatWalletBalance(
     wallet: Wallet,
     transactions: List<Transaction>,
     weekStartDay: DayOfWeek,

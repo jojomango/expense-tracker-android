@@ -35,7 +35,7 @@ sealed interface WalletEditResult {
 
 data class WalletEditUiState(
     val isLoading: Boolean = true,
-    /** 編輯既有錢包時才有值；新增錢包時是 null，`currency` 因此可以編輯。 */
+    /** 編輯既有錢包時才有值；新增錢包時是 null。 */
     val walletId: String? = null,
     val name: String = "",
     val currency: String = "TWD",
@@ -48,9 +48,27 @@ data class WalletEditUiState(
     /** 刪除確認對話框要顯示的交易筆數；`null` 代表對話框沒開。 */
     val pendingDeleteTransactionCount: Int? = null,
     val result: WalletEditResult? = null,
+    /** 編輯時載入的幣別與預算；改回原幣別時要恢復原預算（UI-SPEC.md §15.1）。 */
+    val originalCurrency: String? = null,
+    val originalBudgetAmountDigits: String = "",
 ) {
     val isEditing: Boolean get() = walletId != null
-    val canSubmit: Boolean get() = name.isNotBlank() && Currencies.builtIn.containsKey(currency)
+
+    /** 原本的預算金額是舊幣別的數字，換了幣別就沒有意義，必須重新輸入（UI-SPEC.md §15.1、T8.5.9）。 */
+    val currencyChangedWithBudget: Boolean
+        get() = isEditing && originalCurrency != null && currency != originalCurrency && budgetMode != BudgetMode.NONE
+
+    val canSubmit: Boolean
+        get() =
+            name.isNotBlank() &&
+                Currencies.builtIn.containsKey(currency) &&
+                !(currencyChangedWithBudget && budgetAmountDigits.isEmpty())
+
+    fun withCurrency(code: String): WalletEditUiState {
+        val changed = copy(currency = code)
+        if (!isEditing || budgetMode == BudgetMode.NONE || code == currency) return changed
+        return changed.copy(budgetAmountDigits = if (code == originalCurrency) originalBudgetAmountDigits else "")
+    }
 }
 
 @HiltViewModel
@@ -74,6 +92,7 @@ class WalletEditViewModel
                 internalState.value =
                     if (existing != null) {
                         val decimalDigits = Currencies.builtIn[existing.currency]?.decimalDigits ?: 2
+                        val budgetDigits = existing.budgetAmount?.let { minorUnitsToMajorDigits(it, decimalDigits) } ?: ""
                         internalState.value.copy(
                             isLoading = false,
                             archived = existing.archived,
@@ -81,8 +100,9 @@ class WalletEditViewModel
                             name = existing.name,
                             currency = existing.currency,
                             budgetMode = existing.budgetMode,
-                            budgetAmountDigits =
-                                existing.budgetAmount?.let { minorUnitsToMajorDigits(it, decimalDigits) } ?: "",
+                            budgetAmountDigits = budgetDigits,
+                            originalCurrency = existing.currency,
+                            originalBudgetAmountDigits = budgetDigits,
                         )
                     } else {
                         internalState.value.copy(isLoading = false)
@@ -95,7 +115,7 @@ class WalletEditViewModel
         }
 
         fun onCurrencyChange(currency: String) {
-            internalState.value = internalState.value.copy(currency = currency.uppercase())
+            internalState.value = internalState.value.withCurrency(currency.uppercase())
         }
 
         fun onBudgetModeChange(mode: BudgetMode) {

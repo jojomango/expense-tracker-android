@@ -40,6 +40,27 @@ object MultiCurrency {
         }
     }
 
+    /** 交易用到的幣別，預設幣別在前（UI-SPEC.md §15.4 統計頁的 chip）。 */
+    fun currenciesUsed(
+        transactions: List<Transaction>,
+        defaultCurrency: String,
+    ): List<String> = orderCurrencies(transactions.map { it.currency }, defaultCurrency)
+
+    /**
+     * 統計頁預設選取的幣別（UI-SPEC.md §15.4，T3.9.10）：預設幣別有交易就選它，
+     * 否則選內建順序第一個有交易的幣別；完全沒有交易時仍是預設幣別。
+     */
+    fun statsCurrency(
+        transactions: List<Transaction>,
+        defaultCurrency: String,
+    ): String = currenciesUsed(transactions, defaultCurrency).firstOrNull() ?: defaultCurrency
+
+    /** 記帳頁幣別 sheet 的順序（UI-SPEC.md §15.2）：預設幣別 → 錢包用過的其他幣別 → 其餘內建幣別。 */
+    fun pickerOrder(
+        defaultCurrency: String,
+        walletTransactions: List<Transaction>,
+    ): List<String> = (listOf(defaultCurrency) + currenciesUsed(walletTransactions, defaultCurrency) + Currencies.builtIn.keys).distinct()
+
     /** 預設幣別在前，其餘依 [Currencies.builtIn] 的順序；不在內建清單的排最後（UI-SPEC.md §15）。 */
     private fun orderCurrencies(
         codes: List<String>,

@@ -38,7 +38,7 @@ appId: com.jojomango.expensetracker
 - tapOn: "新增"
 - tapOn: "錢包名稱"
 - inputText: "日本旅遊"
-- tapOn: "幣別"
+- tapOn: "預設幣別"
 - inputText: "JPY"
 - tapOn: "日圓 · JPY · ¥"
 - tapOn: "總預算"
@@ -117,7 +117,7 @@ appId: com.jojomango.expensetracker
 - tapOn: "錢包名稱"
 - inputText: "舊帳"
 # 最後一次輸入改成英文（幣別），之後的 hideKeyboard 才安全
-- tapOn: "幣別"
+- tapOn: "預設幣別"
 - inputText: "TWD"
 - tapOn: "新台幣 · TWD · NT\\$"
 - hideKeyboard
