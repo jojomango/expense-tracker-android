@@ -50,7 +50,7 @@ keytool -printcert -jarfile app/build/outputs/bundle/release/app-release.aab
 
 ## 3. Play Console：建立 App
 
-- [ ] 建立應用程式：名稱「記帳本」、預設語言「中文（台灣）」、App（不是遊戲）、免費
+- [ ] 建立應用程式：名稱「預算本」、預設語言「中文（台灣）」、App（不是遊戲）、免費
 - [ ] 啟用 **Play App Signing**（建立時預設會啟用）
 - [ ] 這個 App 的**商店聯絡信箱**（「商店設定 → 商店資訊聯絡詳細資料」，顯示在商店頁面上）填
       jojomango99@gmail.com。建議在 99 設自動轉寄到你常用的信箱，使用者來信才不會漏看
