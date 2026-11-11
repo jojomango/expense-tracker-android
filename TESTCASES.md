@@ -1,4 +1,4 @@
-# 記帳本 Android — 測試規格 v1
+# 預算本 Android — 測試規格 v1
 
 > **本文件是可攜的測試契約，從 [expense-tracker](https://github.com/jojomango/expense-tracker)
 > 網頁版的 `TESTCASES.md` 移植而來。**
