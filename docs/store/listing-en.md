@@ -2,11 +2,10 @@
 
 > Phase 10 draft. Add it in Play Console → **Store presence → Main store listing → Manage translations → English (United States)**.
 > Character limits: name 30, short description 80, full description 4000.
-> ⚠️ The English app name "Expense Tracker" is a placeholder chosen by the agent (see the Phase 10 PR): please confirm or replace it.
 
 ## App name
 
-Expense Tracker
+Budget Book
 
 ## Short description (77 chars)
 

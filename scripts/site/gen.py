@@ -2,7 +2,7 @@
 import sys, os
 repo = sys.argv[1]
 T = {
- 'zh': dict(lang='zh-Hant-TW', title='記帳本', name='記帳本', other_href='en/', other='English', base='',
+ 'zh': dict(lang='zh-Hant-TW', title='預算本', name='預算本', other_href='en/', other='English', base='',
    tagline='打開就知道這週還能花多少。', sub='純本地、免登入、沒有廣告的 Android 記帳 App。',
    soon='即將在 Google Play 推出', join='加入封閉測試', privacy_href='privacy-policy.html', privacy='隱私權政策', contact='聯絡：',
    trust_h='你的記帳資料只在你的手機上', trust_p='沒有帳號、不用登入、沒有廣告。每一筆收支都只存在你自己的手機裡，不會上傳到任何地方。設定頁有一個預設關閉的「協助改善 App」，打開後也只會傳送匿名的使用情形與當機資訊，不含任何記帳內容。',
@@ -14,7 +14,7 @@ T = {
     ('settings','備份由你掌握','一鍵匯出備份檔，存到你想要的地方；換手機時匯入就能完整還原，App 每個月底提醒你備份。'),
     ('dark','深色模式與中英文','跟著系統切換深色模式；介面支援繁體中文與英文，也支援 TalkBack 螢幕閱讀器。'),
    ]),
- 'en': dict(lang='en', title='Expense Tracker', name='Expense Tracker', other_href='../', other='繁體中文', base='../',
+ 'en': dict(lang='en', title='Budget Book', name='Budget Book', other_href='../', other='繁體中文', base='../',
    tagline='Know what’s left to spend this week, the moment you open it.', sub='A private, offline budget tracker for Android. No sign-up, no ads.',
    soon='Coming soon to Google Play', join='Join the closed test', privacy_href='../privacy-policy-en.html', privacy='Privacy policy', contact='Contact: ',
    trust_h='Your entries stay on your phone', trust_p='No account, no sign-in, no ads. Every entry is stored only on your own phone and never uploaded anywhere. Settings has an optional “Help improve the app” switch, off by default; even when it’s on, only anonymous usage and crash info is sent, never your entries.',

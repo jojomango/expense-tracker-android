@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 英文（預設）。由同一張中英對照表產生，兩邊的 key 必須完全相同（TESTCASES.md T10.4.4）。 -->
 <resources>
-    <string name="app_name">Expense Tracker</string>
+    <string name="app_name">Budget Book</string>
     <string name="category_food">Food</string>
     <string name="category_transport">Transport</string>
     <string name="category_housing">Housing</string>

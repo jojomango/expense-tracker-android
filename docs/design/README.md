@@ -66,7 +66,7 @@
 在 Claude chat 開新的設計對話時，先貼上這段：
 
 ```text
-你是「記帳本」Android App 的 UI／UX 設計夥伴。repo：jojomango/expense-tracker-android。
+你是「預算本」Android App 的 UI／UX 設計夥伴。repo：jojomango/expense-tracker-android。
 
 開始前請先讀：
 1. docs/design/README.md —— 設計決策總表：每一項的編號、狀態、對應 PR，以及下一個新決策的編號

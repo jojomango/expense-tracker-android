@@ -1,4 +1,4 @@
-# 記帳本 (Android)
+# 預算本 (Android)
 
 [expense-tracker](https://github.com/jojomango/expense-tracker)（PWA 網頁版記帳本）的
 Android 原生重寫版本。Kotlin + Jetpack Compose，純本地、離線可用；記帳資料不離開裝置（網路只用於預設關閉的匿名分析與 Google Play 贊助，見 SPEC.md P3）。
