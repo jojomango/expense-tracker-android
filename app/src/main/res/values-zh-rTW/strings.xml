@@ -75,7 +75,7 @@
     <string name="home_add_first">記第一筆</string>
     <string name="onboarding_title">建立你的第一個錢包</string>
     <string name="wallet_name_label">錢包名稱</string>
-    <string name="wallet_currency_label">幣別（ISO 4217，如 TWD）</string>
+    <string name="wallet_currency_label">幣別</string>
     <string name="wallet_budget_mode">預算模式</string>
     <string name="budget_mode_weekly">每週</string>
     <string name="budget_mode_total">總預算</string>
@@ -187,4 +187,26 @@
     <string name="settings_backup_update_save_new">另存新檔</string>
     <string name="settings_backup_file_missing">找不到上次的備份檔，請重新選擇位置。</string>
     <string name="notification_auto_backup_failed">自動備份沒有完成，請打開 App 重新選擇備份檔。</string>
+    <!-- UI-SPEC.md §14 幣別選單 -->
+    <string name="currency_no_match">找不到符合的幣別</string>
+    <string name="currency_name_twd">新台幣</string>
+    <string name="currency_name_jpy">日圓</string>
+    <string name="currency_name_usd">美元</string>
+    <string name="currency_name_eur">歐元</string>
+    <string name="currency_name_krw">韓元</string>
+    <string name="currency_name_cny">人民幣</string>
+    <string name="currency_name_hkd">港幣</string>
+    <string name="currency_name_gbp">英鎊</string>
+    <string name="currency_name_aud">澳幣</string>
+    <string name="currency_name_sgd">新加坡幣</string>
+    <string name="currency_name_thb">泰銖</string>
+    <string name="currency_name_vnd">越南盾</string>
+    <string name="currency_name_myr">馬來西亞令吉</string>
+    <string name="currency_name_php">菲律賓披索</string>
+    <string name="currency_name_idr">印尼盾</string>
+    <string name="currency_name_inr">印度盧比</string>
+    <string name="currency_name_cad">加幣</string>
+    <string name="currency_name_chf">瑞士法郎</string>
+    <string name="currency_name_nzd">紐西蘭幣</string>
+    <string name="currency_name_mop">澳門幣</string>
 </resources>

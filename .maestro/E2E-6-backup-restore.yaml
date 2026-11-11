@@ -21,9 +21,9 @@ appId: com.jojomango.expensetracker
     timeout: 20000
 - tapOn: "錢包名稱"
 - inputText: "日常"
-- tapOn: "幣別（ISO 4217，如 TWD）"
-- eraseText: 10
+- tapOn: "幣別"
 - inputText: "TWD"
+- tapOn: "新台幣 · TWD · NT\\$"
 - tapOn: "每週"
 - tapOn: "預算金額"
 - inputText: "3000"
@@ -50,9 +50,9 @@ appId: com.jojomango.expensetracker
 - tapOn: "新增"
 - tapOn: "錢包名稱"
 - inputText: "日本旅遊"
-- tapOn: "幣別（ISO 4217，如 TWD）"
-- eraseText: 10
+- tapOn: "幣別"
 - inputText: "JPY"
+- tapOn: "日圓 · JPY · ¥"
 - tapOn: "總預算"
 - tapOn: "預算金額"
 - inputText: "200000"

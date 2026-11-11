@@ -15,9 +15,9 @@ appId: com.jojomango.expensetracker
 - assertVisible: "建立你的第一個錢包"
 - tapOn: "錢包名稱"
 - inputText: "日常"
-- tapOn: "幣別（ISO 4217，如 TWD）"
-- eraseText: 10
+- tapOn: "幣別"
 - inputText: "TWD"
+- tapOn: "新台幣 · TWD · NT\\$"
 - hideKeyboard
 - tapOn: "建立錢包"
 

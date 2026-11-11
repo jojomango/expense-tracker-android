@@ -75,7 +75,7 @@
     <string name="home_add_first">Add your first one</string>
     <string name="onboarding_title">Create your first wallet</string>
     <string name="wallet_name_label">Wallet name</string>
-    <string name="wallet_currency_label">Currency (ISO 4217, e.g. TWD)</string>
+    <string name="wallet_currency_label">Currency</string>
     <string name="wallet_budget_mode">Budget mode</string>
     <string name="budget_mode_weekly">Weekly</string>
     <string name="budget_mode_total">Total budget</string>
@@ -189,4 +189,27 @@
     <string name="settings_backup_update_save_new">Save as new file</string>
     <string name="settings_backup_file_missing">Can’t find your last backup file. Please choose a location again.</string>
     <string name="notification_auto_backup_failed">Automatic backup didn’t finish. Open the app and choose your backup file again.</string>
+    <!-- UI-SPEC.md §14 幣別選單 -->
+    <string name="currency_no_match">No matching currency</string>
+    <string name="currency_option" translatable="false">%1$s · %2$s · %3$s</string>
+    <string name="currency_name_twd">New Taiwan Dollar</string>
+    <string name="currency_name_jpy">Japanese Yen</string>
+    <string name="currency_name_usd">US Dollar</string>
+    <string name="currency_name_eur">Euro</string>
+    <string name="currency_name_krw">South Korean Won</string>
+    <string name="currency_name_cny">Chinese Yuan</string>
+    <string name="currency_name_hkd">Hong Kong Dollar</string>
+    <string name="currency_name_gbp">British Pound</string>
+    <string name="currency_name_aud">Australian Dollar</string>
+    <string name="currency_name_sgd">Singapore Dollar</string>
+    <string name="currency_name_thb">Thai Baht</string>
+    <string name="currency_name_vnd">Vietnamese Dong</string>
+    <string name="currency_name_myr">Malaysian Ringgit</string>
+    <string name="currency_name_php">Philippine Peso</string>
+    <string name="currency_name_idr">Indonesian Rupiah</string>
+    <string name="currency_name_inr">Indian Rupee</string>
+    <string name="currency_name_cad">Canadian Dollar</string>
+    <string name="currency_name_chf">Swiss Franc</string>
+    <string name="currency_name_nzd">New Zealand Dollar</string>
+    <string name="currency_name_mop">Macanese Pataca</string>
 </resources>

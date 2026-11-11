@@ -34,7 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.BudgetMode
 import com.jojomango.expensetracker.ui.common.AmountKeyboardOptions
-import com.jojomango.expensetracker.ui.common.CurrencyCodeKeyboardOptions
+import com.jojomango.expensetracker.ui.common.CurrencyPickerField
 import com.jojomango.expensetracker.ui.common.LoadingState
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 
@@ -89,11 +89,9 @@ fun WalletEditScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = state.currency,
-                onValueChange = viewModel::onCurrencyChange,
-                label = { Text(stringResource(R.string.wallet_currency_label)) },
-                keyboardOptions = CurrencyCodeKeyboardOptions,
+            CurrencyPickerField(
+                selected = state.currency,
+                onSelect = viewModel::onCurrencyChange,
                 enabled = !state.isEditing,
                 modifier = Modifier.fillMaxWidth(),
             )

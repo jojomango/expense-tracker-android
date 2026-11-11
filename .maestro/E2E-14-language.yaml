@@ -20,9 +20,9 @@ appId: com.jojomango.expensetracker
 # When 建立錢包「Daily」並記一筆 Food 支出
 - tapOn: "Wallet name"
 - inputText: "Daily"
-- tapOn: "Currency (ISO 4217, e.g. TWD)"
-- eraseText: 10
+- tapOn: "Currency"
 - inputText: "TWD"
+- tapOn: "New Taiwan Dollar · TWD · NT\\$"
 - hideKeyboard
 - tapOn: "Create wallet"
 - tapOn: "Add"
