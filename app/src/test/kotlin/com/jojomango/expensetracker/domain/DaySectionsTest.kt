@@ -72,7 +72,7 @@ class DaySectionsTest {
             entries(listOf(tx(oct28, amount = 30000), tx(oct28, TransactionType.INCOME, 100000)), oct28)
                 .single()
                 .single() as WeekEntry.Day
-        assertEquals("+NT$700.00", Budget.netTotal(day.items, "TWD").formatSigned())
+        assertEquals("+NT$700", Budget.netTotal(day.items, "TWD").formatSigned())
     }
 
     @Test
@@ -82,7 +82,7 @@ class DaySectionsTest {
             entries(listOf(tx(oct28, amount = 50000), tx(oct28, TransactionType.INCOME, 50000)), oct28)
                 .single()
                 .single() as WeekEntry.Day
-        assertEquals("NT$0.00", Budget.netTotal(day.items, "TWD").formatSigned())
+        assertEquals("NT$0", Budget.netTotal(day.items, "TWD").formatSigned())
     }
 
     @Test

@@ -92,7 +92,7 @@ data class Money internal constructor(
     fun formatSigned(): String = if (amount > 0) "+${format()}" else format()
 
     /**
-     * 格式化為使用者可見字串，例如 `NT$100.50`、`¥1,000`、`-NT$5.00`。
+     * 格式化為使用者可見字串，例如 `NT$100.50`、`NT$180`、`¥1,000`、`$5.00`。
      * 千分位分組手刻實作，不依賴平台 locale（見 SPEC.md P1 的可攜性精神）。
      */
     fun format(): String {
@@ -104,7 +104,8 @@ data class Money internal constructor(
         val fractionalPart = absAmount % divisor
 
         val grouped = groupThousands(integerPart)
-        return if (decimalDigits > 0) {
+        val showFraction = decimalDigits > 0 && !(currency.omitZeroFraction && fractionalPart == 0L)
+        return if (showFraction) {
             val fractionalString = fractionalPart.toString().padStart(decimalDigits, '0')
             "$sign${currency.symbol}$grouped.$fractionalString"
         } else {

@@ -28,17 +28,31 @@ class MoneyTest {
     }
 
     @Test
-    @DisplayName("T1.1.3 — Money.of(0, TWD) 合法，顯示 NT\$0.00")
+    @DisplayName("T1.1.3 — Money.of(0, TWD) 合法，顯示 NT\$0")
     fun `T1 1 3`() {
         val m = Money.of(0, "TWD")
-        assertEquals("NT$0.00", m.format())
+        assertEquals("NT$0", m.format())
     }
 
     @Test
-    @DisplayName("T1.1.4 — Money.of(-500, TWD) 合法（餘額可為負），顯示 -NT\$5.00")
+    @DisplayName("T1.1.4 — Money.of(-500, TWD) 合法（餘額可為負），顯示 -NT\$5")
     fun `T1 1 4`() {
         val m = Money.of(-500, "TWD")
-        assertEquals("-NT$5.00", m.format())
+        assertEquals("-NT$5", m.format())
+    }
+
+    @Test
+    @DisplayName("T1.1.8 — Money.of(18000, TWD) 顯示 NT\$180（角分為 0 不顯示小數，內部值不變）")
+    fun `T1 1 8`() {
+        val m = Money.of(18000, "TWD")
+        assertEquals(18000L, m.amount)
+        assertEquals("NT$180", m.format())
+    }
+
+    @Test
+    @DisplayName("T1.1.9 — Money.of(18000, USD) 顯示 \$180.00（只有新台幣省略 .00）")
+    fun `T1 1 9`() {
+        assertEquals("$180.00", Money.of(18000, "USD").format())
     }
 
     // T1.1.5：型別系統層級擋掉（amount 為 Long），編譯期即擋下，不需要 runtime 測試。

@@ -89,8 +89,8 @@ class HomeListTest {
         items = listOf(tx(LocalDate(2026, 10, 27), note = "午餐"), tx(LocalDate(2026, 10, 26)))
         showHome()
         // 日小標題把日期與小計合成一句給 TalkBack（clearAndSetSemantics），所以用描述找
-        compose.onNodeWithContentDescription("昨天 · 10/27 週二，淨額 -NT$330.00").assertIsDisplayed()
-        compose.onNodeWithContentDescription("10/26 週一，淨額 -NT$330.00").assertIsDisplayed()
+        compose.onNodeWithContentDescription("昨天 · 10/27 週二，淨額 -NT$330").assertIsDisplayed()
+        compose.onNodeWithContentDescription("10/26 週一，淨額 -NT$330").assertIsDisplayed()
         compose.onNodeWithText("午餐").assertIsDisplayed()
         compose.onNodeWithText("10/27 · 午餐").assertDoesNotExist()
         compose.onNodeWithText("10/26").assertDoesNotExist()

@@ -23,7 +23,7 @@ appId: com.jojomango.expensetracker
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 - tapOn: "設定"
 - tapOn: "分類管理"
@@ -54,7 +54,7 @@ appId: com.jojomango.expensetracker
 - tapOn: "咖啡"
 - tapOn: "記一筆"
 - assertVisible: "咖啡"
-- assertVisible: "-NT\\$500.00"
+- assertVisible: "-NT\\$500"
 
 # When 刪除分類「咖啡」
 - tapOn: "設定"
@@ -77,4 +77,4 @@ appId: com.jojomango.expensetracker
 # And 原本該筆交易的分類顯示變為「未分類」
 # And 交易本身（金額、日期）不遺失
 - assertVisible: "未分類"
-- assertVisible: "-NT\\$500.00"
+- assertVisible: "-NT\\$500"

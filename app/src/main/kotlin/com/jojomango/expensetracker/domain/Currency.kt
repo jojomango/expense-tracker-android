@@ -7,6 +7,11 @@ data class CurrencyInfo(
     val code: String,
     val decimalDigits: Int,
     val symbol: String,
+    /**
+     * 角分為 0 時不顯示小數（SPEC.md D20）。只影響顯示，儲存仍是 [decimalDigits] 位，
+     * 這樣既有資料與備份都不用換算。
+     */
+    val omitZeroFraction: Boolean = false,
 )
 
 /**
@@ -15,7 +20,7 @@ data class CurrencyInfo(
 object Currencies {
     val builtIn: Map<String, CurrencyInfo> =
         listOf(
-            CurrencyInfo("TWD", 2, "NT$"),
+            CurrencyInfo("TWD", 2, "NT$", omitZeroFraction = true),
             CurrencyInfo("JPY", 0, "¥"),
             CurrencyInfo("USD", 2, "$"),
             CurrencyInfo("EUR", 2, "€"),

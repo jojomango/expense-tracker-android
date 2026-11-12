@@ -35,7 +35,7 @@ class WeekSubtotalTest {
                 "TWD",
             )
         assertEquals(50000, net.amount)
-        assertEquals("+NT$500.00", net.formatSigned())
+        assertEquals("+NT$500", net.formatSigned())
     }
 
     @Test
@@ -43,7 +43,7 @@ class WeekSubtotalTest {
     fun `T2 5 7`() {
         val net = Budget.netTotal(listOf(tx(TransactionType.EXPENSE, 12000), tx(TransactionType.EXPENSE, 4500)), "TWD")
         assertEquals(-16500, net.amount)
-        assertEquals("-NT$165.00", net.formatSigned())
+        assertEquals("-NT$165", net.formatSigned())
     }
 
     @Test
@@ -51,6 +51,6 @@ class WeekSubtotalTest {
     fun `T2 5 8`() {
         val net = Budget.netTotal(listOf(tx(TransactionType.EXPENSE, 50000), tx(TransactionType.INCOME, 50000)), "TWD")
         assertEquals(0, net.amount)
-        assertEquals("NT$0.00", net.formatSigned())
+        assertEquals("NT$0", net.formatSigned())
     }
 }

@@ -23,7 +23,7 @@ appId: com.jojomango.expensetracker
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 - tapOn: "記帳"
 - tapOn: "5"
@@ -32,7 +32,7 @@ appId: com.jojomango.expensetracker
 - assertVisible: "居住"
 - tapOn: "居住"
 - tapOn: "記一筆"
-- assertVisible: "NT$2,500.00"
+- assertVisible: "NT$2,500"
 
 # When 建立第二個錢包「日本旅遊」，幣別「JPY」，預算模式「總預算」，金額「200000」
 - tapOn: "日常"
@@ -82,6 +82,6 @@ appId: com.jojomango.expensetracker
 - tapOn: "日本旅遊"
 - tapOn: "日常"
 
-# Then 本週餘額仍為「NT$2,500.00」（完全不受 JPY 交易影響）
-- assertVisible: "NT$2,500.00"
+# Then 本週餘額仍為「NT$2,500」（完全不受 JPY 交易影響）
+- assertVisible: "NT$2,500"
 - assertNotVisible: "¥"

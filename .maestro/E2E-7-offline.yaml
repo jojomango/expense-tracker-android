@@ -29,14 +29,14 @@ onFlowComplete:
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 - tapOn: "記帳"
 - tapOn: "1"
 - tapOn: "2"
 - tapOn: "0"
 - tapOn: "交通"
 - tapOn: "記一筆"
-- assertVisible: "NT$2,880.00"
+- assertVisible: "NT$2,880"
 
 # When 裝置切換為飛航模式
 - setAirplaneMode: enabled
@@ -55,8 +55,8 @@ onFlowComplete:
 # Then app 正常載入
 # And 所有既有資料可讀取
 - assertVisible: "日常"
-- assertVisible: "NT$2,880.00"
-- assertVisible: "-NT\\$120.00"
+- assertVisible: "NT$2,880"
+- assertVisible: "-NT\\$120"
 
 # And 可正常新增交易
 - tapOn: "記帳"
@@ -64,4 +64,4 @@ onFlowComplete:
 - tapOn: "00"
 - tapOn: "交通"
 - tapOn: "記一筆"
-- assertVisible: "NT$2,380.00"
+- assertVisible: "NT$2,380"

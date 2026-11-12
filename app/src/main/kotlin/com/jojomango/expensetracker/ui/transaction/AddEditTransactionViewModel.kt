@@ -55,7 +55,7 @@ data class AddEditTransactionUiState(
      * 自製鍵台輸入的是「幣別主要單位」的整數位數（跟 [amountDigits] 一樣的字串），
      * 不是 [Money] 的最小單位——這裡要乘上 `10^decimalDigits` 換算，
      * 對應 UI-SPEC.md §5「即時千分位格式化」與 TESTCASES.md E2E-2 的
-     * 「輸入金額「120」...顯示「NT$120.00」」（不是 NT$1.20）。
+     * 「輸入金額「120」...顯示「NT$120」」（不是 NT$1.20）。
      */
     val amount: Long
         get() {

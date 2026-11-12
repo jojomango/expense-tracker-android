@@ -49,7 +49,7 @@ class BudgetTest {
         Budget.calculateWeeklyBalance(dailyWallet, transactions, weekStart, referenceDate)!!
 
     @Test
-    @DisplayName("T3.1.1 — 無交易 -> 300000（NT\$3,000.00）")
+    @DisplayName("T3.1.1 — 無交易 -> 300000（NT\$3,000）")
     fun `T3 1 1`() {
         assertEquals(300000L, weeklyBalance(emptyList()).balance.amount)
     }

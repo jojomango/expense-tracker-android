@@ -33,9 +33,9 @@ appId: com.jojomango.expensetracker
 
 # Then 進入主畫面
 # And 顯示錢包「日常」
-# And 顯示本週餘額「NT$3,000.00」
+# And 顯示本週餘額「NT$3,000」
 - assertVisible: "日常"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 # And 分類清單已預先填入 7 個支出分類與 4 個收入分類
 # （domain/Category.kt DefaultCategories.seedDefaults() — T2.2.x 已用單元測試覆蓋
