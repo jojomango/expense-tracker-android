@@ -23,7 +23,7 @@ appId: com.jojomango.expensetracker
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 # When 進入分類管理頁
 - tapOn: "設定"

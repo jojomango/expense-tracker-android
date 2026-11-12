@@ -30,7 +30,7 @@ appId: com.jojomango.expensetracker
 - tapOn: "00"
 - tapOn: "交通"
 - tapOn: "記一筆"
-- assertVisible: "NT$2,900.00"
+- assertVisible: "NT$2,900"
 
 # 第二個錢包「日本旅遊」（步驟同 E2E-4），切過去記 3 筆
 - tapOn: "日常"
@@ -87,8 +87,8 @@ appId: com.jojomango.expensetracker
 - assertNotVisible: "日本旅遊"
 - tapOn: "返回"
 # And 首頁自動改顯示「日常」，它的交易完全不受影響（UI-SPEC §11：刪掉的是目前錢包）
-- assertVisible: "NT$2,900.00"
-- assertVisible: "-NT\\$100.00"
+- assertVisible: "NT$2,900"
+- assertVisible: "-NT\\$100"
 # And 錢包切換清單裡也沒有「日本旅遊」
 - tapOn: "日常"
 - assertVisible: "切換錢包"

@@ -30,7 +30,7 @@ appId: com.jojomango.expensetracker
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 # And 本週（今天）有支出「飲食 300」
 - tapOn: "記帳"
@@ -91,16 +91,16 @@ appId: com.jojomango.expensetracker
 # When 進入統計頁（預設顯示「本週」）
 - tapOn: "統計"
 - assertVisible: "本週支出"
-# Then 分類佔比顯示「飲食 NT$300.00（60%）」與「交通 NT$200.00（40%）」
-- assertVisible: "NT\\$300.00（60%）"
-- assertVisible: "NT\\$200.00（40%）"
+# Then 分類佔比顯示「飲食 NT$300（60%）」與「交通 NT$200（40%）」
+- assertVisible: "NT\\$300（60%）"
+- assertVisible: "NT\\$200（40%）"
 
 # When 切換為「本月」
 - tapOn: "本月"
-# Then 分類佔比顯示「飲食 NT$400.00（66.67%）」與「交通 NT$200.00（33.33%）」
+# Then 分類佔比顯示「飲食 NT$400（66.67%）」與「交通 NT$200（33.33%）」
 - assertVisible: "本月支出"
-- assertVisible: "NT\\$400.00（66.67%）"
-- assertVisible: "NT\\$200.00（33.33%）"
+- assertVisible: "NT\\$400（66.67%）"
+- assertVisible: "NT\\$200（33.33%）"
 
 # Then 近 8 週趨勢長條圖顯示 8 筆資料（本週的週別標籤在；每根柱子確切高度
 # 是 Canvas 手畫的，Maestro 讀不到，數值本身已經由 domain 的 T3.6 單元測試

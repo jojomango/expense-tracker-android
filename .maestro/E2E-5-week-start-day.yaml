@@ -30,7 +30,7 @@ appId: com.jojomango.expensetracker
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 # And 在「這週一的前一天（週日）」有一筆支出 1000
 # （今天剛好是週日時改用明天，原因見 scripts/e2e5-dates.js 檔頭）
@@ -72,16 +72,16 @@ appId: com.jojomango.expensetracker
 - tapOn: "居住"
 - tapOn: "記一筆"
 
-# Then 本週餘額為「NT$2,500.00」（只計週一那筆——週日那筆屬於上週）
-- assertVisible: "NT$2,500.00"
+# Then 本週餘額為「NT$2,500」（只計週一那筆——週日那筆屬於上週）
+- assertVisible: "NT$2,500"
 
 # When 將 weekStartDay 改為「週日」
 - tapOn: "設定"
 - tapOn: "週日"
 - tapOn: "返回"
 
-# Then 本週餘額立即變為「NT$1,500.00」（兩筆都計入）
-# And 沒有任何交易資料被修改——用同樣兩筆交易的金額還在（-NT$1,000.00 那筆
+# Then 本週餘額立即變為「NT$1,500」（兩筆都計入）
+# And 沒有任何交易資料被修改——用同樣兩筆交易的金額還在（-NT$1,000 那筆
 # 沒有消失或被改到別的值）驗證，不是重新讀一次資料庫比對，但行為上等價：
 # 如果資料被誤改，餘額不會剛好是 1500。
-- assertVisible: "NT$1,500.00"
+- assertVisible: "NT$1,500"

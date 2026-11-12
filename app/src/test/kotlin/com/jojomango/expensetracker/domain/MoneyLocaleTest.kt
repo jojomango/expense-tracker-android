@@ -21,11 +21,11 @@ class MoneyLocaleTest {
     }
 
     @Test
-    @DisplayName("T10.4.6 — NT$1,234.00 在繁中與英文（以及小數點是逗號的德文）下都一樣")
+    @DisplayName("T10.4.6 — NT$1,234 在繁中與英文（以及小數點是逗號的德文）下都一樣")
     fun `T10 4 6`() {
         val twd = Money.of(123400, "TWD")
         for (locale in listOf(Locale.TAIWAN, Locale.US, Locale.GERMANY)) {
-            assertEquals("NT$1,234.00", formatUnder(locale, twd), "locale=$locale")
+            assertEquals("NT$1,234", formatUnder(locale, twd), "locale=$locale")
         }
         assertEquals(formatUnder(Locale.TAIWAN, Money.of(145000, "JPY")), formatUnder(Locale.US, Money.of(145000, "JPY")))
     }

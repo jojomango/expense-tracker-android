@@ -57,7 +57,7 @@ class SavedSnackbarTest {
 
     @Test
     fun `T8_1_4 記一筆後的訊息是「已記錄 飲食 NT$180_00」`() {
-        assertEquals("已記錄 飲食 NT$180.00", message(tx(18_000, "TWD", "food")))
+        assertEquals("已記錄 飲食 NT$180", message(tx(18_000, "TWD", "food")))
     }
 
     @Test
@@ -76,7 +76,7 @@ class SavedSnackbarTest {
     @Test
     fun `T8_1_4 首頁收到訊息時顯示 Snackbar，顯示後通知已消化`() {
         // 跟 MainActivity 一樣：onShown 會把訊息清成 null，Snackbar 不能因此被取消
-        val message = mutableStateOf<String?>("已記錄 飲食 NT$180.00")
+        val message = mutableStateOf<String?>("已記錄 飲食 NT$180")
         compose.setContent {
             ExpenseTrackerTheme(darkTheme = false) {
                 val host = remember { SnackbarHostState() }
@@ -85,7 +85,7 @@ class SavedSnackbarTest {
                 }
             }
         }
-        compose.onNodeWithText("已記錄 飲食 NT$180.00").assertIsDisplayed()
+        compose.onNodeWithText("已記錄 飲食 NT$180").assertIsDisplayed()
         assertNull(message.value)
     }
 }

@@ -26,7 +26,7 @@ fun deleteDigit(current: String): String = current.dropLast(1)
 /**
  * 把鍵台輸入的數字字串（幣別「主要單位」的整數，例如使用者按出的 `"120"`
  * 代表 120 元）換算成 [Money] 用的最小單位——對應 TESTCASES.md E2E-2
- * 「輸入金額「120」...顯示「NT$120.00」」，不是 `NT$1.20`。
+ * 「輸入金額「120」...顯示「NT$120」」，不是 `NT$1.20`。
  */
 fun majorDigitsToMinorUnits(
     digits: String,

@@ -28,7 +28,7 @@ appId: com.jojomango.expensetracker
 # 收起系統鍵盤——這個表單是真正的系統 TextField，鍵盤開著會蓋住「建立錢包」按鈕。
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 # When 點擊新增按鈕
 - tapOn: "記帳"
@@ -53,12 +53,12 @@ appId: com.jojomango.expensetracker
 # And 送出
 - tapOn: "記一筆"
 
-# Then 交易出現在列表最上方，顯示「NT$120.00」與「🍜 飲食」
-# （TransactionRow 實際渲染會加上收支正負號前綴，支出是 "-NT$120.00"）
-- assertVisible: "-NT\\$120.00"
+# Then 交易出現在列表最上方，顯示「NT$120」與「🍜 飲食」
+# （TransactionRow 實際渲染會加上收支正負號前綴，支出是 "-NT$120"）
+- assertVisible: "-NT\\$120"
 - assertVisible: "飲食"
-# And 本週餘額立即變為「NT$2,880.00」（無需重新整理）
-- assertVisible: "NT$2,880.00"
+# And 本週餘額立即變為「NT$2,880」（無需重新整理）
+- assertVisible: "NT$2,880"
 
 # When 將該筆金額編輯為「200」
 - tapOn: "飲食"
@@ -69,8 +69,8 @@ appId: com.jojomango.expensetracker
 - tapOn: "0"
 - tapOn: "0"
 - tapOn: "儲存"
-# Then 本週餘額立即變為「NT$2,800.00」
-- assertVisible: "NT$2,800.00"
+# Then 本週餘額立即變為「NT$2,800」
+- assertVisible: "NT$2,800"
 
 # When 刪除該筆交易
 # 用 tag 定位這一列、從列的正中間往左滑。之前用寫死的螢幕座標百分比（TD-2），在 API 36 的
@@ -81,6 +81,6 @@ appId: com.jojomango.expensetracker
       id: "transaction-row"
     direction: LEFT
 # Then 交易從列表消失
-# And 本週餘額立即回到「NT$3,000.00」
-- assertNotVisible: "-NT\\$200.00"
-- assertVisible: "NT$3,000.00"
+# And 本週餘額立即回到「NT$3,000」
+- assertNotVisible: "-NT\\$200"
+- assertVisible: "NT$3,000"

@@ -23,7 +23,7 @@ appId: com.jojomango.expensetracker
 - inputText: "3000"
 - hideKeyboard
 - tapOn: "建立錢包"
-- assertVisible: "NT$3,000.00"
+- assertVisible: "NT$3,000"
 
 - tapOn: "記帳"
 - tapOn: "2"
@@ -33,7 +33,7 @@ appId: com.jojomango.expensetracker
 - assertVisible: "居住"
 - tapOn: "居住"
 - tapOn: "記一筆"
-- assertVisible: "NT$100.00"
+- assertVisible: "NT$100"
 
 # When 新增一筆支出 500
 - tapOn: "記帳"
@@ -44,9 +44,9 @@ appId: com.jojomango.expensetracker
 - tapOn: "居住"
 - tapOn: "記一筆"
 
-# Then 本週餘額顯示「-NT$400.00」
+# Then 本週餘額顯示「-NT$400」
 # And 餘額以警示樣式呈現（警示色 + 圖示）——用 Material Icon（不是 emoji）畫的
 # 警示圖示，contentDescription 是「已超支」，見 HomeScreen.kt BudgetCard 的說明。
 # And 畫面明確標示「已超支」
-- assertVisible: "-NT\\$400.00"
+- assertVisible: "-NT\\$400"
 - assertVisible: "已超支"
