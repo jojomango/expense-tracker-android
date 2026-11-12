@@ -48,7 +48,8 @@ data class AddEditTransactionUiState(
     val selectedCategoryId: String? = null,
     val date: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
     val note: String = "",
-    val submitted: Boolean = false,
+    /** 儲存成功的交易；首頁的「已記錄」Snackbar 要用它的分類與幣別。 */
+    val saved: Transaction? = null,
 ) {
     /**
      * 自製鍵台輸入的是「幣別主要單位」的整數位數（跟 [amountDigits] 一樣的字串），
@@ -181,7 +182,7 @@ class AddEditTransactionViewModel
                     )
                 transactionRepository.upsert(transaction)
                 analyticsTracker.track(AnalyticsEvent.TransactionSaved.from(transaction, isEdit = loadedOriginal != null))
-                internalState.value = internalState.value.copy(submitted = true)
+                internalState.value = internalState.value.copy(saved = transaction)
             }
         }
 

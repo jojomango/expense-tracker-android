@@ -67,6 +67,7 @@
     <string name="import_mode_merge">合併（保留現有資料）</string>
     <string name="import_mode_replace">取代（清空現有資料）</string>
     <string name="home_deleted_transaction">已刪除 %1$s %2$s</string>
+    <string name="transaction_saved">已記錄 %1$s %2$s</string>
     <string name="common_undo">還原</string>
     <string name="home_switch_wallet">切換錢包</string>
     <string name="home_settings">設定</string>
