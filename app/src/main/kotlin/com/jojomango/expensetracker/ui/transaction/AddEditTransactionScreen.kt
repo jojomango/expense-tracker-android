@@ -53,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -67,6 +68,7 @@ import com.jojomango.expensetracker.R
 import com.jojomango.expensetracker.domain.Category
 import com.jojomango.expensetracker.domain.TransactionType
 import com.jojomango.expensetracker.ui.common.LoadingState
+import com.jojomango.expensetracker.ui.i18n.rememberCategoryNames
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
 import kotlinx.datetime.Clock
@@ -82,7 +84,7 @@ import kotlinx.datetime.todayIn
 /** UI-SPEC.md §5 記帳頁——自製數字鍵台、分類網格，不用系統輸入法／下拉選單。 */
 @Composable
 fun AddEditTransactionScreen(
-    onDone: () -> Unit,
+    onDone: (savedMessage: String) -> Unit,
     onCancel: () -> Unit,
     viewModel: AddEditTransactionViewModel = hiltViewModel(),
 ) {
@@ -90,8 +92,10 @@ fun AddEditTransactionScreen(
     val typography = LocalAppTypography.current
     val extraColors = LocalAppExtraColors.current
 
-    LaunchedEffect(state.submitted) {
-        if (state.submitted) onDone()
+    val context = LocalContext.current
+    val categoryNames = rememberCategoryNames()
+    LaunchedEffect(state.saved) {
+        state.saved?.let { onDone(savedTransactionMessage(context, it, state.categories, categoryNames)) }
     }
 
     Scaffold { padding ->

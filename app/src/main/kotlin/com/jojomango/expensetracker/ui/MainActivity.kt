@@ -50,6 +50,7 @@ import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -79,6 +80,7 @@ import com.jojomango.expensetracker.ui.theme.ExpenseTrackerTheme
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.isDark
 import com.jojomango.expensetracker.ui.transaction.AddEditTransactionScreen
+import com.jojomango.expensetracker.ui.transaction.SAVED_TRANSACTION_MESSAGE_KEY
 import com.jojomango.expensetracker.ui.wallet.WALLET_MESSAGE_KEY
 import com.jojomango.expensetracker.ui.wallet.WalletEditResult
 import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
@@ -284,7 +286,10 @@ private fun ExpenseTrackerApp(
                     bottom = if (showBottomBar) padding.calculateBottomPadding() else 0.dp,
                 ),
         ) {
-            composable(Routes.HOME) {
+            composable(Routes.HOME) { entry ->
+                val savedMessage by entry.savedStateHandle
+                    .getStateFlow<String?>(SAVED_TRANSACTION_MESSAGE_KEY, null)
+                    .collectAsState()
                 HomeScreen(
                     onAddTransaction = { navController.navigate(Routes.ADD_TRANSACTION) },
                     onEditTransaction = { id -> navController.navigate(Routes.editTransaction(id)) },
@@ -297,6 +302,8 @@ private fun ExpenseTrackerApp(
                     // selectedWalletId 互不相通，切換錢包會完全沒反應（真的踩過這個
                     // bug，見 TASKS.md Phase 5 交接筆記）。
                     viewModel = homeViewModel,
+                    savedMessage = savedMessage,
+                    onSavedMessageShown = { entry.savedStateHandle[SAVED_TRANSACTION_MESSAGE_KEY] = null },
                 )
             }
             composable(Routes.STATS) { StatsScreen() }
@@ -309,7 +316,7 @@ private fun ExpenseTrackerApp(
             }
             composable(Routes.ADD_TRANSACTION) {
                 AddEditTransactionScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { message -> navController.popBackWithSavedMessage(message) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -318,7 +325,7 @@ private fun ExpenseTrackerApp(
                 arguments = listOf(navArgument("transactionId") { type = NavType.StringType }),
             ) {
                 AddEditTransactionScreen(
-                    onDone = { navController.popBackStack() },
+                    onDone = { message -> navController.popBackWithSavedMessage(message) },
                     onCancel = { navController.popBackStack() },
                 )
             }
@@ -415,5 +422,11 @@ private fun androidx.navigation.NavController.finishWalletEdit(
             is WalletEditResult.Deleted -> context.getString(R.string.wallet_deleted_message, result.name)
         }
     previousBackStackEntry?.savedStateHandle?.set(WALLET_MESSAGE_KEY, message)
+    popBackStack()
+}
+
+/** UI-SPEC.md §5：記一筆成功後回首頁顯示「已記錄」Snackbar；訊息交給上一頁（首頁）顯示。 */
+private fun NavHostController.popBackWithSavedMessage(message: String) {
+    previousBackStackEntry?.savedStateHandle?.set(SAVED_TRANSACTION_MESSAGE_KEY, message)
     popBackStack()
 }

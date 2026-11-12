@@ -93,6 +93,7 @@ import com.jojomango.expensetracker.ui.i18n.weekTitleLabels
 import com.jojomango.expensetracker.ui.notification.AutoRequestNotificationPermissionOnce
 import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.LocalAppTypography
+import com.jojomango.expensetracker.ui.transaction.SavedTransactionSnackbar
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -106,12 +107,15 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onSwitchWalletRequested: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
+    savedMessage: String? = null,
+    onSavedMessageShown: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val categoryNames = rememberCategoryNames()
+    SavedTransactionSnackbar(savedMessage, snackbarHostState, onSavedMessageShown)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
