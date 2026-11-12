@@ -33,6 +33,8 @@ appId: com.jojomango.expensetracker
 - tapOn: "00"
 - tapOn: "飲食"
 - tapOn: "記一筆"
+# T8.1.4：回首頁顯示「已記錄 {分類} {金額}」
+- assertVisible: "已記錄 飲食 ₱1,200.00"
 - assertVisible: "₱8,800.00"
 
 # And 新增支出，把幣別換成 USD，金額 40，分類「交通」
@@ -46,6 +48,8 @@ appId: com.jojomango.expensetracker
 - assertVisible: "\\$40.00"
 - tapOn: "交通"
 - tapOn: "記一筆"
+# T8.5.3：Snackbar 金額用這筆交易的幣別
+- assertVisible: "已記錄 交通 \\$40.00"
 
 # Then 預算卡顯示本週還可以花「₱8,800.00」，下方「另有 $40.00」
 - assertVisible: "₱8,800.00"
