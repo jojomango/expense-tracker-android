@@ -154,6 +154,10 @@
     <string name="wallet_management_title">管理錢包</string>
     <string name="wallet_archived_section">已封存</string>
     <string name="wallet_unarchive">取消封存</string>
+    <string name="wallet_unarchived_message">已取消封存 %1$s</string>
+    <string name="wallet_archived_caption">已封存</string>
+    <string name="archived_wallet_empty">這個錢包沒有任何交易。</string>
+    <string name="common_more_options">更多選項</string>
     <string name="budget_mode_weekly_label">每週預算</string>
     <plurals name="wallet_delete_with_transactions">
         <item quantity="other">這個錢包的 %1$d 筆交易會一併刪除，無法復原。</item>

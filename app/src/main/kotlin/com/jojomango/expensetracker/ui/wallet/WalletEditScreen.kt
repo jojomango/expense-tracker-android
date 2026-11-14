@@ -9,13 +9,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Archive
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -27,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -141,9 +148,23 @@ fun WalletEditScreen(
     }
 }
 
+/** UI-SPEC.md §11 v2.14：封存／取消封存／刪除的圖示大小。 */
+internal val ACTION_ICON_SIZE = 18.dp
+
+/** 文字前加一個裝飾用圖示；無障礙只唸文字，所以圖示不給描述（UI-SPEC.md §11 v2.14）。 */
+@Composable
+internal fun IconLabel(
+    icon: ImageVector,
+    text: String,
+) {
+    Icon(icon, contentDescription = null, modifier = Modifier.size(ACTION_ICON_SIZE))
+    Spacer(Modifier.width(8.dp))
+    Text(text)
+}
+
 /** UI-SPEC.md §11：只有編輯既有錢包時才有；最後一個未封存的錢包兩個鍵都停用。 */
 @Composable
-private fun ArchiveAndDeleteSection(
+internal fun ArchiveAndDeleteSection(
     isLastActive: Boolean,
     onArchive: () -> Unit,
     onDelete: () -> Unit,
@@ -151,12 +172,14 @@ private fun ArchiveAndDeleteSection(
     Spacer(Modifier.height(24.dp))
     HorizontalDivider()
     Spacer(Modifier.height(8.dp))
-    TextButton(onClick = onArchive, enabled = !isLastActive) { Text(stringResource(R.string.wallet_archive)) }
+    TextButton(onClick = onArchive, enabled = !isLastActive) {
+        IconLabel(Icons.Outlined.Archive, stringResource(R.string.wallet_archive))
+    }
     TextButton(
         onClick = onDelete,
         enabled = !isLastActive,
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-    ) { Text(stringResource(R.string.wallet_delete)) }
+    ) { IconLabel(Icons.Outlined.Delete, stringResource(R.string.wallet_delete)) }
     if (isLastActive) {
         Text(
             stringResource(R.string.wallet_keep_one),
@@ -168,7 +191,7 @@ private fun ArchiveAndDeleteSection(
 }
 
 @Composable
-private fun DeleteWalletDialog(
+internal fun DeleteWalletDialog(
     walletName: String,
     transactionCount: Int,
     onConfirm: () -> Unit,
