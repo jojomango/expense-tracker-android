@@ -86,6 +86,9 @@ bash scripts/release-internal.sh
 - **versionCode 從 26102415 這種時間戳記開始之後，就不能再上傳比它小的版本**——不要再用舊的方式手動組 `versionCode = 3/4…` 的版本；
   一律用這個 script（`app/build.gradle.kts` 裡的 3 只是平常開發用的預設值）
 - versionName（例如 1.1.1）仍然寫在 `app/build.gradle.kts`，正式改版時手動改
+- **改 versionName 的同一個 PR 也要加更新紀錄**：在 `scripts/site/updates.json` 最上面加一筆（版號、日期、中英文各 2～5 行重點），
+  再跑 `python3 scripts/site/gen.py .` 重新產生 `docs/updates.html` 與 `docs/en/updates.html`。
+  同一段文字可以直接貼到 Play Console 新版本的「版本資訊」
 - 自動上傳到 Play（不用手動拖檔）需要 Google Play Developer API 的服務帳戶，加上上傳工具（Gradle Play Publisher 屬於新套件，
   依 CLAUDE.md 禁令 3 要先經人類批准；或另外裝 fastlane）。目前上傳頻率低，先不做
 

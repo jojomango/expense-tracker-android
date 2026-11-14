@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Updates · Budget Book</title>
+<meta name="description" content="What’s new in each version of Budget Book.">
+<link rel="alternate" hreflang="zh-Hant" href="https://jojomango.github.io/expense-tracker-android/updates.html">
+<link rel="alternate" hreflang="en" href="https://jojomango.github.io/expense-tracker-android/en/updates.html">
+<link rel="icon" href="../assets/icon-192.png">
+<!-- 由 scripts/site/gen.py 產生，請改那支程式，不要直接改這個檔案。 -->
+<script data-goatcounter="https://jojomango99.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+<style>
+  /* 版面：App 自己的色票與圖示；左文右圖的功能列，手機上改成單欄 */
+  :root { --bg:#F2F1EF; --surface:#FFFFFF; --fg:#1C1B1F; --fg2:#5F5C66; --line:#E2DFDA; --accent:#C1502E; --ink:#17171A; --gold:#F6C445; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0F0F12; --surface:#1A1A1F; --fg:#ECEBEF; --fg2:#A7A4AE; --line:#2B2A30; --accent:#E2795A; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.75 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Segoe UI",sans-serif; }
+  a { color:var(--accent); }
+  .wrap { max-width:1040px; margin:0 auto; padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
+  header.top { display:flex; justify-content:flex-end; gap:20px; padding-block:18px; font-size:15px; }
+  header.top .home { margin-right:auto; }
+  .log { max-width:720px; padding-block:8px 24px; }
+  .log h1 { margin:0 0 8px; font-size:clamp(30px,5vw,42px); line-height:1.2; }
+  .log > p { margin:0 0 24px; color:var(--fg2); }
+  .release { padding-block:24px; border-top:1px solid var(--line); }
+  .release h2 { margin:0; font-size:22px; }
+  .release time { color:var(--fg2); font-size:15px; }
+  .release ul { margin:8px 0 0; padding-left:1.2em; }
+  .hero { display:grid; grid-template-columns:auto 1fr; gap:28px; align-items:center; padding-block:28px 56px; }
+  .hero img { width:120px; height:120px; border-radius:28px; box-shadow:0 10px 30px rgba(23,23,26,.25); }
+  .hero h1 { margin:0; font-size:clamp(34px,6vw,54px); line-height:1.15; letter-spacing:.01em; text-wrap:balance; }
+  .hero .tag { margin:10px 0 4px; font-size:clamp(19px,2.6vw,24px); font-weight:600; text-wrap:balance; }
+  .hero .sub { margin:0; color:var(--fg2); }
+  .cta { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .join { padding:8px 16px; border-radius:999px; background:var(--accent); color:var(--bg); font-size:15px; font-weight:600; text-decoration:none; }
+  .soon { display:inline-block; padding:8px 16px; border-radius:999px; background:var(--ink); color:var(--gold); font-size:15px; font-weight:600; }
+  .trust { background:var(--ink); color:#F2F1EF; border-radius:24px; padding:32px clamp(22px,4vw,44px); }
+  .trust h2 { margin:0 0 8px; font-size:24px; color:var(--gold); }
+  .trust p { margin:0; max-width:64ch; color:#D9D6DE; }
+  .feature { display:grid; grid-template-columns:1fr 280px; gap:clamp(24px,5vw,64px); align-items:center; padding-block:52px; border-bottom:1px solid var(--line); }
+  .feature:nth-of-type(even) { grid-template-columns:280px 1fr; }
+  .feature:nth-of-type(even) .text { order:2; }
+  .feature h2 { margin:0 0 10px; font-size:clamp(22px,3vw,28px); line-height:1.3; text-wrap:balance; }
+  .feature p { margin:0; color:var(--fg2); max-width:46ch; }
+  .shot { width:100%; height:auto; max-width:280px; justify-self:center; border-radius:28px; border:1px solid var(--line); box-shadow:0 12px 30px rgba(23,23,26,.12); background:var(--surface); }
+  footer { display:flex; flex-wrap:wrap; gap:8px 24px; padding-block:40px 56px; color:var(--fg2); font-size:15px; }
+  @media (max-width:720px) {
+    .hero { grid-template-columns:1fr; text-align:left; padding-block:8px 40px; }
+    .hero img { width:88px; height:88px; border-radius:22px; }
+    .feature, .feature:nth-of-type(even) { grid-template-columns:1fr; padding-block:40px; }
+    .feature:nth-of-type(even) .text { order:0; }
+    .shot { max-width:240px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="home" href="./">Budget Book</a><a href="../updates.html" hreflang="zh-Hant">繁體中文</a></header>
+  <main class="log">
+  <h1>Updates</h1>
+  <p>What’s new in each version of Budget Book.</p>
+  <section class="release">
+    <h2>1.1.6</h2><time datetime="2026-11-12">2026-11-12</time>
+    <ul><li>One wallet can now hold several currencies: pick a currency when adding an entry; each currency is listed on its own, never converted or added together</li><li>Change a wallet’s default currency when managing wallets; the currency field for new wallets is now a searchable menu</li><li>After saving an entry, the home screen confirms it was saved</li><li>New Taiwan dollar amounts no longer show “.00”</li><li>The app is now called Budget Book</li></ul>
+  </section>
+  <section class="release">
+    <h2>1.1.5</h2><time datetime="2026-11-02">2026-11-02</time>
+    <ul><li>Backups now update the same file instead of piling up</li><li>New: automatic backup at the end of each month (off by default)</li></ul>
+  </section>
+  <section class="release">
+    <h2>1.1.4</h2><time datetime="2026-11-01">2026-11-01</time>
+    <ul><li>Backup reminders now come once at the end of each month, starting after 30 days of use, and skip months you’ve already backed up</li><li>Fixed the look of the budget progress bar</li></ul>
+  </section>
+  <section class="release">
+    <h2>1.1.3</h2><time datetime="2026-10-29">2026-10-29</time>
+    <ul><li>The home list is grouped by day, with a divider when the year changes; the budget card now scrolls with the list</li><li>The date on the add screen is now a calendar button; while writing a note, categories shrink to one row</li><li>Better TalkBack support for deleting entries</li><li>Fixed a blank row appearing after swiping to delete or undoing</li></ul>
+  </section>
+  <section class="release">
+    <h2>1.1.2</h2><time datetime="2026-10-27">2026-10-27</time>
+    <ul><li>Categories are shown in two rows, in the order you arranged them</li><li>Weekly subtotals now show income minus spending</li><li>The number pad hides while you write a note</li><li>The “Entertainment” category is renamed “Leisure”</li></ul>
+  </section>
+  <section class="release">
+    <h2>1.1.1</h2><time datetime="2026-10-22">2026-10-22</time>
+    <ul><li>First test release: multiple wallets, weekly or total budgets, stats, backup and restore, dark mode, English and Chinese</li><li>Optional “Help improve the app” switch in Settings (off by default), and a way to support the developer</li><li>New app icon</li></ul>
+  </section>
+  </main>
+  <footer><a href="../privacy-policy-en.html">Privacy policy</a><span>Contact: jojomango99@gmail.com</span><span>© 2026 jojomango</span></footer>
+</div>
+</body>
+</html>

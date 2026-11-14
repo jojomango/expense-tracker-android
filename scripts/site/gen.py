@@ -1,10 +1,14 @@
-"""Generates docs/index.html (zh) and docs/en/index.html from one template."""
-import sys, os
+"""Generates docs/index.html, docs/updates.html (zh) and their docs/en/ versions from one template.
+
+更新紀錄的內容在 updates.json：每次推版加一筆在最上面（新的在前）。
+"""
+import sys, os, json, html as h
 repo = sys.argv[1]
 T = {
  'zh': dict(lang='zh-Hant-TW', title='預算本', name='預算本', other_href='en/', other='English', base='',
    tagline='打開就知道這週還能花多少。', sub='純本地、免登入、沒有廣告的 Android 記帳 App。',
    soon='即將在 Google Play 推出', join='加入封閉測試', privacy_href='privacy-policy.html', privacy='隱私權政策', contact='聯絡：',
+   updates='更新紀錄', updates_desc='預算本每個版本的更新內容。', home='首頁',
    trust_h='你的記帳資料只在你的手機上', trust_p='沒有帳號、不用登入、沒有廣告。每一筆收支都只存在你自己的手機裡，不會上傳到任何地方。設定頁有一個預設關閉的「協助改善 App」，打開後也只會傳送匿名的使用情形與當機資訊，不含任何記帳內容。',
    features=[
     ('home','每週預算，一眼看懂','首頁最上方就是本週還能花多少、還剩幾天、平均每天能花多少。超支時清楚標示，每一週的收支淨額也列在週標題旁。'),
@@ -17,6 +21,7 @@ T = {
  'en': dict(lang='en', title='Budget Book', name='Budget Book', other_href='../', other='繁體中文', base='../',
    tagline='Know what’s left to spend this week, the moment you open it.', sub='A private, offline budget tracker for Android. No sign-up, no ads.',
    soon='Coming soon to Google Play', join='Join the closed test', privacy_href='../privacy-policy-en.html', privacy='Privacy policy', contact='Contact: ',
+   updates='Updates', updates_desc='What’s new in each version of Budget Book.', home='Home',
    trust_h='Your entries stay on your phone', trust_p='No account, no sign-in, no ads. Every entry is stored only on your own phone and never uploaded anywhere. Settings has an optional “Help improve the app” switch, off by default; even when it’s on, only anonymous usage and crash info is sent, never your entries.',
    features=[
     ('home','Your weekly budget at a glance','The top of the home screen shows what’s left this week, how many days remain and how much you can spend per day. Overspending is clearly marked, and each week shows its net total.'),
@@ -35,7 +40,15 @@ CSS = '''
   body { margin:0; background:var(--bg); color:var(--fg); font:17px/1.75 -apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Segoe UI",sans-serif; }
   a { color:var(--accent); }
   .wrap { max-width:1040px; margin:0 auto; padding-left:max(20px,env(safe-area-inset-left)); padding-right:max(20px,env(safe-area-inset-right)); }
-  header.top { display:flex; justify-content:flex-end; padding-block:18px; font-size:15px; }
+  header.top { display:flex; justify-content:flex-end; gap:20px; padding-block:18px; font-size:15px; }
+  header.top .home { margin-right:auto; }
+  .log { max-width:720px; padding-block:8px 24px; }
+  .log h1 { margin:0 0 8px; font-size:clamp(30px,5vw,42px); line-height:1.2; }
+  .log > p { margin:0 0 24px; color:var(--fg2); }
+  .release { padding-block:24px; border-top:1px solid var(--line); }
+  .release h2 { margin:0; font-size:22px; }
+  .release time { color:var(--fg2); font-size:15px; }
+  .release ul { margin:8px 0 0; padding-left:1.2em; }
   .hero { display:grid; grid-template-columns:auto 1fr; gap:28px; align-items:center; padding-block:28px 56px; }
   .hero img { width:120px; height:120px; border-radius:28px; box-shadow:0 10px 30px rgba(23,23,26,.25); }
   .hero h1 { margin:0; font-size:clamp(34px,6vw,54px); line-height:1.15; letter-spacing:.01em; text-wrap:balance; }
@@ -62,21 +75,21 @@ CSS = '''
     .shot { max-width:240px; }
   }
 '''
-for code, t in T.items():
+updates = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'updates.json')))
+
+
+def page(t, title, desc, path, body):
+    """index 與 updates 共用的外框；path 是相對於語言根目錄的檔名（'' 是首頁）。"""
     b = t['base']
-    feats = '\n'.join(f'''    <section class="feature">
-      <div class="text"><h2>{h}</h2><p>{p}</p></div>
-      <img class="shot" src="{b}assets/screens/{code}/{k}.webp" alt="{h}" width="540" height="1080" loading="lazy">
-    </section>''' for k, h, p in t['features'])
-    html = f'''<!doctype html>
+    return f'''<!doctype html>
 <html lang="{t['lang']}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{t['title']}</title>
-<meta name="description" content="{t['sub']}">
-<link rel="alternate" hreflang="zh-Hant" href="https://jojomango.github.io/expense-tracker-android/">
-<link rel="alternate" hreflang="en" href="https://jojomango.github.io/expense-tracker-android/en/">
+<title>{title}</title>
+<meta name="description" content="{desc}">
+<link rel="alternate" hreflang="zh-Hant" href="https://jojomango.github.io/expense-tracker-android/{path}">
+<link rel="alternate" hreflang="en" href="https://jojomango.github.io/expense-tracker-android/en/{path}">
 <link rel="icon" href="{b}assets/icon-192.png">
 <!-- 由 scripts/site/gen.py 產生，請改那支程式，不要直接改這個檔案。 -->
 <script data-goatcounter="https://jojomango99.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
@@ -84,7 +97,22 @@ for code, t in T.items():
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><a href="{t['other_href']}" hreflang="{'en' if code=='zh' else 'zh-Hant'}">{t['other']}</a></header>
+{body}
+  <footer><a href="{t['privacy_href']}">{t['privacy']}</a><span>{t['contact']}jojomango99@gmail.com</span><span>© 2026 jojomango</span></footer>
+</div>
+</body>
+</html>
+'''
+
+
+for code, t in T.items():
+    b = t['base']
+    other_lang = 'en' if code == 'zh' else 'zh-Hant'
+    feats = '\n'.join(f'''    <section class="feature">
+      <div class="text"><h2>{h}</h2><p>{p}</p></div>
+      <img class="shot" src="{b}assets/screens/{code}/{k}.webp" alt="{h}" width="540" height="1080" loading="lazy">
+    </section>''' for k, h, p in t['features'])
+    body = f'''  <header class="top"><a href="updates.html">{t['updates']}</a><a href="{t['other_href']}" hreflang="{other_lang}">{t['other']}</a></header>
   <section class="hero">
     <img src="{b}assets/icon-512.png" alt="" width="120" height="120">
     <div>
@@ -95,13 +123,23 @@ for code, t in T.items():
     </div>
   </section>
   <section class="trust"><h2>{t['trust_h']}</h2><p>{t['trust_p']}</p></section>
-{feats}
-  <footer><a href="{t['privacy_href']}">{t['privacy']}</a><span>{t['contact']}jojomango99@gmail.com</span><span>© 2026 jojomango</span></footer>
-</div>
-</body>
-</html>
-'''
+{feats}'''
+    html = page(t, t['title'], t['sub'], '', body)
     out = os.path.join(repo, 'docs', 'index.html' if code == 'zh' else 'en/index.html')
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w').write(html)
+
+    releases = '\n'.join(
+        f'''  <section class="release">
+    <h2>{u['version']}</h2><time datetime="{u['date']}">{u['date']}</time>
+    <ul>{''.join(f'<li>{h.escape(item)}</li>' for item in u[code])}</ul>
+  </section>''' for u in updates)
+    body = f'''  <header class="top"><a class="home" href="./">{t['name']}</a><a href="{t['other_href']}updates.html" hreflang="{other_lang}">{t['other']}</a></header>
+  <main class="log">
+  <h1>{t['updates']}</h1>
+  <p>{t['updates_desc']}</p>
+{releases}
+  </main>'''
+    out = os.path.join(repo, 'docs', 'updates.html' if code == 'zh' else 'en/updates.html')
+    open(out, 'w').write(page(t, f"{t['updates']} · {t['name']}", t['updates_desc'], 'updates.html', body))
 print('ok')
