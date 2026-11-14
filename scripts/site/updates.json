@@ -1,0 +1,89 @@
+[
+  {
+    "version": "1.1.6",
+    "date": "2026-11-12",
+    "zh": [
+      "一個錢包可以記多種幣別：記帳時可以換幣別，不同幣別分開列出，不換算、不相加",
+      "管理錢包時可以改預設幣別；新增錢包的幣別改為可搜尋的選單",
+      "記一筆之後，首頁會提示「已記錄」",
+      "新台幣金額不再顯示「.00」",
+      "App 改名為「預算本」"
+    ],
+    "en": [
+      "One wallet can now hold several currencies: pick a currency when adding an entry; each currency is listed on its own, never converted or added together",
+      "Change a wallet’s default currency when managing wallets; the currency field for new wallets is now a searchable menu",
+      "After saving an entry, the home screen confirms it was saved",
+      "New Taiwan dollar amounts no longer show “.00”",
+      "The app is now called Budget Book"
+    ]
+  },
+  {
+    "version": "1.1.5",
+    "date": "2026-11-02",
+    "zh": [
+      "備份改為更新同一個檔案，不會越存越多",
+      "新增月底自動備份（預設關閉）"
+    ],
+    "en": [
+      "Backups now update the same file instead of piling up",
+      "New: automatic backup at the end of each month (off by default)"
+    ]
+  },
+  {
+    "version": "1.1.4",
+    "date": "2026-11-01",
+    "zh": [
+      "備份提醒改為每月月底一次：使用滿 30 天才開始提醒，當月已備份就不提醒",
+      "預算進度條的外觀修正"
+    ],
+    "en": [
+      "Backup reminders now come once at the end of each month, starting after 30 days of use, and skip months you’ve already backed up",
+      "Fixed the look of the budget progress bar"
+    ]
+  },
+  {
+    "version": "1.1.3",
+    "date": "2026-10-29",
+    "zh": [
+      "首頁依日期分組，跨年時加上年份分隔；預算卡會隨列表一起捲動",
+      "記帳頁的日期改為日曆按鈕；寫備註時分類改成單列，畫面不擁擠",
+      "改善 TalkBack 的刪除操作",
+      "修正左滑刪除或還原後出現空白列"
+    ],
+    "en": [
+      "The home list is grouped by day, with a divider when the year changes; the budget card now scrolls with the list",
+      "The date on the add screen is now a calendar button; while writing a note, categories shrink to one row",
+      "Better TalkBack support for deleting entries",
+      "Fixed a blank row appearing after swiping to delete or undoing"
+    ]
+  },
+  {
+    "version": "1.1.2",
+    "date": "2026-10-27",
+    "zh": [
+      "分類改為兩列，並依你排的順序顯示",
+      "每週小計改為收入減支出的淨額",
+      "寫備註時收起數字鍵盤"
+    ],
+    "en": [
+      "Categories are shown in two rows, in the order you arranged them",
+      "Weekly subtotals now show income minus spending",
+      "The number pad hides while you write a note",
+      "The “Entertainment” category is renamed “Leisure”"
+    ]
+  },
+  {
+    "version": "1.1.1",
+    "date": "2026-10-22",
+    "zh": [
+      "第一個測試版本：多錢包、每週或總預算、統計、備份與還原、深色模式、中英文介面",
+      "設定頁可以打開「協助改善 App」（預設關閉），也可以支持開發者",
+      "新的 App 圖示"
+    ],
+    "en": [
+      "First test release: multiple wallets, weekly or total budgets, stats, backup and restore, dark mode, English and Chinese",
+      "Optional “Help improve the app” switch in Settings (off by default), and a way to support the developer",
+      "New app icon"
+    ]
+  }
+]
