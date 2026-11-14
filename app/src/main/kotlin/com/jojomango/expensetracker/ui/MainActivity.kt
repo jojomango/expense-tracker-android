@@ -81,6 +81,7 @@ import com.jojomango.expensetracker.ui.theme.LocalAppExtraColors
 import com.jojomango.expensetracker.ui.theme.isDark
 import com.jojomango.expensetracker.ui.transaction.AddEditTransactionScreen
 import com.jojomango.expensetracker.ui.transaction.SAVED_TRANSACTION_MESSAGE_KEY
+import com.jojomango.expensetracker.ui.wallet.ArchivedWalletScreen
 import com.jojomango.expensetracker.ui.wallet.WALLET_MESSAGE_KEY
 import com.jojomango.expensetracker.ui.wallet.WalletEditResult
 import com.jojomango.expensetracker.ui.wallet.WalletEditScreen
@@ -335,6 +336,7 @@ private fun ExpenseTrackerApp(
                     onBack = { navController.popBackStack() },
                     onAddWallet = { navController.navigate(Routes.WALLET_NEW) },
                     onEditWallet = { id -> navController.navigate(Routes.editWallet(id)) },
+                    onOpenArchivedWallet = { id -> navController.navigate(Routes.archivedWallet(id)) },
                     message = walletMessage,
                     onMessageShown = { entry.savedStateHandle[WALLET_MESSAGE_KEY] = null },
                 )
@@ -352,6 +354,15 @@ private fun ExpenseTrackerApp(
                 WalletEditScreen(
                     onDone = { result -> navController.finishWalletEdit(result, context) },
                     onCancel = { navController.popBackStack() },
+                )
+            }
+            composable(
+                Routes.ARCHIVED_WALLET_PATTERN,
+                arguments = listOf(navArgument("walletId") { type = NavType.StringType }),
+            ) {
+                ArchivedWalletScreen(
+                    onBack = { navController.popBackStack() },
+                    onDone = { result -> navController.finishWalletEdit(result, context) },
                 )
             }
             composable(Routes.CATEGORY_MANAGEMENT) {
@@ -420,6 +431,7 @@ private fun androidx.navigation.NavController.finishWalletEdit(
             WalletEditResult.Saved -> null
             is WalletEditResult.Archived -> context.getString(R.string.wallet_archived_message, result.name)
             is WalletEditResult.Deleted -> context.getString(R.string.wallet_deleted_message, result.name)
+            is WalletEditResult.Unarchived -> context.getString(R.string.wallet_unarchived_message, result.name)
         }
     previousBackStackEntry?.savedStateHandle?.set(WALLET_MESSAGE_KEY, message)
     popBackStack()

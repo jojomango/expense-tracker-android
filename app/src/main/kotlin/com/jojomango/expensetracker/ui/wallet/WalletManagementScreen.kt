@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Unarchive
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +41,7 @@ fun WalletManagementScreen(
     onBack: () -> Unit,
     onAddWallet: () -> Unit,
     onEditWallet: (String) -> Unit,
+    onOpenArchivedWallet: (String) -> Unit,
     message: String?,
     onMessageShown: () -> Unit,
     viewModel: WalletManagementViewModel = hiltViewModel(),
@@ -86,16 +89,31 @@ fun WalletManagementScreen(
                     modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp).semantics { heading() },
                 )
                 archivedWallets.forEach { wallet ->
-                    ListItem(
-                        headlineContent = { Text(wallet.name, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                        trailingContent = {
-                            TextButton(onClick = { viewModel.unarchive(wallet.id) }) { Text(stringResource(R.string.wallet_unarchive)) }
-                        },
+                    ArchivedWalletRow(
+                        name = wallet.name,
+                        onOpen = { onOpenArchivedWallet(wallet.id) },
+                        onUnarchive = { viewModel.unarchive(wallet.id) },
                     )
                 }
             }
         }
     }
+}
+
+/** UI-SPEC.md §11、§11.1：點列開唯讀檢視頁；點列尾按鈕直接取消封存。 */
+@Composable
+internal fun ArchivedWalletRow(
+    name: String,
+    onOpen: () -> Unit,
+    onUnarchive: () -> Unit,
+) {
+    ListItem(
+        headlineContent = { Text(name, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        trailingContent = {
+            TextButton(onClick = onUnarchive) { IconLabel(Icons.Outlined.Unarchive, stringResource(R.string.wallet_unarchive)) }
+        },
+        modifier = Modifier.clickable(onClick = onOpen),
+    )
 }
 
 @Composable

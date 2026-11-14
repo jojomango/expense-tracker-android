@@ -154,6 +154,10 @@
     <string name="wallet_management_title">Wallets</string>
     <string name="wallet_archived_section">Archived</string>
     <string name="wallet_unarchive">Unarchive</string>
+    <string name="wallet_unarchived_message">Unarchived %1$s</string>
+    <string name="wallet_archived_caption">Archived</string>
+    <string name="archived_wallet_empty">This wallet has no entries.</string>
+    <string name="common_more_options">More options</string>
     <string name="budget_mode_weekly_label">Weekly budget</string>
     <plurals name="wallet_delete_with_transactions">
         <item quantity="one">%1$d transaction in this wallet will also be deleted. This can’t be undone.</item>

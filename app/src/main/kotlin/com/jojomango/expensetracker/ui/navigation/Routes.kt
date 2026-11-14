@@ -10,6 +10,7 @@ object Routes {
     const val WALLET_MANAGEMENT = "wallet/manage"
     const val WALLET_NEW = "wallet/new"
     const val WALLET_EDIT_PATTERN = "wallet/edit/{walletId}"
+    const val ARCHIVED_WALLET_PATTERN = "wallet/archived/{walletId}"
     const val CATEGORY_MANAGEMENT = "category/manage"
     const val CATEGORY_NEW = "category/new"
     const val CATEGORY_EDIT_PATTERN = "category/edit/{categoryId}"
@@ -17,6 +18,8 @@ object Routes {
     fun editTransaction(transactionId: String) = "transaction/edit/$transactionId"
 
     fun editWallet(walletId: String) = "wallet/edit/$walletId"
+
+    fun archivedWallet(walletId: String) = "wallet/archived/$walletId"
 
     fun editCategory(categoryId: String) = "category/edit/$categoryId"
 }
@@ -32,4 +35,5 @@ fun isBottomNavHiddenRoute(route: String?): Boolean =
         route == Routes.CATEGORY_NEW ||
         (route?.startsWith("transaction/edit/") == true) ||
         (route?.startsWith("wallet/edit/") == true) ||
+        (route?.startsWith("wallet/archived/") == true) ||
         (route?.startsWith("category/edit/") == true)

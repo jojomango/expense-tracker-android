@@ -31,6 +31,11 @@ sealed interface WalletEditResult {
     data class Deleted(
         val name: String,
     ) : WalletEditResult
+
+    /** 只有封存錢包檢視頁會產生（UI-SPEC.md §11.1）。 */
+    data class Unarchived(
+        val name: String,
+    ) : WalletEditResult
 }
 
 data class WalletEditUiState(

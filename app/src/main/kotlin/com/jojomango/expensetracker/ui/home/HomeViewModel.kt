@@ -58,11 +58,12 @@ data class HomeUiState(
     val needsOnboarding: Boolean get() = !isLoading && wallets.isEmpty()
 }
 
-private data class HomeContext(
+/** 算一個錢包的畫面狀態時，除了它自己的交易以外需要的東西。 */
+internal data class HomeContext(
     val wallets: List<Wallet>,
     val categories: List<Category>,
     val settings: Settings,
-    val resolvedWalletId: String?,
+    val resolvedWalletId: String? = null,
 )
 
 @HiltViewModel
@@ -109,59 +110,14 @@ class HomeViewModel
             }.flatMapLatest { ctx ->
                 val wallet = ctx.wallets.firstOrNull { it.id == ctx.resolvedWalletId }
                 val transactionsFlow = if (wallet != null) transactionRepository.observeByWallet(wallet.id) else flowOf(emptyList())
-                transactionsFlow.map { transactions -> buildUiState(wallet, ctx, transactions) }
+                transactionsFlow.map { transactions ->
+                    buildHomeUiState(wallet, ctx, transactions, today())
+                }
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = HomeUiState(),
             )
-
-        private fun buildUiState(
-            wallet: Wallet?,
-            ctx: HomeContext,
-            transactions: List<Transaction>,
-        ): HomeUiState {
-            if (wallet == null) {
-                return HomeUiState(
-                    isLoading = false,
-                    wallets = ctx.wallets,
-                    categories = ctx.categories,
-                    weekStartDay = ctx.settings.weekStartDay,
-                )
-            }
-            val referenceDate = today()
-            val weeklyBalance = Budget.calculateWeeklyBalance(wallet, transactions, ctx.settings.weekStartDay, referenceDate)
-            val totalBalance = Budget.calculateTotalBalance(wallet, transactions)
-            val weeklyExpenseTotal =
-                Budget.calculateWeeklyExpenseTotal(wallet, transactions, ctx.settings.weekStartDay, referenceDate)
-            // 同一天的交易，後記的在上面（TESTCASES.md T2.5.5）
-            val groups = Week.groupByWeek(transactions, ctx.settings.weekStartDay, compareByDescending { it.createdAt }) { it.date }
-            // 「還有 N 天」/「日均可用」是週預算特有的概念（總預算沒有週期，
-            // 不會重置），UI-SPEC.md §4.2 只有明講「budgetMode == NONE 時不顯示
-            // 進度條」，沒有明講這兩行在 TOTAL 模式下要不要出現——這裡選擇只在
-            // WEEKLY 模式顯示，見 TASKS.md Phase 5 交接筆記的說明。
-            val daysLeft = weeklyBalance?.let { Budget.daysLeftInWeek(ctx.settings.weekStartDay, referenceDate) }
-            val dailyAllowance =
-                if (weeklyBalance != null && daysLeft != null) {
-                    Money.of(Budget.dailyAllowance(weeklyBalance.balance.amount, daysLeft), wallet.currency)
-                } else {
-                    null
-                }
-            return HomeUiState(
-                isLoading = false,
-                wallets = ctx.wallets,
-                currentWallet = wallet,
-                categories = ctx.categories,
-                weekStartDay = ctx.settings.weekStartDay,
-                weeklyBalance = weeklyBalance,
-                totalBalance = totalBalance,
-                weeklyExpenseTotal = weeklyExpenseTotal,
-                daysLeftInWeek = daysLeft,
-                dailyAllowance = dailyAllowance,
-                otherCurrencyExpenses = MultiCurrency.otherCurrencyExpenses(wallet, transactions, ctx.settings.weekStartDay, referenceDate),
-                transactionGroups = groups,
-            )
-        }
 
         fun switchWallet(walletId: String) {
             selectedWalletId.value = walletId
@@ -203,7 +159,59 @@ class HomeViewModel
         }
     }
 
-/** 跟 [HomeViewModel.buildUiState] 的金額選擇邏輯一致（週預算優先、其次總預算、
+/**
+ * 一個錢包的預算卡與交易列表狀態。首頁與封存錢包檢視頁（UI-SPEC.md §11.1）共用，
+ * 兩邊的金額、分組、小計規則必須一模一樣。
+ */
+internal fun buildHomeUiState(
+    wallet: Wallet?,
+    ctx: HomeContext,
+    transactions: List<Transaction>,
+    referenceDate: LocalDate,
+): HomeUiState {
+    val (wallets, categories, settings) = ctx
+    if (wallet == null) {
+        return HomeUiState(
+            isLoading = false,
+            wallets = wallets,
+            categories = categories,
+            weekStartDay = settings.weekStartDay,
+        )
+    }
+    val weeklyBalance = Budget.calculateWeeklyBalance(wallet, transactions, settings.weekStartDay, referenceDate)
+    val totalBalance = Budget.calculateTotalBalance(wallet, transactions)
+    val weeklyExpenseTotal =
+        Budget.calculateWeeklyExpenseTotal(wallet, transactions, settings.weekStartDay, referenceDate)
+    // 同一天的交易，後記的在上面（TESTCASES.md T2.5.5）
+    val groups = Week.groupByWeek(transactions, settings.weekStartDay, compareByDescending { it.createdAt }) { it.date }
+    // 「還有 N 天」/「日均可用」是週預算特有的概念（總預算沒有週期，
+    // 不會重置），UI-SPEC.md §4.2 只有明講「budgetMode == NONE 時不顯示
+    // 進度條」，沒有明講這兩行在 TOTAL 模式下要不要出現——這裡選擇只在
+    // WEEKLY 模式顯示，見 TASKS.md Phase 5 交接筆記的說明。
+    val daysLeft = weeklyBalance?.let { Budget.daysLeftInWeek(settings.weekStartDay, referenceDate) }
+    val dailyAllowance =
+        if (weeklyBalance != null && daysLeft != null) {
+            Money.of(Budget.dailyAllowance(weeklyBalance.balance.amount, daysLeft), wallet.currency)
+        } else {
+            null
+        }
+    return HomeUiState(
+        isLoading = false,
+        wallets = wallets,
+        currentWallet = wallet,
+        categories = categories,
+        weekStartDay = settings.weekStartDay,
+        weeklyBalance = weeklyBalance,
+        totalBalance = totalBalance,
+        weeklyExpenseTotal = weeklyExpenseTotal,
+        daysLeftInWeek = daysLeft,
+        dailyAllowance = dailyAllowance,
+        otherCurrencyExpenses = MultiCurrency.otherCurrencyExpenses(wallet, transactions, settings.weekStartDay, referenceDate),
+        transactionGroups = groups,
+    )
+}
+
+/** 跟 [buildHomeUiState] 的金額選擇邏輯一致（週預算優先、其次總預算、
  * 否則本週支出），抽出來給 [HomeViewModel.walletBalanceTexts] 共用，因為那裡是
  * 對「每一個」錢包各自算一次，不是只對目前選中的錢包。 */
 internal fun formatWalletBalance(

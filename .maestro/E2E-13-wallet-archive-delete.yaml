@@ -152,3 +152,30 @@ appId: com.jojomango.expensetracker
 - tapOn: "日常"
 - assertVisible: "切換錢包"
 - assertVisible: "舊帳"
+
+# When 再次封存「舊帳」，然後在「已封存」區塊點「舊帳」（v2.14）
+- tapOn: "管理錢包…"
+- tapOn: "TWD · 不設定"
+- scrollUntilVisible:
+    element: "封存錢包"
+- tapOn: "封存錢包"
+- assertVisible: "已封存 舊帳"
+- tapOn: "舊帳"
+# Then 開啟「舊帳」的檢視頁，標題下方顯示「已封存」
+- assertVisible: "更多選項"
+- assertVisible: "舊帳"
+- assertVisible: "已封存"
+# And 顯示「這個錢包沒有任何交易。」，沒有「記帳」按鈕
+- assertVisible: "這個錢包沒有任何交易。"
+- assertNotVisible: "記帳"
+
+# When 從右上角選單點「刪除錢包」並按「刪除」
+- tapOn: "更多選項"
+- tapOn: "刪除錢包"
+- assertVisible: "刪除「舊帳」？"
+- tapOn: "刪除"
+# Then 回到錢包管理頁，顯示「已刪除 舊帳」
+- assertVisible: "已刪除 舊帳"
+# And 「已封存」區塊不再出現（沒有其他封存的錢包）
+- assertNotVisible: "已封存"
+- assertNotVisible: "取消封存"
